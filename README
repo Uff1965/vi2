@@ -1,0 +1,15 @@
+# vi_timing
+
+Compact and lightweight library for measuring code execution time in C and C++.
+
+## Build
+
+```bash
+cmake -B build -DVI_TIMING_ENABLE_TESTS=ON -DBUILD_SHARED_LIBS=ON
+cmake --build build
+ctest --test-dir build
+
+
+## Install
+cmake --install build --prefix install
+

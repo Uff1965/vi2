@@ -1,0 +1,43 @@
+BUSINESS SOURCE LICENSE 1.1
+
+vi_timing Library
+
+Licensor: A.Prograamar
+Library: vi_timing
+
+1. Definitions
+   1.1 "Licensor" means A.Prograamar, the copyright owner and the party granting this Business Source License.
+   1.2 "Licensee" means any individual or legal entity exercising rights granted under this License.
+   1.3 "Library" means the software package named vi_timing, including all source code, object code, documentation, and related resources.
+   1.4 "Non-Commercial Use" means use of the Library for personal, educational, charitable, or similar purposes where the Licensee does not derive commercial advantage, revenue, or other consideration directly or indirectly from providing services or products using the Library.
+   1.5 "Commercial Use" means any use of the Library to provide services, products, or other offerings for which the Licensee receives revenue or other consideration.
+   1.6 "Change Date" is September 1, 2029 (2029-09-01).
+   1.7 "Change License" is the GNU General Public License version 3 (GPLv3).
+
+2. Grant of License
+   Subject to the terms and conditions of this License, the Licensor hereby grants the Licensee a worldwide, royalty-free, non-exclusive license to:
+   a) copy, modify, and distribute the Library solely for Non-Commercial Use;
+   b) create derivative works based on the Library solely for Non-Commercial Use;
+   c) in all copies, distributions, or derivative works, preserve and reproduce the following attribution notice: "vi_timing Library © A.Prograamar".
+
+3. Additional Conditions
+   This License expressly permits only Non-Commercial Use. Any Commercial Use of the Library without a separate commercial license from the Licensor is prohibited.
+
+4. Change of License
+   On or after the Change Date (2029-09-01), the Licensee may, at their option, choose to use, copy, modify, and distribute the Library under the terms and conditions of the Change License (GPLv3).
+
+5. Commercial Licensing
+   For Commercial Use or for rights beyond those granted in Section 2, the Licensee must enter into a separate commercial licensing agreement with the Licensor.
+   Contact for commercial licensing: [programmer.amateur@proton.me](mailto:programmer.amateur@proton.me)
+
+6. Disclaimer of Warranty
+   The Library is provided "AS IS", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
+
+7. Limitation of Liability
+   In no event shall the Licensor be liable for any claim, damages, or other liability arising from, out of, or in connection with the Library or the use or other dealings in the Library.
+
+8. Miscellaneous
+   8.1 This License constitutes the entire agreement between the parties concerning the Library and supersedes all prior or contemporaneous communications.
+   8.2 If any provision of this License is held to be unenforceable, that provision shall be enforced to the maximum extent permissible, and the remaining provisions of this License shall remain in full force and effect.
+
+END OF LICENSE
