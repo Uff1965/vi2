@@ -1,37 +1,39 @@
-# File: "vi/cmake/vi_timing.cmake"
+# File: "vi/src/CMakeLists.txt"
 
 set(SOURCE_FILES) # Initialize the list of source files.
 
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.in" "${CMAKE_CURRENT_SOURCE_DIR}/version.out" @ONLY)
+
 if(MSVC)
     set(FILE_GROUP
-      "${VI_ROOT_DIR}/LICENSE"
-      "${VI_ROOT_DIR}/README"
+      "${CMAKE_SOURCE_DIR}/LICENSE"
+      "${CMAKE_SOURCE_DIR}/README"
     )
     source_group("Extras" FILES ${FILE_GROUP})
 endif()
 
 set(FILE_GROUP
-  "${CMAKE_CURRENT_SOURCE_DIR}/include/vi_timing/vi_timing.hpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/include/vi_timing/vi_timing.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/include/vi_timing/vi_timing_proxy.hpp"
+  "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing.hpp"
+  "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing.h"
+  "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing_proxy.hpp"
 )
 source_group("Interface files" FILES ${FILE_GROUP})
 list(APPEND SOURCE_FILES ${FILE_GROUP})
 
 set(FILE_GROUP
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/version.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/misc.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/version.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/misc.h"
 )
 source_group("Header files" FILES ${FILE_GROUP})
 list(APPEND SOURCE_FILES ${FILE_GROUP})
 
 set(FILE_GROUP
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/clock.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/misc.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/props.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/report.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/timing.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/version.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/clock.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/misc.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/props.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/report.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/timing.cpp"
 )
 source_group("Source files" FILES ${FILE_GROUP})
 list(APPEND SOURCE_FILES ${FILE_GROUP})
@@ -75,35 +77,35 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 ### Compiler ##################################################################
 target_include_directories(vi_timing
 PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 
-target_compile_definitions(${PROJECT_NAME}
+target_compile_definitions(vi_timing
 PRIVATE
   $<$<CONFIG:Release>: NDEBUG>
   $<$<CONFIG:Debug>: VI_TM_DEBUG=1>
 )
 
 if(BUILD_SHARED_LIBS)
-    target_compile_definitions(${PROJECT_NAME}
+    target_compile_definitions(vi_timing
     PUBLIC
         VI_TM_SHARED=1
     )
 endif()
 
-#target_precompile_headers(${PROJECT_NAME}
+#target_precompile_headers(vi_timing
 #PRIVATE
-#    "VI_TM_SOURCE_DIR}/pch.hpp"
+#    "CMAKE_CURRENT_SOURCE_DIR}/pch.hpp"
 #)
 
 if (WIN32)
-    set_source_files_properties("VI_TM_SOURCE_DIR}/timing.cpp" PROPERTIES
+    set_source_files_properties("CMAKE_CURRENT_SOURCE_DIR}/timing.cpp" PROPERTIES
         COMPILE_FLAGS "/fp:fast" # Enable fast floating-point model for 'timing.cpp'
         SKIP_PRECOMPILE_HEADERS ON
     )
 
-    target_compile_definitions(${PROJECT_NAME}
+    target_compile_definitions(vi_timing
     PRIVATE
       WIN32_LEAN_AND_MEAN # Exclude rarely-used stuff from Windows headers.
       NOMINMAX # WinAPI
@@ -112,7 +114,7 @@ if (WIN32)
       $<$<CONFIG:Debug>: _DEBUG> # Microsoft debug RTL
     )
 
-    target_compile_options(${PROJECT_NAME}
+    target_compile_options(vi_timing
     PRIVATE
         /MP /nologo # Enable multi-processor compilation, disable logo.
         /W4 # Set warning level 4.
@@ -125,25 +127,25 @@ if (WIN32)
     )
 
     if(BUILD_SHARED_LIBS)
-        target_compile_options(${PROJECT_NAME}
+        target_compile_options(vi_timing
         PRIVATE
             $<$<CONFIG:Release>: /MT>
             $<$<CONFIG:Debug>:   /MTd>
         )
     else()
-        target_compile_options(${PROJECT_NAME}
+        target_compile_options(vi_timing
         PRIVATE
             $<$<CONFIG:Release>: /MD>
             $<$<CONFIG:Debug>:   /MDd>
         )
     endif()
 elseif (UNIX)
-  set_source_files_properties("VI_TM_SOURCE_DIR}/timing.cpp" PROPERTIES
+  set_source_files_properties("CMAKE_CURRENT_SOURCE_DIR}/timing.cpp" PROPERTIES
     COMPILE_FLAGS "-ffast-math" # Allow floating-point optimizations that may violate strict IEEE or ISO rules for 'timing.cpp'.
     SKIP_PRECOMPILE_HEADERS ON
   )
 
-  target_compile_options(${PROJECT_NAME}
+  target_compile_options(vi_timing
   PRIVATE
     -fvisibility=hidden # Hide symbols by default, only export those marked with VI_TM_EXPORTS.
     -Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
@@ -171,8 +173,8 @@ install(EXPORT vi_timingTargets
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/vi_timingConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/vi_timingConfig.cmake
+    ${CMAKE_SOURCE_DIR}/cmake/vi_timingConfig.cmake.in
+    ${CMAKE_SOURCE_DIR}/vi_timingConfig.cmake
     INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/vi_timing
 )
 

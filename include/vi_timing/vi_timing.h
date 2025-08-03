@@ -1,26 +1,21 @@
 /*****************************************************************************\
-'vi_timing' is a compact and lightweight library for measuring code execution
-time in C and C++. 
-
-Copyright (C) 2025 A.Prograamar
-
-This library was created for experimental and educational use. 
-Please keep expectations reasonable. If you find bugs or have suggestions for 
-improvement, contact programmer.amateur@proton.me.
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.
-If not, see <https://www.gnu.org/licenses/gpl-3.0.html#license-text>.
+* This file is part of the vi_timing library.
+* 
+* vi_timing - a compact, lightweight C/C++ library for measuring code 
+* execution time. It was developed for experimental and educational purposes, 
+* so please keep expectations reasonable.
+*
+* Report bugs or suggest improvements to author: <programmer.amateur@proton.me>
+*
+* LICENSE & DISCLAIMER:
+* - No warranties. Use at your own risk.
+* - Licensed under Business Source License 1.1 (BSL-1.1):
+*   - Free for non-commercial use.
+*   - For commercial licensing, contact the author.
+*   - Change Date: 2029-09-01 - after which the library will be licensed 
+*     under GNU GPLv3.
+*   - Attribution required: “vi_timing Library © A.Prograamar”.
+*   - See LICENSE in the project root for full terms.
 \*****************************************************************************/
 
 #ifndef VI_TIMING_VI_TIMING_C_H
@@ -176,6 +171,7 @@ If not, see <https://www.gnu.org/licenses/gpl-3.0.html#license-text>.
 #define VI_STR_CONCAT_AUX( a, b ) a##b
 #define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
 #define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, VI_ID )
+#define VI_STRINGIZE(x) #x
 // Auxiliary macros: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 typedef double VI_TM_FP; // Floating-point type used for timing calculations, typically double precision.

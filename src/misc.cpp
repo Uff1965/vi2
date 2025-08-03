@@ -2,24 +2,23 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
 
 /*****************************************************************************\
-* This file is part of the 'vi_timing' library.
+* This file is part of the vi_timing library.
 * 
-* 'vi_timing' is a compact and lightweight library for measuring code execution
-* time in C and C++. 
+* vi_timing - a compact, lightweight C/C++ library for measuring code 
+* execution time. It was developed for experimental and educational purposes, 
+* so please keep expectations reasonable.
 *
-* This library was created for experimental and educational purposes. Please keep 
-* expectations reasonable. If you find bugs or have suggestions for 
-* improvement, contact <programmer.amateur@proton.me>.
+* Report bugs or suggest improvements to author: <programmer.amateur@proton.me>
 *
-* No warranties — see LICENSE.txt in project root.
-* Business Source License 1.1 (BSL-1.1):
-*   • Permitted for non-commercial use only.
-*   • Change Date: 2029-09-01 — thereafter under GNU GPLv3.
-* 
-* Attribution notice must be preserved in all copies and derivatives:
-*    “vi_timing Library © A.Prograamar”
-* 
-* For commercial licensing inquiries: <programmer.amateur@proton.me>
+* LICENSE & DISCLAIMER:
+* - No warranties. Use at your own risk.
+* - Licensed under Business Source License 1.1 (BSL-1.1):
+*   - Free for non-commercial use.
+*   - For commercial licensing, contact the author.
+*   - Change Date: 2029-09-01 - after which the library will be licensed 
+*     under GNU GPLv3.
+*   - Attribution required: “vi_timing Library © A.Prograamar”.
+*   - See LICENSE in the project root for full terms.
 \*****************************************************************************/
 
 #include "misc.h"
@@ -68,8 +67,8 @@ namespace
 	constexpr auto TYPE = "static"sv;
 #endif
 
-	// Keeps the CPU busy for a short period to simulate workload.
-	void busy()
+	// Keeps the CPU payload for a short period to simulate workload.
+	void payload()
 	{	volatile auto f = 0.0;
 		for (auto n = 10'000U; n; --n)
 		{	f = (f + std::sin(n) * std::cos(n)) / 1.0001;
@@ -134,13 +133,12 @@ namespace
 		class affinity_fix_t
 		{	inline static thread_local std::size_t cnt_ = 0U;
 			inline static thread_local thread_affinity_mask_t previous_affinity_ = AFFINITY_ZERO;
-			inline static struct watch_dog_t
+			inline static thread_local struct watch_dog_t
 			{	~watch_dog_t() { assert(0U == cnt_); }
 			} watch_dog_;
 
 			affinity_fix_t(const affinity_fix_t &) = delete;
 			affinity_fix_t &operator=(const affinity_fix_t &) = delete;
-			~affinity_fix_t() { assert(0 == cnt_); }
 		public:
 			static int fixate()
 			{	if (0 == cnt_++)
@@ -331,9 +329,9 @@ void VI_TM_CALL vi_ThreadYield(void) noexcept
 {	std::this_thread::yield();
 }
 
-// Keeps the CPU busy for a specified duration using multiple threads to simulate workload and warm up the system.
+// Keeps the CPU payload for a specified duration using multiple threads to simulate workload and warm up the system.
 // - threads_qty: Number of threads to use (0 means use hardware concurrency).
-// - ms: Duration in milliseconds to keep the CPU busy.
+// - ms: Duration in milliseconds to keep the CPU payload.
 // Returns: VI_EXIT_SUCCESS on success, VI_EXIT_FAILURE on error.
 int  VI_TM_CALL vi_Warming(unsigned int threads_qty, unsigned int ms)
 {	if (0 == ms)
@@ -352,11 +350,11 @@ int  VI_TM_CALL vi_Warming(unsigned int threads_qty, unsigned int ms)
 		std::vector<std::thread> additional_threads;
 		additional_threads.reserve(static_cast<std::size_t>(threads_qty));
 		for (unsigned i = 0; i < threads_qty; ++i)
-		{	additional_threads.emplace_back([&done] { while (!done) busy(); });
+		{	additional_threads.emplace_back([&done] { while (!done) payload(); });
 		}
 
 		for (const auto stop = ch::steady_clock::now() + ch::milliseconds{ ms }; ch::steady_clock::now() < stop;)
-		{	busy();
+		{	payload();
 		}
 
 		done = true;

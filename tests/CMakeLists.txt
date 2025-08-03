@@ -1,4 +1,4 @@
-# File: "vi2\tests\CMakeLists.txt"
+# File: "vi2/tests/CMakeLists.txt"
 
 include(FetchContent)
 FetchContent_Declare(

@@ -8,18 +8,16 @@ option(VI_TIMING_ENABLE_TESTS "Build unit tests" ON)
 # Enable folder structure in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-include("${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateVersion.cmake") # Include the script to generate version information.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/.git/HEAD"
     "${CMAKE_SOURCE_DIR}/.git/packed-refs"
 )
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateVersion.cmake") # Include the script to generate version information.
 
 # Set project name and version based on the generated version information.
 project(vi_timing VERSION ${GIT_VERSION_NUMBER})
 
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.out" @ONLY)
-
-include ("cmake/vi_timing.cmake")
+add_subdirectory(src)
 
 if (VI_TIMING_ENABLE_TESTS)
     add_subdirectory(tests)

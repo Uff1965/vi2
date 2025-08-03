@@ -4,6 +4,6 @@
 constexpr unsigned VI_TM_VERSION_MAJOR = 0+0U;
 constexpr unsigned VI_TM_VERSION_MINOR = 0+0U;
 constexpr unsigned VI_TM_VERSION_PATCH = 0+0U;
-constexpr std::string_view VI_TM_GIT_DESCRIBE = "";
-constexpr std::string_view VI_TM_GIT_COMMIT = "HEAD";
-constexpr std::string_view VI_TM_GIT_DATETIME = "";
+constexpr std::string_view VI_TM_GIT_DESCRIBE = "v0.0.0-0-g50cec11-dirty";
+constexpr std::string_view VI_TM_GIT_COMMIT = "50cec116158e71ceb86f43f69168ad51b6ff0f5d";
+constexpr std::string_view VI_TM_GIT_DATETIME = "2025-08-02 20:30:36 +0300";
