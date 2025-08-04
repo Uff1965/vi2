@@ -12,7 +12,7 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_SOURCE_DIR}/.git/HEAD"
     "${CMAKE_SOURCE_DIR}/.git/packed-refs"
 )
-include("${CMAKE_CURRENT_LIST_DIR}/cmake/GenerateVersion.cmake") # Include the script to generate version information.
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/GenerateVersion.cmake") # Include the script to generate version information.
 
 # Set project name and version based on the generated version information.
 project(vi_timing VERSION ${GIT_VERSION_NUMBER})

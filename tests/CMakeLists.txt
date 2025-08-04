@@ -1,6 +1,10 @@
 # File: "vi2/tests/CMakeLists.txt"
 
 include(FetchContent)
+
+set(BUILD_GMOCK OFF CACHE BOOL "Disable building GoogleMock")
+set(BUILD_GTEST ON CACHE BOOL "Enable building GoogleTest")
+
 FetchContent_Declare(
   googletest
   GIT_REPOSITORY https://github.com/google/googletest.git

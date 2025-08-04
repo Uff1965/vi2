@@ -1,4 +1,5 @@
 # File: "vi/src/CMakeLists.txt"
+cmake_minimum_required(VERSION 3.22)
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.in" "${CMAKE_CURRENT_SOURCE_DIR}/version.out" @ONLY)
 
