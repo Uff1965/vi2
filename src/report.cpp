@@ -17,7 +17,7 @@
 *   - For commercial licensing, contact the author.
 *   - Change Date: 2029-09-01 - after which the library will be licensed 
 *     under GNU GPLv3.
-*   - Attribution required: “vi_timing Library © A.Prograamar”.
+*   - Attribution required: "vi_timing Library © A.Prograamar".
 *   - See LICENSE in the project root for full terms.
 \*****************************************************************************/
 

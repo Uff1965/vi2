@@ -17,7 +17,7 @@
 *   - For commercial licensing, contact the author.
 *   - Change Date: 2029-09-01 - after which the library will be licensed 
 *     under GNU GPLv3.
-*   - Attribution required: “vi_timing Library © A.Prograamar”.
+*   - Attribution required: "vi_timing Library © A.Prograamar".
 *   - See LICENSE in the project root for full terms.
 \*****************************************************************************/
 
@@ -131,11 +131,12 @@ namespace
 #endif
 
 		class affinity_fix_t
-		{	inline static thread_local std::size_t cnt_ = 0U;
-			inline static thread_local thread_affinity_mask_t previous_affinity_ = AFFINITY_ZERO;
-			inline static thread_local struct watch_dog_t
+		{	static thread_local std::size_t cnt_;
+			static thread_local thread_affinity_mask_t previous_affinity_;
+			struct watch_dog_t
 			{	~watch_dog_t() { assert(0U == cnt_); }
-			} watch_dog_;
+			};
+			static thread_local const watch_dog_t watch_dog_;
 
 			affinity_fix_t(const affinity_fix_t &) = delete;
 			affinity_fix_t &operator=(const affinity_fix_t &) = delete;
@@ -161,6 +162,10 @@ namespace
 				return VI_EXIT_SUCCESS;
 			}
 		};
+		thread_local std::size_t affinity_fix_t::cnt_ = 0U;
+		thread_local thread_affinity_mask_t affinity_fix_t::previous_affinity_ = AFFINITY_ZERO;
+		thread_local const affinity_fix_t::watch_dog_t affinity_fix_t::watch_dog_;
+
 	} // namespace affinity
 
 	namespace to_str

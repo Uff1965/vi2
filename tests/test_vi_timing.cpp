@@ -17,17 +17,7 @@ namespace ch = std::chrono;
 #	define MS_WARN(s)
 #endif
 
-VI_TM_INIT("\nTiming: ", vi_tmSortBySpeed, vi_tmShowResolution, vi_tmShowOverhead, vi_tmShowDuration);
-VI_TM("Global");
-
-// Demonstrate some basic assertions.
-TEST(HelloTest, BasicAssertions)
-{	VI_TM_FUNC;
-	// Expect two strings not to be equal.
-	EXPECT_STRNE("hello", "world");
-	// Expect equality.
-	EXPECT_EQ(7 * 6, 42);
-}
+VI_TM_INIT(+[](const char *, void *) { return 0; });
 
 namespace
 {
@@ -46,7 +36,7 @@ namespace
 }
 
 int main(int argc, char** argv)
-{	VI_TM_FUNC;
+{
 	prn_header();
 	endl(std::cout);
 

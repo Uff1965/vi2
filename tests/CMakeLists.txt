@@ -14,8 +14,9 @@ enable_testing()
 
 set(SOURCE_FILES
     "test_vi_timing.cpp"
+    "test_misc.cpp"
 )
-#source_group("Source files_" FILES ${SOURCE_FILES})
+#source_group("Source files" FILES ${SOURCE_FILES})
 
 add_executable(vi_timing_tests ${SOURCE_FILES})
 

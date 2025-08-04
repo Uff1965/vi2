@@ -2,8 +2,8 @@
 // based on data obtained from the GenerateVersion.cmake script.
 
 constexpr unsigned VI_TM_VERSION_MAJOR = 0+0U;
-constexpr unsigned VI_TM_VERSION_MINOR = 0+0U;
-constexpr unsigned VI_TM_VERSION_PATCH = 0+0U;
-constexpr std::string_view VI_TM_GIT_DESCRIBE = "v0.0.0-0-g50cec11-dirty";
-constexpr std::string_view VI_TM_GIT_COMMIT = "50cec116158e71ceb86f43f69168ad51b6ff0f5d";
-constexpr std::string_view VI_TM_GIT_DATETIME = "2025-08-02 20:30:36 +0300";
+constexpr unsigned VI_TM_VERSION_MINOR = 1+0U;
+constexpr unsigned VI_TM_VERSION_PATCH = 1+0U;
+constexpr std::string_view VI_TM_GIT_DESCRIBE = "v0.1.1-0-g5430b42-dirty";
+constexpr std::string_view VI_TM_GIT_COMMIT = "5430b42e17eabba4a729390ced0e79541d30d1db";
+constexpr std::string_view VI_TM_GIT_DATETIME = "2025-08-03 18:00:31 +0300";
