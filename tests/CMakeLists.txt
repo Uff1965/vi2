@@ -28,8 +28,6 @@ include(GoogleTest)
 gtest_discover_tests(vi_timing_tests)
 set_target_properties(gtest PROPERTIES FOLDER "ThirdParty/GTest")
 set_target_properties(gtest_main PROPERTIES FOLDER "ThirdParty/GTest")
-set_target_properties(gmock PROPERTIES FOLDER "ThirdParty/GTest")
-set_target_properties(gmock_main PROPERTIES FOLDER "ThirdParty/GTest")
 
 target_link_libraries( vi_timing_tests
 PRIVATE
