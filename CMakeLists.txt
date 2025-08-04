@@ -5,6 +5,8 @@ cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 option(BUILD_SHARED_LIBS "Build shared libraries instead of static ones" OFF)
 option(VI_TIMING_ENABLE_TESTS "Build unit tests" ON)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
 # Enable folder structure in IDEs
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
