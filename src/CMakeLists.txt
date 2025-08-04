@@ -1,8 +1,8 @@
 # File: "vi/src/CMakeLists.txt"
 
-set(SOURCE_FILES) # Initialize the list of source files.
-
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.in" "${CMAKE_CURRENT_SOURCE_DIR}/version.out" @ONLY)
+
+set(SOURCE_FILES) # Initialize the list of source files.
 
 if(MSVC)
     set(FILE_GROUP

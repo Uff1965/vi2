@@ -399,4 +399,4 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 /out/build
-/vi_timing/source/version.out
+/src/version.out
