@@ -222,13 +222,15 @@ typedef enum vi_tmInfo_e
 	VI_TM_INFO_GIT_DESCRIBE, // const char*: Git describe string, e.g., "v0.10.0-3-g96b37d4-dirty".
 	VI_TM_INFO_GIT_COMMIT,   // const char*: Git commit hash, e.g., "96b37d49d235140e86f6f6c246bc7f166ab773aa".
 	VI_TM_INFO_GIT_DATETIME, // const char*: Git commit date and time, e.g., "2025-07-26 13:56:02 +0300".
+	VI_TM_INFO_FLAGS,        // const unsigned*: Flags for controlling the library behavior.
 	VI_TM_INFO_COUNT_,       // Number of information types.
 } vi_tmInfo_e;
 
 // vi_tmReportFlags_e: Flags for controlling the formatting and content of timing reports.
 // These flags allow customization of sorting, display options, and report details.
 typedef enum vi_tmReportFlags_e
-{	vi_tmSortByTime = 0x00, // If set, the report will be sorted by time spent in the measurement.
+{
+	vi_tmSortByTime = 0x00, // If set, the report will be sorted by time spent in the measurement.
 	vi_tmSortByName = 0x01, // If set, the report will be sorted by measurement name.
 	vi_tmSortBySpeed = 0x02, // If set, the report will be sorted by average time per event (speed).
 	vi_tmSortByAmount = 0x03, // If set, the report will be sorted by the number of events measured.
@@ -248,6 +250,14 @@ typedef enum vi_tmReportFlags_e
 
 	vi_tmHideHeader = 0x0800, // If set, the report will not show the header with column names.
 	vi_tmDoNotSubtractOverhead = 0x1000, // If set, the overhead is not subtracted from the measured time in report.
+
+	vi_tmDebug = 0x01,
+	vi_tmShared = 0x02,
+	vi_tmThreadsafe = 0x04,
+	vi_tmStatUseBase = 0x08,
+	vi_tmStatUseFilter = 0x10,
+	vi_tmStatUseMinMax = 0x20,
+
 } vi_tmReportFlags_e;
 
 #define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global journal handle, used for global measurements.

@@ -96,6 +96,34 @@ if(BUILD_SHARED_LIBS)
     )
 endif()
 
+if (VI_TM_STAT_USE_BASE)
+    target_compile_definitions(vi_timing
+    PUBLIC
+        VI_TM_STAT_USE_BASE=1
+    )
+endif()
+
+if (VI_TM_STAT_USE_FILTER)
+    target_compile_definitions(vi_timing
+    PUBLIC
+        VI_TM_STAT_USE_FILTER=1
+    )
+endif()
+
+if (VI_TM_THREADSAFE)
+    target_compile_definitions(vi_timing
+    PUBLIC
+        VI_TM_THREADSAFE=1
+    )
+endif()
+
+if (VI_TM_STAT_USE_MINMAX)
+    target_compile_definitions(vi_timing
+    PUBLIC
+        VI_TM_STAT_USE_MINMAX=1
+    )
+endif()
+
 #target_precompile_headers(vi_timing
 #PRIVATE
 #    "CMAKE_CURRENT_SOURCE_DIR}/pch.hpp"

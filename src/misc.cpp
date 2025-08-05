@@ -456,8 +456,33 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 			return &unit;
 		}
 
+		case VI_TM_INFO_FLAGS:
+		{
+			static const unsigned flags = 0U
+#if VI_TM_DEBUG
+				| vi_tmDebug
+#endif
+#if VI_TM_SHARED
+				| vi_tmShared
+#endif
+#if VI_TM_THREADSAFE
+				| vi_tmThreadsafe
+#endif
+#if VI_TM_STAT_USE_BASE
+				| vi_tmStatUseBase
+#endif
+#if VI_TM_STAT_USE_FILTER
+				| vi_tmStatUseFilter
+#endif
+#if VI_TM_STAT_USE_MINMAX
+				| vi_tmStatUseMinMax
+#endif
+				;
+			return &flags; // Returns a pointer to the flags that control the library behavior.
+		}
+
 		default: // If the info type is not recognized, assert and return nullptr.
-			static_assert(VI_TM_INFO_COUNT_ == 13, "Not all vi_tmInfo_e enum values are processed in the function vi_tmStaticInfo.");
+			static_assert(VI_TM_INFO_COUNT_ == 14, "Not all vi_tmInfo_e enum values are processed in the function vi_tmStaticInfo.");
 			assert(false); // If we reach this point, the info type is not recognized.
 			return nullptr;
 	}

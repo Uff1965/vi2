@@ -29,3 +29,68 @@ TEST_F(ViTimingJournalFixture, Journal)
 	EXPECT_EQ(stats.cnt_, 0) << "Count of measured events should be 0";
     EXPECT_EQ(stats.sum_, 0) << "Total time should be 0";
 }
+
+TEST(misc, vi_tmStaticInfo)
+{
+    const auto flags = *static_cast<const unsigned*>(vi_tmStaticInfo(VI_TM_INFO_FLAGS));
+
+    {
+#if VI_TM_SHARED
+        const char exp[] = "shared";
+        const auto flag = vi_tmShared;
+#else
+        const char exp[] = "static";
+		const auto flag = 0U;
+#endif
+        EXPECT_STREQ(exp, static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_LIBRARYTYPE))) << "The library type does not match.";
+        EXPECT_EQ(flag, flags & vi_tmShared) << "The library type flag does not match.";
+    }
+
+    {
+#if VI_TM_DEBUG
+        const char exp[] = "Debug";
+        const auto flag = vi_tmDebug;
+#else
+        const char exp[] = "Release";
+		const auto flag = 0U;
+#endif
+        EXPECT_STREQ(exp, static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_BUILDTYPE))) << "The build type does not match.";
+        EXPECT_EQ(flag, flags & vi_tmDebug) << "The build type flag does not match.";
+    }
+
+    {
+#if VI_TM_THREADSAFE
+        const auto flag = vi_tmThreadsafe;
+#else
+		const auto flag = 0U;
+#endif
+        EXPECT_EQ(flag, flags & vi_tmThreadsafe) << "The thread safe flag does not match.";
+    }
+
+    {
+#if VI_TM_STAT_USE_BASE
+        const auto flag = vi_tmStatUseBase;
+#else
+		const auto flag = 0U;
+#endif
+        EXPECT_EQ(flag, flags & vi_tmStatUseBase) << "The use base flag does not match.";
+    }
+
+    {
+#if VI_TM_STAT_USE_FILTER
+        const auto flag = vi_tmStatUseFilter;
+#else
+		const auto flag = 0U;
+#endif
+        EXPECT_EQ(flag, flags & vi_tmStatUseFilter) << "The use filter flag does not match.";
+    }
+
+    {
+#if VI_TM_STAT_USE_MINMAX
+        const auto flag = vi_tmStatUseMinMax;
+#else
+		const auto flag = 0U;
+#endif
+        EXPECT_EQ(flag, flags & vi_tmStatUseMinMax) << "The use minmax flag does not match.";
+    }
+}
