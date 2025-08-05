@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(misc, Format)
+TEST(misc, vi_tmF2A)
 {
 	struct
 	{	int line_; double value_; std::string_view expected_; unsigned char significant_; unsigned char decimal_;
@@ -68,13 +68,11 @@ TEST(misc, Format)
 		{__LINE__, 100.0, "100000.0 m", 5, 1},	{__LINE__, -100.0, "-100000.0 m", 5, 1},
 		{__LINE__, 1000.0, "1000.0  ", 5, 1},	{__LINE__, -1000.0, "-1000.0  ", 5, 1},
 	};
-	errno = 0;
 
-	char buff[32] = "";
+	std::string buff(32, '\0');
 
 	for (auto &test : tests_set)
-	{	vi_tmF2A(buff, std::size(buff), test.value_, test.significant_, test.decimal_);
-		EXPECT_STREQ(buff, test.expected_.data()) << "Line of sample: " << test.line_;
+	{	EXPECT_GE(buff.size(), vi_tmF2A(buff.data(), buff.size(), test.value_, test.significant_, test.decimal_));
+		EXPECT_STREQ(buff.data(), test.expected_.data()) << "Line of sample: " << test.line_;
 	}
-	assert(0 == errno);
 }
