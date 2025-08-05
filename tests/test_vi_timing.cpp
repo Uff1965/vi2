@@ -17,17 +17,16 @@ namespace ch = std::chrono;
 #	define MS_WARN(s)
 #endif
 
-VI_TM_INIT(+[](const char *, void *) { return 0; });
+VI_TM_INIT(vi_tmReportCb_t{});
 
 namespace
 {
-	void prn_header()
+	void header(std::ostream& stream)
 	{	const auto tm = ch::system_clock::to_time_t(ch::system_clock::now());
 
-		std::cout << "\nStart: " << std::put_time(std::localtime(&tm), "%F %T.\n") <<
-			std::endl;
+		stream << "Start: " << std::put_time(std::localtime(&tm), "%F %T.\n") << std::endl;
 
-		std::cout <<
+		stream <<
 			"Information about the \'vi_timing\' library:\n"
 			"\tVersion: " << VI_TM_FULLVERSION << "\n"
 			"\tGit describe: " << static_cast<const char*>(vi_tmStaticInfo(VI_TM_INFO_GIT_DESCRIBE)) << "\n"
@@ -37,7 +36,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	prn_header();
+	header(std::cout);
 	endl(std::cout);
 
     ::testing::InitGoogleTest(&argc, argv);

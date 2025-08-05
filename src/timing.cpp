@@ -148,7 +148,7 @@ private:
 	static inline std::mutex global_mtx_;
 	static inline std::size_t global_initialized_ = 0U;
 	storage_t storage_;
-	bool need_report_ = false;
+	bool unused_ = true;
 	VI_TM_THREADSAFE_ONLY(adaptive_mutex_t storage_guard_);
 public:
 	vi_tmMeasurementsJournal_t(const vi_tmMeasurementsJournal_t &) = delete;
@@ -165,6 +165,8 @@ public:
 	static int global_init(); // Initialize the global journal.
 	static int global_finit();
 	static auto& from_handle(VI_TM_HJOUR journal); // Get the journal from the handle or return the global journal.
+	bool used() const noexcept { return !unused_; } // Check if the journal has been used.
+	void used(bool used) noexcept { unused_ = !used; } // Set the journal as used or unused.
 };
 
 inline void meterage_t::reset() noexcept
@@ -193,14 +195,14 @@ inline auto& vi_tmMeasurementsJournal_t::from_handle(VI_TM_HJOUR journal)
  	return VI_TM_HGLOBAL == journal ? global : *journal;
 }
 
-vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t(bool need_report)
-	: need_report_(need_report)
+vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t(bool unused)
+	: unused_(unused)
 {	storage_.max_load_factor(MAX_LOAD_FACTOR);
 	storage_.reserve(DEFAULT_STORAGE_CAPACITY);
 }
 
 vi_tmMeasurementsJournal_t::~vi_tmMeasurementsJournal_t()
-{	if (need_report_)
+{	if (unused_)
 	{	vi_tmReport(this, vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName);
 	}
 
@@ -228,7 +230,7 @@ inline auto& vi_tmMeasurementsJournal_t::try_emplace(const char *name)
 template<typename F>
 int vi_tmMeasurementsJournal_t::for_each_measurement(const F &fn)
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lock{ storage_guard_ });
-	need_report_ = false; // No need to report. The user probebly make a report himself.
+	unused_ = false; // No need to report. The user probebly make a report himself.
 	for (auto &it : storage_)
 	{	if (!it.first.empty())
 		{	if (const auto breaker = fn(it))
@@ -470,8 +472,7 @@ void VI_TM_CALL vi_tmJournalReset(VI_TM_HJOUR journal) noexcept
 }
 
 int VI_TM_CALL vi_tmMeasurementEnumerate(VI_TM_HJOUR journal, vi_tmMeasEnumCb_t fn, void *ctx)
-{
-	return vi_tmMeasurementsJournal_t::from_handle(journal).for_each_measurement
+{	return vi_tmMeasurementsJournal_t::from_handle(journal).for_each_measurement
 	(	[fn, ctx](storage_t::value_type &i)
 		{	return fn(static_cast<VI_TM_HMEAS>(&i), ctx);
 		}

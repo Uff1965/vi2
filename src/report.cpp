@@ -498,7 +498,9 @@ int formatter_t::print_metering(const metering_t &i, const F &fn) const
 int VI_TM_CALL vi_tmReport(VI_TM_HJOUR journal_handle, unsigned flags, vi_tmReportCb_t fn, void *ctx)
 {	assert(!ctx || !!fn);
 	if (nullptr == fn)
-	{	return 0;
+	{	// Simulate the use of the journal to inhibit automatic report generation.
+		vi_tmMeasurementEnumerate(journal_handle, +[](VI_TM_HMEAS, void *) { return 1; }, nullptr);
+		return 0;
 	}
 
 	auto metering_entries = get_meterings(journal_handle, flags);

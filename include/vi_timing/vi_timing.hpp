@@ -76,7 +76,7 @@ namespace vi_tm
 			{	flags_ |= v;
 			}
 			else if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportCb_t>)
-			{	assert(vi_tmReportCb == callback_function_ && nullptr != v);
+			{	assert(vi_tmReportCb == callback_function_);
 				callback_function_ = v;
 			}
 			else if constexpr (std::is_same_v<T, decltype(title_)>)
@@ -100,7 +100,7 @@ namespace vi_tm
 		{	init(std::forward<Args>(args)...);
 		}
 		~init_t()
-		{	if (!title_.empty())
+		{	if (!!callback_function_ && !title_.empty())
 			{	callback_function_(title_.c_str(), callback_data_);
 			}
 			vi_tmReport(VI_TM_HGLOBAL, flags_, callback_function_, callback_data_);
