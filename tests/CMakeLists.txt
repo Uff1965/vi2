@@ -1,7 +1,5 @@
 # File: "vi2/tests/CMakeLists.txt"
 
-include(FetchContent)
-
 set(BUILD_GMOCK OFF CACHE BOOL "Disable building GoogleMock")
 set(BUILD_GTEST ON CACHE BOOL "Enable building GoogleTest")
 
@@ -14,7 +12,6 @@ FetchContent_Declare(
 #set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-enable_testing()
 
 set(SOURCE_FILES
     "test_vi_timing.cpp"
