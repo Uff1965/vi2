@@ -443,31 +443,6 @@ extern "C" {
 		vi_tmReportCb_t cb VI_DEF(vi_tmReportCb),
 		void* ctx VI_DEF(NULL)
 	);
-
-	/// <summary>
-	/// Performs a CPU warming routine by running computationally intensive tasks across multiple threads for a specified duration.
-	/// </summary>
-	/// <param name="threads">The number of threads to use for the warming routine. If zero or greater than the number of available hardware threads, the function uses the maximum available.</param>
-	/// <param name="ms">The duration of the warming routine in milliseconds. If zero, the function returns immediately.</param>
-	/// <returns>Returns zero if successful.</returns>
-	VI_TM_API int VI_TM_CALL vi_Warming(unsigned threads VI_DEF(0), unsigned ms VI_DEF(500));
-
-	/// <summary>
-	/// Fixates the CPU affinity of the current thread.
-	/// </summary>
-	/// <returns>Returns zero if successful.</returns>
-	VI_TM_API int VI_TM_CALL vi_CurrentThreadAffinityFixate(void);
-
-	/// <summary>
-	/// Restores the CPU affinity of the current thread to its previous state.
-	/// </summary>
-	/// <returns>Returns zero if successful.</returns>
-	VI_TM_API int VI_TM_CALL vi_CurrentThreadAffinityRestore(void);
-
-	/// <summary>
-	/// Yields execution of the current thread, allowing other threads to run.
-	/// </summary>
-	VI_TM_API void VI_TM_CALL vi_ThreadYield(void) VI_NOEXCEPT;
 // Auxiliary functions: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 #	ifdef __cplusplus

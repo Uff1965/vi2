@@ -1,23 +1,13 @@
+#include "test.h"
+
 #include <vi_timing/vi_timing.hpp>
 
 #include <gtest/gtest.h>
 
-#include <memory>
-
-class ViTimingJournalFixture : public ::testing::Test
-{   using unique_journal_t = std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmJournalClose)>;
-protected:
-	unique_journal_t journal_{ nullptr, vi_tmJournalClose };
-	void SetUp() override
-	{   journal_.reset(vi_tmJournalCreate(0, nullptr));
-		ASSERT_NE(journal_, nullptr) << "vi_tmJournalCreate should return a valid descriptor";
-	}
-};
-
 TEST_F(ViTimingJournalFixture, Journal)
 {
     // Add a measurement to check reset
-    VI_TM_HMEAS meas = vi_tmMeasurement(journal_.get(), "test_entry");
+    VI_TM_HMEAS meas = vi_tmMeasurement(journal(), "test_entry");
     ASSERT_NE(meas, nullptr) << "vi_tmMeasurement should return a valid descriptor";
 
     // Add a measurement
@@ -30,7 +20,7 @@ TEST_F(ViTimingJournalFixture, Journal)
     EXPECT_EQ(stats.sum_, 100) << "Total time should be 100";
 
     // Reset the journal
-    vi_tmJournalReset(journal_.get());
+    vi_tmJournalReset(journal());
 
     // After reset, the measurement handle should remain valid
     vi_tmMeasurementGet(meas, nullptr, &stats);

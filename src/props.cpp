@@ -25,6 +25,7 @@
 
 #include "version.h"
 #include <vi_timing/vi_timing.h>
+#include <vi_timing/vi_timing_aux.h>
 
 #include <algorithm> // For std::nth_element
 #include <array>

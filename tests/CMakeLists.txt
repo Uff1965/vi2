@@ -14,8 +14,10 @@ FetchContent_MakeAvailable(googletest)
 
 
 set(SOURCE_FILES
-    "test_vi_timing.cpp"
+    "test.h"
+    "test_format.cpp"
     "test_misc.cpp"
+    "test_vi_timing.cpp"
 )
 #source_group("Source files" FILES ${SOURCE_FILES})
 
