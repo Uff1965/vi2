@@ -24,6 +24,9 @@
 #include <vi_timing/vi_timing.h>
 #include "version.h"
 
+#include <cassert>
+#include <cerrno>
+
 #if VI_TM_USE_STDCLOCK
 	// Use standard clock
 #	include <time.h> // for timespec_get

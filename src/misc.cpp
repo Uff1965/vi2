@@ -38,6 +38,7 @@
 #include <array>
 #include <atomic> // for atomic_bool
 #include <cassert>
+#include <cerrno>
 #include <cfloat>
 #include <chrono>
 #include <cmath>

@@ -4,6 +4,9 @@
 
 #include <gtest/gtest.h>
 
+#include <cassert>
+#include <cerrno>
+
 TEST_F(ViTimingJournalFixture, Journal)
 {
     // Add a measurement to check reset
