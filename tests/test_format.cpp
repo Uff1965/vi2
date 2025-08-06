@@ -79,6 +79,8 @@ TEST(misc, vi_tmF2A)
 		{__LINE__, 100.0, "100000.0 m", 5, 1},	{__LINE__, -100.0, "-100000.0 m", 5, 1},
 		{__LINE__, 1000.0, "1000.0  ", 5, 1},	{__LINE__, -1000.0, "-1000.0  ", 5, 1},
 	};
+
+	assert(0 == errno || ERANGE == errno);
 	errno = 0; // Reset errno before running the tests
 
 	for (auto &test : tests_set)
