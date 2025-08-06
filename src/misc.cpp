@@ -271,7 +271,8 @@ namespace
 		// - dec: Number of decimal places to display.
 		// Returns: Formatted string representation of the value.
 		std::string to_string_aux(double val_org, unsigned char sig, unsigned char const dec)
-		{	assert(sig > dec && 0 == errno);
+		{	assert(0 == errno);
+			assert(sig > dec);
 			const auto [val, suffix] = std::isnormal(val_org) ?
 				to_string_aux2(val_org, sig - 1, dec) :
 				std::make_tuple(+0.0, "  ");
