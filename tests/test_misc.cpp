@@ -36,54 +36,54 @@ TEST(misc, vi_tmStaticInfo)
 
     {
 #if VI_TM_DEBUG
-        const auto flag = vi_tmDebug;
+        constexpr auto flag = vi_tmDebug;
 #else
-		const auto flag = 0U;
+		constexpr auto flag = 0U;
 #endif
         EXPECT_EQ(flag, flags & vi_tmDebug) << "The build type flag does not match.";
     }
 
     {
 #if VI_TM_SHARED
-        const auto flag = vi_tmShared;
+        constexpr auto flag = vi_tmShared;
 #else
-		const auto flag = 0U;
+		constexpr auto flag = 0U;
 #endif
         EXPECT_EQ(flag, flags & vi_tmShared) << "The library type flag does not match.";
     }
 
     {
 #if VI_TM_THREADSAFE
-        const auto flag = vi_tmThreadsafe;
+        constexpr auto flag = vi_tmThreadsafe;
 #else
-		const auto flag = 0U;
+		constexpr auto flag = 0U;
 #endif
         EXPECT_EQ(flag, flags & vi_tmThreadsafe) << "The thread safe flag does not match.";
     }
 
     {
 #if VI_TM_STAT_USE_BASE
-        const auto flag = vi_tmStatUseBase;
+        constexpr auto flag = vi_tmStatUseBase;
 #else
-		const auto flag = 0U;
+		constexpr auto flag = 0U;
 #endif
         EXPECT_EQ(flag, flags & vi_tmStatUseBase) << "The use base flag does not match.";
     }
 
     {
 #if VI_TM_STAT_USE_FILTER
-        const auto flag = vi_tmStatUseFilter;
+        constexpr auto flag = vi_tmStatUseFilter;
 #else
-		const auto flag = 0U;
+		constexpr auto flag = 0U;
 #endif
         EXPECT_EQ(flag, flags & vi_tmStatUseFilter) << "The use filter flag does not match.";
     }
 
     {
 #if VI_TM_STAT_USE_MINMAX
-        const auto flag = vi_tmStatUseMinMax;
+        constexpr auto flag = vi_tmStatUseMinMax;
 #else
-		const auto flag = 0U;
+		constexpr auto flag = 0U;
 #endif
         EXPECT_EQ(flag, flags & vi_tmStatUseMinMax) << "The use minmax flag does not match.";
     }

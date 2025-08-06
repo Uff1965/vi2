@@ -83,10 +83,20 @@ PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 
+if(NOT DEFINED VI_TM_DEBUG AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(VI_TM_DEBUG 1)
+endif()
+
+if(VI_TM_DEBUG)
+    target_compile_definitions(vi_timing
+    PUBLIC
+        VI_TM_DEBUG=1
+    )
+endif()
+
 target_compile_definitions(vi_timing
 PRIVATE
   $<$<CONFIG:Release>: NDEBUG>
-  $<$<CONFIG:Debug>: VI_TM_DEBUG=1>
 )
 
 if(BUILD_SHARED_LIBS)
