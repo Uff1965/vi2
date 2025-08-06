@@ -7,9 +7,15 @@
 
 TEST(misc, vi_tmF2A)
 {
-	struct
-	{	int line_; double value_; std::string_view expected_; unsigned char significant_; unsigned char decimal_;
-	} static const tests_set[] =
+	struct item_t
+	{	int line_;
+		double value_;
+		std::string_view expected_;
+		unsigned char significant_;
+		unsigned char decimal_;
+	};
+
+	static const item_t tests_set[]
 	{
 		// The following test cases check the boundary and special floating-point values for the misc::to_string function.
 		// They ensure correct handling of INF, -INF, NaN, -NaN, DBL_MAX, DBL_MIN, DBL_TRUE_MIN, and values near zero.
@@ -69,10 +75,9 @@ TEST(misc, vi_tmF2A)
 		{__LINE__, 1000.0, "1000.0  ", 5, 1},	{__LINE__, -1000.0, "-1000.0  ", 5, 1},
 	};
 
-	std::string buff(32, '\0');
-
 	for (auto &test : tests_set)
-	{	EXPECT_GE(buff.size(), vi_tmF2A(buff.data(), buff.size(), test.value_, test.significant_, test.decimal_));
+	{	std::string buff(32, '\0');
+		EXPECT_GE(buff.size(), vi_tmF2A(buff.data(), buff.size(), test.value_, test.significant_, test.decimal_));
 		EXPECT_STREQ(buff.data(), test.expected_.data()) << "Line of sample: " << test.line_;
 	}
 }

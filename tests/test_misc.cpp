@@ -35,27 +35,21 @@ TEST(misc, vi_tmStaticInfo)
     const auto flags = *static_cast<const unsigned*>(vi_tmStaticInfo(VI_TM_INFO_FLAGS));
 
     {
-#if VI_TM_SHARED
-        const char exp[] = "shared";
-        const auto flag = vi_tmShared;
+#if VI_TM_DEBUG
+        const auto flag = vi_tmDebug;
 #else
-        const char exp[] = "static";
 		const auto flag = 0U;
 #endif
-        EXPECT_STREQ(exp, static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_LIBRARYTYPE))) << "The library type does not match.";
-        EXPECT_EQ(flag, flags & vi_tmShared) << "The library type flag does not match.";
+        EXPECT_EQ(flag, flags & vi_tmDebug) << "The build type flag does not match.";
     }
 
     {
-#if VI_TM_DEBUG
-        const char exp[] = "Debug";
-        const auto flag = vi_tmDebug;
+#if VI_TM_SHARED
+        const auto flag = vi_tmShared;
 #else
-        const char exp[] = "Release";
 		const auto flag = 0U;
 #endif
-        EXPECT_STREQ(exp, static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_BUILDTYPE))) << "The build type does not match.";
-        EXPECT_EQ(flag, flags & vi_tmDebug) << "The build type flag does not match.";
+        EXPECT_EQ(flag, flags & vi_tmShared) << "The library type flag does not match.";
     }
 
     {

@@ -57,17 +57,6 @@ using namespace std::literals;
 
 namespace
 {
-#if VI_TM_DEBUG
-	constexpr auto CONFIG = "Debug"sv;
-#else
-	constexpr auto CONFIG = "Release"sv;
-#endif
-#if VI_TM_SHARED
-	constexpr auto TYPE = "shared"sv;
-#else
-	constexpr auto TYPE = "static"sv;
-#endif
-
 	// Keeps the CPU payload for a short period to simulate workload.
 	void payload()
 	{	volatile auto f = 0.0;
@@ -396,9 +385,21 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 		}
 
 		case VI_TM_INFO_VERSION: // Returns a pointer to a static string containing the full version (major.minor.patch.buildType libraryType).
-		{	static const auto version = []
+		{
+#if VI_TM_DEBUG
+			static constexpr auto CONFIG = 'D';
+#else
+			static constexpr auto CONFIG = 'R';
+#endif
+#if VI_TM_SHARED
+			static constexpr auto TYPE = "shared"sv;
+#else
+			static constexpr auto TYPE = "static"sv;
+#endif
+
+			static const auto version = []
 				{	static_assert(VI_TM_VERSION_MAJOR <= 99 && VI_TM_VERSION_MINOR <= 999 && VI_TM_VERSION_PATCH <= 9999);
-					std::array<char, "99.999.9999.YYMMDDHHmm"sv.size() + sizeof(CONFIG[0]) + " "sv.size() + TYPE.size() + 1> result;
+					std::array<char, "99.999.9999.YYMMDDHHmm"sv.size() + 1U + " "sv.size() + TYPE.size() + 1U> result;
 					[[maybe_unused]] const auto sz = snprintf
 					(	result.data(),
 						result.size(),
@@ -407,7 +408,7 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 						VI_TM_VERSION_MINOR,
 						VI_TM_VERSION_PATCH,
 						build_number_get(),
-						CONFIG[0],
+						CONFIG,
 						TYPE.data()
 					);
 					assert(0 < sz && static_cast<std::size_t>(sz) < result.size());
@@ -415,12 +416,6 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 				}();
 			return version.data();
 		}
-
-		case VI_TM_INFO_BUILDTYPE: // Returns a pointer to the build type string ("Release" or "Debug").
-			return CONFIG.data();
-
-		case VI_TM_INFO_LIBRARYTYPE: // Returns a pointer to the library type string ("shared" or "static").
-			return TYPE.data();
 
 		case VI_TM_INFO_GIT_DESCRIBE: // Returns a pointer to the Git describe string (e.g., "v0.10.0-3-g96b37d4-dirty").
 			return VI_TM_GIT_DESCRIBE.data();
@@ -482,7 +477,7 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 		}
 
 		default: // If the info type is not recognized, assert and return nullptr.
-			static_assert(VI_TM_INFO_COUNT_ == 14, "Not all vi_tmInfo_e enum values are processed in the function vi_tmStaticInfo.");
+			static_assert(VI_TM_INFO_COUNT_ == 12, "Not all vi_tmInfo_e enum values are processed in the function vi_tmStaticInfo.");
 			assert(false); // If we reach this point, the info type is not recognized.
 			return nullptr;
 	}

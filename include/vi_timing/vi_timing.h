@@ -212,8 +212,6 @@ typedef enum vi_tmInfo_e
 {	VI_TM_INFO_VER,          // const unsigned*: Version number of the library.
 	VI_TM_INFO_BUILDNUMBER,  // const unsigned*: Build number of the library.
 	VI_TM_INFO_VERSION,      // const char*: Full version string of the library.
-	VI_TM_INFO_BUILDTYPE,    // const char*: Build type, either "Release" or "Debug".
-	VI_TM_INFO_LIBRARYTYPE,  // const char*: Library type, either "Shared" or "Static".
 	VI_TM_INFO_RESOLUTION,   // const double*: Clock resolution in ticks.
 	VI_TM_INFO_DURATION,     // const double*: Measure duration with cache in seconds.
 	VI_TM_INFO_DURATION_EX,  // const double*: Measure duration in seconds.
