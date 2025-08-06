@@ -5,6 +5,8 @@
 
 #include <gtest/gtest.h>
 
+#include <cmath>
+
 TEST(misc, vi_tmF2A)
 {
 	struct item_t
