@@ -11,10 +11,6 @@ option(VI_TM_THREADSAFE "Enable thread safety." ON)
 
 include(FetchContent)
 
-if (VI_TIMING_ENABLE_TESTS)
-    enable_testing()
-endif()
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Enable folder structure in IDEs
@@ -32,6 +28,7 @@ project(vi_timing VERSION ${GIT_VERSION_NUMBER})
 add_subdirectory(src)
 
 if (VI_TIMING_ENABLE_TESTS)
+    enable_testing()
     add_subdirectory(tests)
 endif()
 
