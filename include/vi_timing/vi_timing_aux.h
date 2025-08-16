@@ -7,7 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 	/// <summary>
 	/// Performs a CPU warming routine by running computationally intensive tasks across multiple threads for a specified duration.
 	/// </summary>
