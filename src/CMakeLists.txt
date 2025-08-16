@@ -11,6 +11,7 @@ if(MSVC)
       "${CMAKE_CURRENT_SOURCE_DIR}/version.in"
       "${CMAKE_SOURCE_DIR}/LICENSE"
       "${CMAKE_SOURCE_DIR}/README"
+      "${CMAKE_SOURCE_DIR}/cmake/GenerateVersion.cmake"
     )
     source_group("Extras" FILES ${FILE_GROUP})
     list(APPEND SOURCE_FILES ${FILE_GROUP})

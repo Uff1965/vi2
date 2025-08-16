@@ -2,12 +2,25 @@
 cmake_minimum_required(VERSION 3.22)
 project(vi_timing_tests LANGUAGES C CXX)
 
-set(SOURCE_FILES
+include(cmake/gtest.cmake)
+
+set(SOURCE_FILES)
+
+if(MSVC)
+    set(FILE_GROUP
+      "cmake/gtest.cmake"
+    )
+    source_group("Extras" FILES ${FILE_GROUP})
+    list(APPEND SOURCE_FILES ${FILE_GROUP})
+endif()
+
+set(FILE_GROUP
     "test.h"
     "test_format.cpp"
     "test_misc.cpp"
     "test_vi_timing.cpp"
 )
+list(APPEND SOURCE_FILES ${FILE_GROUP})
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 

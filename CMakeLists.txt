@@ -43,7 +43,6 @@ add_subdirectory(src)
 
 if (VI_TIMING_ENABLE_TESTS)
     enable_testing()
-    include(cmake/gtest.cmake)
     add_subdirectory(tests)
 endif()
 
