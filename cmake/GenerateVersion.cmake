@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
 
+set(GIT_DESCRIBE "")
+set(GIT_COMMIT "unknown")
+set(GIT_DATETIME "unknown")
+set(GIT_VERSION_NUMBER "0.0.0")
+set(GIT_VERSION_ABI "0")
+
 find_package(Git QUIET)
 if(GIT_FOUND)
 	execute_process(
@@ -23,15 +29,8 @@ if(GIT_FOUND)
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
 
-	string(REGEX MATCH "^(v\\.?)?(([0-9]+)(\\.([0-9]+))?(\\.([0-9]+))?(\\.([0-9]+))?)-.*" MATCHED "${GIT_DESCRIBE}")
+	string(REGEX MATCH "^(v\\.?)?((([0-9]+)(\\.[0-9]+)?)(\\.[0-9]+)?)-.*" MATCHED "${GIT_DESCRIBE}")
 	if(MATCHED)
-		set(GIT_VERSION_NUMBER "${CMAKE_MATCH_2}")
-	else()
-		set(GIT_VERSION_NUMBER "0.0.0")
+		set(VI_GIT_VERSION_NUMBER "${CMAKE_MATCH_2}")
 	endif()
-else()
-	set(GIT_DESCRIBE "")
-	set(GIT_COMMIT "unknown")
-	set(GIT_DATETIME "unknown")
-	set(GIT_VERSION_NUMBER "0.0.0")
 endif()

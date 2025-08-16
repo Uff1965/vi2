@@ -1,14 +1,14 @@
 # File: "vi/src/CMakeLists.txt"
 cmake_minimum_required(VERSION 3.22)
-project(vi_timing VERSION ${GIT_VERSION_NUMBER} LANGUAGES CXX)
+project(vi_timing VERSION ${VI_GIT_VERSION_NUMBER} LANGUAGES CXX)
 
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.in" "${CMAKE_CURRENT_SOURCE_DIR}/version.out" @ONLY)
+configure_file("version.in" "version.out" @ONLY)
 
 set(SOURCE_FILES) # Initialize the list of source files.
 
 if(MSVC)
     set(FILE_GROUP
-      "${CMAKE_CURRENT_SOURCE_DIR}/version.in"
+      "version.in"
       "${CMAKE_SOURCE_DIR}/LICENSE"
       "${CMAKE_SOURCE_DIR}/README"
       "${CMAKE_SOURCE_DIR}/cmake/GenerateVersion.cmake"
@@ -27,18 +27,18 @@ source_group("Interface files" FILES ${FILE_GROUP})
 list(APPEND SOURCE_FILES ${FILE_GROUP})
 
 set(FILE_GROUP
-  "${CMAKE_CURRENT_SOURCE_DIR}/version.h"
-  "${CMAKE_CURRENT_SOURCE_DIR}/misc.h"
+  "version.h"
+  "misc.h"
 )
 list(APPEND SOURCE_FILES ${FILE_GROUP})
 
 set(FILE_GROUP
-  "${CMAKE_CURRENT_SOURCE_DIR}/version.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/clock.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/misc.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/props.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/report.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/timing.cpp"
+  "version.cpp"
+  "clock.cpp"
+  "misc.cpp"
+  "props.cpp"
+  "report.cpp"
+  "timing.cpp"
 )
 list(APPEND SOURCE_FILES ${FILE_GROUP})
 
@@ -116,11 +116,11 @@ endif()
 
 #target_precompile_headers(${PROJECT_NAME}
 #PRIVATE
-#    "CMAKE_CURRENT_SOURCE_DIR}/pch.hpp"
+#    "pch.hpp"
 #)
 
 if (WIN32)
-    set_source_files_properties("CMAKE_CURRENT_SOURCE_DIR}/timing.cpp" PROPERTIES
+    set_source_files_properties("timing.cpp" PROPERTIES
         COMPILE_FLAGS "/fp:fast" # Enable fast floating-point model for 'timing.cpp'
         SKIP_PRECOMPILE_HEADERS ON
     )
@@ -160,7 +160,7 @@ if (WIN32)
         )
     endif()
 elseif (UNIX)
-  set_source_files_properties("CMAKE_CURRENT_SOURCE_DIR}/timing.cpp" PROPERTIES
+  set_source_files_properties("timing.cpp" PROPERTIES
     COMPILE_FLAGS "-ffast-math" # Allow floating-point optimizations that may violate strict IEEE or ISO rules for 'timing.cpp'.
     SKIP_PRECOMPILE_HEADERS ON
   )
