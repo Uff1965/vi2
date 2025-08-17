@@ -456,7 +456,7 @@ extern "C" {
 #	ifdef __cplusplus
 } // extern "C"
 
-#	include "vi_timing.hpp"
+#		include "vi_timing.hpp"
 #	endif
 
 #endif // #ifndef VI_TIMING_VI_TIMING_C_H
