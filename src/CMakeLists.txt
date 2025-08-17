@@ -119,9 +119,11 @@ endif()
 #    "pch.hpp"
 #)
 
-set_source_files_properties("timing.cpp" PROPERTIES
-    COMPILE_OPTIONS "$<$<CXX_COMPILER_ID:GNU>: -ffast-math> $<$<CXX_COMPILER_ID:MSVC>: /fp:fast>"
-    SKIP_PRECOMPILE_HEADERS ON
+set_source_files_properties(
+    "timing.cpp"
+    PROPERTIES
+        COMPILE_OPTIONS "$<$<CXX_COMPILER_ID:GNU>:-ffast-math>;$<$<CXX_COMPILER_ID:MSVC>:/fp:fast>"
+        SKIP_PRECOMPILE_HEADERS ON
 )
 
 if (WIN32)

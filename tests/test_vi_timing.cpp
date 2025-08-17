@@ -29,8 +29,17 @@ namespace
 		stream <<
 			"Information about the \'vi_timing\' library:\n"
 			"\tVersion: " << VI_TM_FULLVERSION << "\n"
-			"\tGit describe: " << static_cast<const char*>(vi_tmStaticInfo(VI_TM_INFO_GIT_DESCRIBE)) << "\n"
-			"\tGit commit date and time: " << static_cast<const char*>(vi_tmStaticInfo(VI_TM_INFO_GIT_DATETIME)) << "\n";
+			"\tGit describe: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DESCRIBE)) << "\n"
+			"\tGit commit date and time: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DATETIME)) << "\n";
+
+		const auto unit = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_UNIT));
+		const auto duration = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_DURATION));
+		const auto overhead = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_OVERHEAD));
+		const auto resolution = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_RESOLUTION));
+		stream <<
+			"\tResolution: " << static_cast<int>(resolution * unit * 1e9) << " ns.\n"
+			"\tDuration: " << static_cast<int>(duration * 1e9) << " ns.\n"
+			"\tOverhead: " << static_cast<int>(overhead * unit * 1e9) << " ns.\n";
 	}
 }
 
