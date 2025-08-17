@@ -31,6 +31,7 @@ namespace
 			"\tVersion: " << VI_TM_FULLVERSION << "\n"
 			"\tGit describe: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DESCRIBE)) << "\n"
 			"\tGit commit date and time: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DATETIME)) << "\n";
+		endl(std::cout);
 
 		const auto unit = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_UNIT));
 		const auto duration = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_DURATION));
@@ -40,13 +41,13 @@ namespace
 			"\tResolution: " << static_cast<int>(resolution * unit * 1e9) << " ns.\n"
 			"\tDuration: " << static_cast<int>(duration * 1e9) << " ns.\n"
 			"\tOverhead: " << static_cast<int>(overhead * unit * 1e9) << " ns.\n";
+		endl(std::cout);
 	}
 }
 
 int main(int argc, char** argv)
 {
 	header(std::cout);
-	endl(std::cout);
 
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
