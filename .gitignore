@@ -400,3 +400,5 @@ FodyWeavers.xsd
 *.sln.iml
 /src/version.out
 /_build*/
+/out/build
+/CMakeSettings.json
