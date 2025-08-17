@@ -39,8 +39,7 @@ namespace
 		const auto resolution = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_RESOLUTION));
 		stream <<
 			"\tResolution: " << static_cast<int>(resolution * unit * 1e9) << " ns.\n"
-			"\tDuration: " << static_cast<int>(duration * 1e9) << " ns.\n"
-			"\tOverhead: " << static_cast<int>(overhead * unit * 1e9) << " ns.\n";
+			"\tDuration: " << static_cast<int>(duration * unit * 1e9) << " ns.\n";
 		endl(std::cout);
 	}
 }

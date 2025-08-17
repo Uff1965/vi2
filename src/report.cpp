@@ -210,20 +210,22 @@ namespace
 				str << (flags & vi_tmDoNotSubtractOverhead? "": "Corrected. ");
 #endif
 			}
+
+			const auto tick = props.seconds_per_tick_.count();
 			if (flags & vi_tmShowResolution)
-			{	str << "Resolution: " << to_string(props.seconds_per_tick_.count() * props.clock_resolution_ticks_);
+			{	str << "Resolution: " << to_string(tick * props.clock_resolution_ticks_);
 			}
 			if (flags & vi_tmShowDuration)
-			{	str << "Duration: " << to_string(props.duration_threadsafe_.count());
+			{	str << "Duration: " << to_string(tick * props.duration_threadsafe_);
 			}
 			if (flags & vi_tmShowDurationEx)
-			{	str << "Duration ex: " << to_string(props.duration_ex_threadsafe_.count());
+			{	str << "Duration ex: " << to_string(tick * props.duration_ex_threadsafe_);
 			}
 			if (flags & vi_tmShowUnit)
-			{	str << "One tick: " << to_string(props.seconds_per_tick_.count());
+			{	str << "One tick: " << to_string(tick);
 			}
 			if (flags & vi_tmShowOverhead)
-			{	str << "Overhead: " << to_string(props.seconds_per_tick_.count() * props.clock_overhead_ticks_);
+			{	str << "Overhead: " << to_string(tick * props.clock_overhead_ticks_);
 			}
 
 			str << '\n';

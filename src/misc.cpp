@@ -433,13 +433,13 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 			return &resolution;
 		}
 
-		case VI_TM_INFO_DURATION: // Returns a pointer to the measure duration with cache in seconds (double).
-		{	static const double duration = properties_t::props().duration_threadsafe_.count();
+		case VI_TM_INFO_DURATION: // Returns a pointer to the measure duration with cache in ticks (double).
+		{	static const double duration = properties_t::props().duration_threadsafe_;
 			return &duration;
 		}
 
-		case VI_TM_INFO_DURATION_EX: // Returns a pointer to the extended measure duration in seconds (double).
-		{	static const double duration_ex = properties_t::props().duration_ex_threadsafe_.count();
+		case VI_TM_INFO_DURATION_EX: // Returns a pointer to the extended measure duration in ticks (double).
+		{	static const double duration_ex = properties_t::props().duration_ex_threadsafe_;
 			return &duration_ex;
 		}
 

@@ -228,6 +228,6 @@ misc::properties_t::properties_t()
 	clock_resolution_ticks_ = meas_resolution(); // The resolution of the clock in ticks.
 	seconds_per_tick_ = meas_seconds_per_tick(); // The duration of a single tick in seconds.
 	clock_overhead_ticks_ = meas_cost_calling_tick_function(); // The cost of a single call of vi_tmGetTicks.
-	duration_threadsafe_ = seconds_per_tick_ * meas_duration_with_caching(); // The cost of a single measurement with preservation in seconds.
-	duration_ex_threadsafe_ = seconds_per_tick_ * meas_duration(); // The cost of a single measurement in seconds.
+	duration_threadsafe_ = meas_duration_with_caching(); // The cost of a single measurement with preservation in ticks.
+	duration_ex_threadsafe_ = meas_duration(); // The cost of a single measurement in ticks.
 }
