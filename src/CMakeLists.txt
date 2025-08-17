@@ -119,12 +119,12 @@ endif()
 #    "pch.hpp"
 #)
 
-if (WIN32)
-    set_source_files_properties("timing.cpp" PROPERTIES
-        COMPILE_FLAGS "/fp:fast" # Enable fast floating-point model for 'timing.cpp'
-        SKIP_PRECOMPILE_HEADERS ON
-    )
+set_source_files_properties("timing.cpp" PROPERTIES
+    COMPILE_OPTIONS "$<$<CXX_COMPILER_ID:GNU>: -ffast-math> $<$<CXX_COMPILER_ID:MSVC>: /fp:fast>"
+    SKIP_PRECOMPILE_HEADERS ON
+)
 
+if (WIN32)
     target_compile_definitions(${PROJECT_NAME}
     PRIVATE
       WIN32_LEAN_AND_MEAN # Exclude rarely-used stuff from Windows headers.
@@ -160,11 +160,6 @@ if (WIN32)
         )
     endif()
 elseif (UNIX)
-  set_source_files_properties("timing.cpp" PROPERTIES
-    COMPILE_FLAGS "-ffast-math" # Allow floating-point optimizations that may violate strict IEEE or ISO rules for 'timing.cpp'.
-    SKIP_PRECOMPILE_HEADERS ON
-  )
-
   target_compile_options(${PROJECT_NAME}
   PRIVATE
     -fvisibility=hidden # Hide symbols by default, only export those marked with VI_TM_EXPORTS.
