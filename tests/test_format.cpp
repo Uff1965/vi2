@@ -5,36 +5,62 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cassert>
 #include <cerrno>
 #include <cmath>
+#include <string>
+#include <string_view>
 
-TEST(misc, vi_tmF2A)
+using namespace std::literals;
+
+TEST(vi_tmF2A, common)
 {	assert(0 == errno);
-		
-	struct item_t
-	{	int line_;
-		double value_;
-		std::string_view expected_;
-		unsigned char significant_;
-		unsigned char decimal_;
-	};
+	std::string buff(32, '\0');
+	EXPECT_EQ(6, vi_tmF2A(nullptr, 0U, 1.23456, 2, 1));
+	EXPECT_STREQ(buff.data(), "");
+	EXPECT_EQ(6, vi_tmF2A(nullptr, 1U, 1.23456, 2, 1));
+	EXPECT_STREQ(buff.data(), "");
+	EXPECT_EQ(6, vi_tmF2A(nullptr, buff.size() - 1U, 1.23456, 2, 1));
+	EXPECT_STREQ(buff.data(), "");
+	EXPECT_EQ(6, vi_tmF2A(buff.data(), 0U, 1.23456, 2, 1));
+	EXPECT_STREQ(buff.data(), "");
+	EXPECT_EQ(6, vi_tmF2A(buff.data(), 1U, 1.23456, 2, 1));
+	EXPECT_STREQ(buff.data(), "");
+	EXPECT_EQ(6, vi_tmF2A(buff.data(), 6U, 1.23456, 2, 1));
+	EXPECT_STREQ(buff.data(), "1.2  ");
+	EXPECT_EQ(6, vi_tmF2A(buff.data(), buff.size() - 1U, 1.23456, 2, 1));
+	EXPECT_STREQ(buff.data(), "1.2  ");
+	errno = 0; // Reset errno for the next test
+}
 
+struct item_t
+{
+	int line_;
+	double value_;
+	std::string_view expected_;
+	unsigned char significant_;
+	unsigned char decimal_;
+};
+
+template <std::size_t N>
+void test(const item_t(&tests_set)[N])
+{	assert(0 == errno || ERANGE == errno);
+	errno = 0; // Reset errno before running the tests
+
+	for (auto &test : tests_set)
+	{	assert(0 == errno);
+		std::string buff(32, '\0');
+		SCOPED_TRACE("Line of sample: "s + std::to_string(test.line_) + ". Expected: \'"s + test.expected_.data() + "\'; Actual: \'"s + buff.data() + "\'.");
+		EXPECT_EQ(test.expected_.size() + 1, vi_tmF2A(buff.data(), buff.size(), test.value_, test.significant_, test.decimal_)) << "Line of sample: " << test.line_;
+		EXPECT_STREQ(buff.data(), test.expected_.data()) << "Line of sample: " << test.line_;
+	}
+}
+
+TEST(vi_tmF2A, suffixes)
+{	assert(0 == errno);
 	static const item_t tests_set[]
-	{
-		// The following test cases check the boundary and special floating-point values for the misc::to_string function.
-		// They ensure correct handling of INF, -INF, NaN, -NaN, DBL_MAX, DBL_MIN, DBL_TRUE_MIN, and values near zero.
-		{__LINE__, 0.0, "0.0  ", 2, 1},
-		{__LINE__, NAN, "NaN", 2, 1},									{__LINE__, -NAN, "NaN", 2, 1},
-		{__LINE__, std::nextafter( 0.0, 1.0), "0.0  ", 2, 1},			{__LINE__, std::nextafter(-0.0, -1.0), "0.0  ", 2, 1},
-		{__LINE__, DBL_TRUE_MIN, "0.0  ", 2, 1},						{__LINE__, -DBL_TRUE_MIN, "0.0  ", 2, 1},
-		{__LINE__, std::nextafter( DBL_TRUE_MIN, 1.0), "0.0  ", 2, 1},	{__LINE__, std::nextafter(-DBL_TRUE_MIN, -1.0), "0.0  ", 2, 1},
-		{__LINE__, std::nextafter( DBL_MIN, 0.0), "0.0  ", 2, 1},		{__LINE__, std::nextafter(-DBL_MIN, 0.0), "0.0  ", 2, 1},
-		{__LINE__, DBL_MIN, "22.0e-309", 2, 1},							{__LINE__, -DBL_MIN, "-22.0e-309", 2, 1},
-		{__LINE__, 3.14159, "3.1  ", 2, 1},								{__LINE__, -3.14159, "-3.1  ", 2, 1},
-		{__LINE__, DBL_MAX, "180.0e306", 2, 1},							{__LINE__, -DBL_MAX, "-180.0e306", 2, 1},
-		{__LINE__, DBL_MAX * (1.0 + DBL_EPSILON),  "INF", 2, 1},		{__LINE__, -DBL_MAX * (1.0 + DBL_EPSILON), "-INF", 2, 1},
-		// Test cases for SI prefixes and scientific notation formatting in misc::to_string.
+	{	// Test cases for SI prefixes and scientific notation formatting in misc::to_string.
 		// Each entry checks that a value like 1e3, 1e-3, etc., is formatted with the correct SI suffix or scientific notation.
 		{ __LINE__, 1e-306,"1.0e-306", 2, 1 },	{ __LINE__, -1e-306,"-1.0e-306", 2, 1 },
 		{ __LINE__, 1e-30,"1.0 q", 2, 1 },		{ __LINE__, -1e-30,"-1.0 q", 2, 1 },
@@ -59,12 +85,48 @@ TEST(misc, vi_tmF2A)
         { __LINE__, 1e27,"1.0 R", 2, 1 },		{ __LINE__, -1e27,"-1.0 R", 2, 1 },
         { __LINE__, 1e30,"1.0 Q", 2, 1 },		{ __LINE__, -1e30,"-1.0 Q", 2, 1 },
         { __LINE__, 1e306,"1.0e306", 2, 1 },	{ __LINE__, -1e306,"-1.0e306", 2, 1 },
-		// rounding tests.
+	};
+
+	test(tests_set);
+}
+
+TEST(vi_tmF2A, special)
+{	assert(0 == errno);
+	static const item_t tests_set[]
+	{	// The following test cases check the boundary and special floating-point values for the misc::to_string function.
+		// They ensure correct handling of INF, -INF, NaN, -NaN, DBL_MAX, DBL_MIN, DBL_TRUE_MIN, and values near zero.
+		{ __LINE__, 0.0, "0.0  ", 2, 1 },
+		{ __LINE__, NAN, "NaN", 2, 1 }, { __LINE__, -NAN, "NaN", 2, 1 },
+		{ __LINE__, std::nextafter(0.0, 1.0), "0.0  ", 2, 1 }, { __LINE__, std::nextafter(-0.0, -1.0), "0.0  ", 2, 1 },
+		{ __LINE__, DBL_TRUE_MIN, "0.0  ", 2, 1 }, { __LINE__, -DBL_TRUE_MIN, "0.0  ", 2, 1 },
+		{ __LINE__, std::nextafter(DBL_TRUE_MIN, 1.0), "0.0  ", 2, 1 }, { __LINE__, std::nextafter(-DBL_TRUE_MIN, -1.0), "0.0  ", 2, 1 },
+		{ __LINE__, std::nextafter(DBL_MIN, 0.0), "0.0  ", 2, 1 }, { __LINE__, std::nextafter(-DBL_MIN, 0.0), "0.0  ", 2, 1 },
+		{ __LINE__, DBL_MIN, "22.0e-309", 2, 1 }, { __LINE__, -DBL_MIN, "-22.0e-309", 2, 1 },
+		{ __LINE__, 3.14159, "3.1  ", 2, 1 }, { __LINE__, -3.14159, "-3.1  ", 2, 1 },
+		{ __LINE__, DBL_MAX, "180.0e306", 2, 1 }, { __LINE__, -DBL_MAX, "-180.0e306", 2, 1 },
+		{ __LINE__, DBL_MAX * (1.0 + DBL_EPSILON), "INF", 2, 1 }, { __LINE__, -DBL_MAX * (1.0 + DBL_EPSILON), "-INF", 2, 1 },
+	};
+
+	test(tests_set);
+}
+
+TEST(vi_tmF2A, rounding)
+{	assert(0 == errno);
+	static const item_t tests_set[]
+	{	// rounding tests.
 		{__LINE__, 1.19, "1.2  ", 2, 1},		{__LINE__, -1.19, "-1.2  ", 2, 1}, // simple
 		{__LINE__, 9.99, "10.0  ", 2, 1},		{__LINE__, -9.99, "-10.0  ", 2, 1},
 		{ __LINE__, 1.349, "1.3  ", 2, 1 },		{ __LINE__, -1.349, "-1.3  ", 2, 1 },
 		{ __LINE__, 1.35, "1.4  ", 2, 1 },		{ __LINE__, -1.35, "-1.4  ", 2, 1 }, // 0.5 rounding up.
-		// test group sellect
+	};
+
+	test(tests_set);
+}
+
+TEST(vi_tmF2A, format)
+{	assert(0 == errno);
+	static const item_t tests_set[]
+	{	// test group sellect
 		{__LINE__, 0.0001, "100.0 u", 2, 1},	{__LINE__, -0.0001, "-100.0 u", 2, 1},
 		{__LINE__, 0.001, "1.0 m", 2, 1},		{__LINE__, -0.001, "-1.0 m", 2, 1},
 		{__LINE__, 0.01, "10.0 m", 2, 1},		{__LINE__, -0.01, "-10.0 m", 2, 1},
@@ -80,13 +142,5 @@ TEST(misc, vi_tmF2A)
 		{__LINE__, 1000.0, "1000.0  ", 5, 1},	{__LINE__, -1000.0, "-1000.0  ", 5, 1},
 	};
 
-	assert(0 == errno || ERANGE == errno);
-	errno = 0; // Reset errno before running the tests
-
-	for (auto &test : tests_set)
-	{	assert(0 == errno);
-		std::string buff(32, '\0');
-		EXPECT_GE(buff.size(), vi_tmF2A(buff.data(), buff.size(), test.value_, test.significant_, test.decimal_));
-		EXPECT_STREQ(buff.data(), test.expected_.data()) << "Line of sample: " << test.line_;
-	}
+	test(tests_set);
 }
