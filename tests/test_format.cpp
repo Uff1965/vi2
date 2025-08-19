@@ -52,7 +52,8 @@ void test(const item_t(&tests_set)[N])
 	{	assert(0 == errno);
 		std::string buff(32, '\0');
 		SCOPED_TRACE("Line of sample: "s + std::to_string(test.line_) + ". Expected: \'"s + test.expected_.data() + "\'; Actual: \'"s + buff.data() + "\'.");
-		EXPECT_EQ(test.expected_.size() + 1, vi_tmF2A(buff.data(), buff.size(), test.value_, test.significant_, test.decimal_)) << "Line of sample: " << test.line_;
+		const auto ret = vi_tmF2A(buff.data(), buff.size(), test.value_, test.significant_, test.decimal_);
+		EXPECT_EQ(test.expected_.size() + 1, ret) << "Line of sample: " << test.line_;
 		EXPECT_STREQ(buff.data(), test.expected_.data()) << "Line of sample: " << test.line_;
 	}
 }

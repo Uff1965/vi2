@@ -7,20 +7,45 @@
 #include <cassert>
 #include <cerrno>
 
-TEST_F(ViTimingJournalFixture, Journal)
-{
-    // Add a measurement to check reset
-    VI_TM_HMEAS meas = vi_tmMeasurement(journal(), "test_entry");
+TEST_F(ViTimingJournalFixture, measurement)
+{   const char name[] = "test_entry";
+	vi_tmMeasurementStats_t stats{};
+	const char *pname = nullptr;
+
+	const auto meas = vi_tmMeasurement(journal(), name);
     ASSERT_NE(meas, nullptr) << "vi_tmMeasurement should return a valid descriptor";
 
-    // Add a measurement
-    vi_tmMeasurementAdd(meas, 100, 10);
+	vi_tmMeasurementGet(meas, &pname, &stats);
+	EXPECT_STREQ(pname, name);
+	EXPECT_EQ(stats.calls_, 0) << "New measurement should have zero calls";
+	EXPECT_EQ(stats.cnt_, 0) << "Count of measured events should be 0";
+    EXPECT_EQ(stats.sum_, 0) << "Total time should be 0";
+
+	const auto tmp = vi_tmMeasurement(journal(), name);
+	EXPECT_EQ(meas, tmp) << "The probe address must not change while the journal exists.";
+}
+
+TEST_F(ViTimingJournalFixture, Journal)
+{   const char name[] = "test_entry";
+	constexpr VI_TM_SIZE CNT = 10;
+    constexpr VI_TM_SIZE AMT = 100;
+    constexpr VI_TM_TDIFF DUR = 1000;
+
+    // Add a measurement to check reset
+    VI_TM_HMEAS meas = vi_tmMeasurement(journal(), name);
+    ASSERT_NE(meas, nullptr) << "vi_tmMeasurement should return a valid descriptor";
+
+    // Add a CNT measurement
+    for (unsigned n = 0; n < CNT; ++n)
+    {   vi_tmMeasurementAdd(meas, DUR, AMT);
+    }
+
     // Get measurement statistics
     vi_tmMeasurementStats_t stats{};
     vi_tmMeasurementGet(meas, nullptr, &stats);
-    EXPECT_EQ(stats.calls_, 1) << "Number of calls should be 1";
-	EXPECT_EQ(stats.cnt_, 10) << "Count of measured events should be 10";
-    EXPECT_EQ(stats.sum_, 100) << "Total time should be 100";
+    EXPECT_EQ(stats.calls_, CNT) << "Number of calls should be " << CNT;
+	EXPECT_EQ(stats.cnt_, CNT * AMT) << "Count of measured events should be " << CNT * AMT;
+    EXPECT_EQ(stats.sum_, CNT * DUR) << "Total time should be " << CNT * DUR;
 
     // Reset the journal
     vi_tmJournalReset(journal());
@@ -31,6 +56,9 @@ TEST_F(ViTimingJournalFixture, Journal)
     EXPECT_EQ(stats.calls_, 0) << "After journal reset, statistics should be reset";
 	EXPECT_EQ(stats.cnt_, 0) << "Count of measured events should be 0";
     EXPECT_EQ(stats.sum_, 0) << "Total time should be 0";
+
+	const auto tmp = vi_tmMeasurement(journal(), name);
+	EXPECT_EQ(meas, tmp);
 }
 
 TEST(misc, vi_tmStaticInfo)
