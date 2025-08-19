@@ -485,17 +485,16 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 	}
 } // vi_tmStaticInfo(vi_tmInfo_e info)
 
-int VI_TM_CALL vi_tmF2A(char *buff, unsigned sz, double val, unsigned char sig, unsigned char dec)
+unsigned VI_TM_CALL vi_tmF2A(char *buff, unsigned sz, double val, unsigned char sig, unsigned char dec)
 {	auto str = misc::to_string(val, sig, dec);
-	const int result = static_cast<int>(str.size()) + 1;
+	const unsigned result = static_cast<unsigned>(str.size()) + 1U;
 	
-	if (static_cast<unsigned>(result) > sz)
-	{	str.resize(sz - 1); // Resize to fit the buffer, leaving space for null-termination.
-	}
+	if (nullptr != buff && 0U != sz)
+	{	if (result > sz)
+		{	str.resize(static_cast<std::size_t>(sz - 1U)); // Resize to fit the buffer, leaving space for null-termination.
+		}
 
-	if(nullptr != buff && 0U != sz)
-	{	std::memcpy(buff, str.data(), str.size()); // If the string fits, copy it to the buffer and null-terminate.
-		buff[str.size()] = '\0';
+		std::memcpy(buff, str.data(), str.size() + 1);
 	}
 
 	return result; // Return the size of the string that was copied or the required size if it didn't fit.

@@ -108,22 +108,22 @@ namespace vi_tm
 		}
 	}; // class init_t
 
-	// measurer_t class: A RAII-style class for measuring code execution time.
+	// probe_t class: A RAII-style class for measuring code execution time.
 	// Unlike the API, this class is not thread-safe!!!
-	class measurer_t
+	class probe_t
 	{	VI_TM_HMEAS meas_ = nullptr;
 		VI_TM_SIZE cnt_ = 0U;
 		VI_TM_TICK start_ = 0U; // Order matters!!! 'start_' must be initialized last!
 	public:
-		measurer_t() = delete;
-		measurer_t(const measurer_t &) = delete;
-		measurer_t(measurer_t &&src) noexcept
+		probe_t() = delete;
+		probe_t(const probe_t &) = delete;
+		probe_t(probe_t &&src) noexcept
 		:	meas_{ std::exchange(src.meas_, nullptr) },
 			cnt_{ std::exchange(src.cnt_, 0U) },
 			start_{ src.start_ }
 		{	assert(meas_);
 		}
-		measurer_t(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
+		explicit probe_t(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
 		:	meas_{ m },
 			cnt_{ cnt }
 		{	assert(meas_);
@@ -131,9 +131,9 @@ namespace vi_tm
 			{	start_ = vi_tmGetTicks();
 			}
 		}
-		~measurer_t() { finish(); }
-		void operator=(const measurer_t &) = delete;
-		measurer_t &operator=(measurer_t &&src) noexcept
+		~probe_t() { finish(); }
+		void operator=(const probe_t &) = delete;
+		probe_t &operator=(probe_t &&src) noexcept
 		{	if (this != &src)
 			{	meas_ = std::exchange(src.meas_, nullptr);
 				cnt_ = std::exchange(src.cnt_, 0U);
@@ -160,7 +160,7 @@ namespace vi_tm
 				cnt_ = 0;
 			}
 		}
-	}; // class measurer_t
+	}; // class probe_t
 } // namespace vi_tm
 
 	// Initializes the global journal and sets up the report callback.
@@ -175,11 +175,11 @@ namespace vi_tm
 #		define VI_TM_DEBUG_ONLY(t)
 #	endif
 
-	// The VI_TM macro creates a measurer_t object with a unique identifier based on the line number.
+	// The VI_TM macro creates a probe_t object with a unique identifier based on the line number.
 	// It stores the pointer to the named measurer entry in a static variable. Therefore, it cannot 
 	// be called with different measurement names.
 #	define VI_TM(...) \
-		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::measurer_t { \
+		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t { \
 			static const auto meas = vi_tmMeasurement(VI_TM_HGLOBAL, name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
 			VI_TM_DEBUG_ONLY \
 			(	const char* registered_name = nullptr; \
@@ -187,10 +187,10 @@ namespace vi_tm
 				assert(registered_name && 0 == std::strcmp(name, registered_name) && \
 					"One VI_TM macro cannot be reused with a different name value!"); \
 			) \
-			return vi_tm::measurer_t{meas, cnt}; \
+			return vi_tm::probe_t{meas, cnt}; \
 		}(__VA_ARGS__)
 
-	// This macro is used to create a measurer_t object with the function name as the measurement name.
+	// This macro is used to create a probe_t object with the function name as the measurement name.
 #	define VI_TM_FUNC VI_TM(VI_FUNCNAME)
 
 	// Generates a report for the global journal.

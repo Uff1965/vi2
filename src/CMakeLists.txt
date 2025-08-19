@@ -2,13 +2,14 @@
 cmake_minimum_required(VERSION 3.22)
 project(vi_timing VERSION ${VI_GIT_VERSION_NUMBER} LANGUAGES CXX)
 
-configure_file("version.in" "version.out" @ONLY)
+configure_file("version.in" "${CMAKE_CURRENT_SOURCE_DIR}/version.out" @ONLY)
 
 set(SOURCE_FILES) # Initialize the list of source files.
 
 if(MSVC)
     set(FILE_GROUP
       "version.in"
+      "vi_timing.pvsconfig"
       "${CMAKE_SOURCE_DIR}/LICENSE"
       "${CMAKE_SOURCE_DIR}/README"
       "${CMAKE_SOURCE_DIR}/cmake/GenerateVersion.cmake"
