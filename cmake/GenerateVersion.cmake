@@ -1,11 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
 
-set(GIT_DESCRIBE "")
-set(GIT_COMMIT "unknown")
-set(GIT_DATETIME "unknown")
-set(GIT_VERSION_NUMBER "0.0.0")
-set(GIT_VERSION_ABI "0")
-
 find_package(Git QUIET)
 if(GIT_FOUND)
 	execute_process(

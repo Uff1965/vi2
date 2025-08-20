@@ -23,6 +23,7 @@
 #	pragma once
 
 #	include "vi_timing.h"
+#	include "vi_timing_aux.h"
 
 #ifdef VI_TM_DISABLE
 #	define VI_ID __LINE__
