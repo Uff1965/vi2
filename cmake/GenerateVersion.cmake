@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.22)
 
-find_package(Git QUIET)
-if(GIT_FOUND)
-	execute_process(
-		COMMAND ${GIT_EXECUTABLE} describe --tags --long --always --abbrev --dirty --broken
-		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-		OUTPUT_VARIABLE GIT_DESCRIBE
-		OUTPUT_STRIP_TRAILING_WHITESPACE
-	)
+function(get_version_from_git VAR_NAME)
+	if(GIT_FOUND)
+		set(${VAR_NAME}_COMMIT "unknown" PARENT_SCOPE)
+		set(${VAR_NAME}_DATETIME "unknown" PARENT_SCOPE)
+		set(${VAR_NAME}_DESCRIBE "" PARENT_SCOPE)
+		set(${VAR_NAME}_VERSION_NUMBER "0.0.0" PARENT_SCOPE)
+		set(${VAR_NAME}_VERSION_LABEL "" PARENT_SCOPE)
+		return()
+	endif()
 
 	execute_process(
 		COMMAND ${GIT_EXECUTABLE} rev-parse HEAD
@@ -23,8 +24,23 @@ if(GIT_FOUND)
 		OUTPUT_STRIP_TRAILING_WHITESPACE
 	)
 
-	string(REGEX MATCH "^(v\\.?)?((([0-9]+)(\\.[0-9]+)?)(\\.[0-9]+)?)-.*" MATCHED "${GIT_DESCRIBE}")
+	execute_process(
+		COMMAND ${GIT_EXECUTABLE} describe --tags --long --always --abbrev --dirty --broken
+		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+		OUTPUT_VARIABLE GIT_DESCRIBE
+		OUTPUT_STRIP_TRAILING_WHITESPACE
+	)
+
+	set(${VAR_NAME}_COMMIT ${GIT_COMMIT} PARENT_SCOPE)
+	set(${VAR_NAME}_DATETIME ${GIT_DATETIME} PARENT_SCOPE)
+	set(${VAR_NAME}_DESCRIBE ${GIT_DESCRIBE} PARENT_SCOPE)
+
+	string(REGEX MATCH "^(v\\.?)?([0-9]+(\\.[0-9]+)?(\\.[0-9]+)?)-(.*)" MATCHED "${GIT_DESCRIBE}")
 	if(MATCHED)
-		set(VI_GIT_VERSION_NUMBER "${CMAKE_MATCH_2}")
+		set(${VAR_NAME}_VERSION_NUMBER "${CMAKE_MATCH_2}" PARENT_SCOPE)
+		set(${VAR_NAME}_VERSION_LABEL "${CMAKE_MATCH_5}" PARENT_SCOPE)
+	else()
+		set(${VAR_NAME}_VERSION_NUMBER "0.0.0" PARENT_SCOPE)
+		set(${VAR_NAME}_VERSION_LABEL "" PARENT_SCOPE)
 	endif()
-endif()
+endfunction()

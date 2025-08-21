@@ -21,11 +21,9 @@ set(SOURCE_FILES)
 if (VI_TM_ENABLE_TESTS)
     include(cmake/gtest.cmake)
 
-    if(MSVC)
-        set(FILE_GROUP "cmake/gtest.cmake")
-        source_group("Extras" FILES ${FILE_GROUP})
-        list(APPEND SOURCE_FILES ${FILE_GROUP})
-    endif()
+    set(FILE_GROUP "cmake/gtest.cmake")
+    source_group("Extras" FILES ${FILE_GROUP})
+    list(APPEND SOURCE_FILES ${FILE_GROUP})
 
     set(FILE_GROUP
         "test.h"
@@ -35,27 +33,44 @@ if (VI_TM_ENABLE_TESTS)
     )
     list(APPEND SOURCE_FILES ${FILE_GROUP})
 
-    include(GoogleTest)
-    gtest_discover_tests(${PROJECT_NAME})
-#    set_target_properties(
-#        gtest
-#    PROPERTIES
-#        FOLDER "ThirdParty/GTest"
-#    )
+    target_link_libraries(${PROJECT_NAME}
+    PRIVATE
+        GTest::gtest
+#       GTest::gtest_main
+#       GMock::gmock
+#       GMock::gmock_main
+    )
 
-    target_link_libraries(${PROJECT_NAME} PRIVATE GTest::gtest)
+    target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+        VI_HAS_GTEST=1
+    )
+
+    gtest_discover_tests(${PROJECT_NAME})
 endif()
 
 if (VI_TM_ENABLE_BENCHMARK)
     include(cmake/gbenchmark.cmake)
 
-    if(MSVC)
-        set(FILE_GROUP
-          "cmake/gbenchmark.cmake"
-        )
-        source_group("Extras" FILES ${FILE_GROUP})
-        list(APPEND SOURCE_FILES ${FILE_GROUP})
-    endif()
+    set(FILE_GROUP "cmake/gbenchmark.cmake")
+    source_group("Extras" FILES ${FILE_GROUP})
+    list(APPEND SOURCE_FILES ${FILE_GROUP})
+
+    set(FILE_GROUP
+        "benchmark.h"
+        "benchmark.cpp"
+    )
+    list(APPEND SOURCE_FILES ${FILE_GROUP})
+
+    target_link_libraries(${PROJECT_NAME}
+    PRIVATE
+        benchmark::benchmark
+    )
+
+    target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+        VI_HAS_GBENCHMARK=1
+    )
 endif()
 
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCE_FILES})

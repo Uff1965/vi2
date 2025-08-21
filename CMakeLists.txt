@@ -20,19 +20,11 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-set(GIT_DESCRIBE "")
-set(GIT_COMMIT "unknown")
-set(GIT_DATETIME "unknown")
-set(VI_GIT_VERSION_NUMBER "0.0.0")
-if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
-    file(GLOB GIT_REFS "${CMAKE_SOURCE_DIR}/.git/refs/heads/*")
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
-        "${CMAKE_SOURCE_DIR}/.git/HEAD"
-        "${CMAKE_SOURCE_DIR}/.git/packed-refs"
-        ${GIT_REFS}
-    )
-    include("cmake/GenerateVersion.cmake") # Include the script to generate version information.
-endif()
+include("cmake/GenerateVersion.cmake") # Include the script to generate version information.
+get_version_from_git(VI_GIT)
+message(STATUS "VI_GIT_DESCRIBE: ${VI_GIT_DESCRIBE}")
+message(STATUS "\tVI_GIT_VERSION_NUMBER: ${VI_GIT_VERSION_NUMBER}")
+message(STATUS "\tVI_GIT_VERSION_LABEL: ${VI_GIT_VERSION_LABEL}")
 
 set(VI_TM_OUTPUT "${CMAKE_SOURCE_DIR}/bin")
 foreach(CONFIG_TYPE IN ITEMS "" "_DEBUG" "_RELEASE")

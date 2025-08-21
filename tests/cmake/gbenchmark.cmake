@@ -6,7 +6,14 @@ FetchContent_Declare(
 )
 
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "")
+
 FetchContent_MakeAvailable(googlebenchmark)
+
+set_target_properties(benchmark_main
+PROPERTIES
+	EXCLUDE_FROM_ALL TRUE
+	EXCLUDE_FROM_DEFAULT_BUILD TRUE
+)
 
 set_target_properties(benchmark PROPERTIES
 	ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib/debug

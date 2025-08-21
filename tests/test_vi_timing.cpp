@@ -1,6 +1,12 @@
 #include <vi_timing/vi_timing.hpp>
 
-#include <gtest/gtest.h>
+#ifdef VI_HAS_GTEST
+#	include <gtest/gtest.h>
+#endif
+
+#ifdef VI_HAS_GBENCHMARK
+#	include <benchmark/benchmark.h>
+#endif
 
 #include <chrono>
 #include <ctime>
@@ -49,5 +55,19 @@ int main(int argc, char** argv)
 	header(std::cout);
 
     ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+	::benchmark::Initialize(&argc, argv);
+
+	if (::benchmark::ReportUnrecognizedArguments(argc, argv))
+	{	return 1;
+    }
+
+	if (auto ret = RUN_ALL_TESTS())
+	{	return ret;
+	}
+
+	endl(std::cout);
+	std::cout << "Benchmark:\n";
+	::benchmark::RunSpecifiedBenchmarks();
+
+	return 0;
 }
