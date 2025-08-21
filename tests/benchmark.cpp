@@ -37,3 +37,26 @@ static void BM_vi_tmGetTicks(benchmark::State& state) {
     }
 }
 BENCHMARK(BM_vi_tmGetTicks);
+
+#if __ARM_ARCH >= 8 // ARMv8 (RaspberryPi4)
+	VI_TM_TICK VI_TM_CALL RPi4(void) noexcept
+	{	uint64_t result;
+		asm volatile
+		(	// too slow: "dmb ish\n\t" // Ensure all previous memory accesses are complete before reading the timer
+			"isb\n\t" // Ensure the instruction stream is synchronized
+			"mrs %0, cntvct_el0\n\t" // Read the current value of the system timer
+			"isb\n\t" // Ensure the instruction stream is synchronized again
+			: "=r"(result) // Output operand: result will hold the current timer value
+			: // No input operands
+			: "memory" // Clobber memory to ensure the compiler does not reorder instructions
+		);
+		return result;
+	}
+	
+	static void BM_RPi4(benchmark::State& state) {
+		for (auto _ : state) {
+			benchmark::DoNotOptimize(RPi4());
+		}
+	}
+	BENCHMARK(BM_RPi4);
+#endif
