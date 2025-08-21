@@ -330,7 +330,7 @@ void VI_TM_CALL vi_ThreadYield(void) noexcept
 // - threads_qty: Number of threads to use (0 means use hardware concurrency).
 // - ms: Duration in milliseconds to keep the CPU payload.
 // Returns: VI_EXIT_SUCCESS on success, VI_EXIT_FAILURE on error.
-int  VI_TM_CALL vi_Warming(unsigned int threads_qty, unsigned int ms)
+int  VI_TM_CALL vi_WarmUp(unsigned int threads_qty, unsigned int ms)
 {	if (0 == ms)
 	{	return VI_EXIT_SUCCESS;
 	}

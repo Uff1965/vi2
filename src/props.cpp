@@ -223,7 +223,7 @@ misc::properties_t::properties_t()
 		~affinity_guard_t() { vi_CurrentThreadAffinityRestore(); }
 	} affinity_guard; // Fixate the current thread's affinity to avoid issues with clock resolution measurement.
 
-	vi_Warming(1, 500);
+	vi_WarmUp(1, 500);
 
 	clock_resolution_ticks_ = meas_resolution(); // The resolution of the clock in ticks.
 	seconds_per_tick_ = meas_seconds_per_tick(); // The duration of a single tick in seconds.

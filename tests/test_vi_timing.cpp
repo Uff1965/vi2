@@ -69,7 +69,9 @@ int main(int argc, char** argv)
 	}
 
 	if (!gtest_list_tests)
-	{	endl(std::cout);
+	{
+		vi_WarmUp(1U);
+		endl(std::cout);
 		std::cout << "Benchmark:\n";
 		::benchmark::RunSpecifiedBenchmarks();
 	}
