@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <iostream>
 #include <ostream>
+#include <string_view>
 
 using namespace std::literals;
 namespace ch = std::chrono;
@@ -54,6 +55,8 @@ int main(int argc, char** argv)
 {
 	header(std::cout);
 
+	const bool gtest_list_tests = std::any_of(argv, argv + argc, [](auto arg) { return "--gtest_list_tests"sv == arg; });
+
     ::testing::InitGoogleTest(&argc, argv);
 	::benchmark::Initialize(&argc, argv);
 
@@ -65,9 +68,11 @@ int main(int argc, char** argv)
 	{	return ret;
 	}
 
-	endl(std::cout);
-	std::cout << "Benchmark:\n";
-	::benchmark::RunSpecifiedBenchmarks();
+	if (!gtest_list_tests)
+	{	endl(std::cout);
+		std::cout << "Benchmark:\n";
+		::benchmark::RunSpecifiedBenchmarks();
+	}
 
 	return 0;
 }
