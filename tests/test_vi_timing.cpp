@@ -57,7 +57,7 @@ namespace
 
 		stream << "Calculated:\n";
 		{	constexpr auto N = 8U;
-			std::this_thread::yield(); // Reduce likelihood of thread interruption during measurement.
+			vi_ThreadYield(); // Reduce likelihood of thread interruption during measurement.
 			const auto first = vi_tmGetTicks();
 			auto last = first;
 			for (auto cnt = N; cnt; )
