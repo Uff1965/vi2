@@ -6,10 +6,6 @@
 #include <ctime> // for timespec_get
 #include <chrono> // for std::chrono
 
-#if defined(__GNUC__)
-#	include <x86intrin.h>
-#endif
-
 VI_TM_TICK stdclock(void) noexcept
 {	timespec ts;
 	(void)std::timespec_get(&ts, TIME_UTC);
