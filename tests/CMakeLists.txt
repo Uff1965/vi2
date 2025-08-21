@@ -109,7 +109,7 @@ elseif(UNIX)
         $<$<CONFIG:Release>: -O3 -flto -s> # Optimize for speed, strip symbols.
     )
 
-    target_link_options(MyLib PUBLIC "$<$<CONFIG:Release>:-flto>")
+    target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:Release>:-flto>")
 endif()
 
 set(BUILD_SHARED_LIBS ${_original_BUILD_SHARED_LIBS})
