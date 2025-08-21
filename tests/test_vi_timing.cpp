@@ -46,9 +46,10 @@ namespace
 		const auto resolution = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_RESOLUTION));
 		stream <<
 			"Static info:\n"
-			"\tDivision price: " << static_cast<int>(unit * 1e12) << " ps.\n"
-			"\tClock resolution: " << static_cast<int>(resolution * unit * 1e9) << " ns.\n"
-			"\tMeasurement duration: " << static_cast<int>(duration * unit * 1e9) << " ns.\n";
+			"\tDivision price: " << vi_tm::to_string(unit, 3) << "s.\n"
+			"\tClock resolution: " << vi_tm::to_string(resolution * unit, 3) << "s.\n"
+			"\tClock overhead: " << vi_tm::to_string(overhead * unit, 3) << "s.\n"
+			"\tMeasurement duration: " << vi_tm::to_string(duration * unit, 3) << "s.\n";
 		endl(stream);
 	}
 

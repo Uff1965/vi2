@@ -106,9 +106,46 @@ TEST(vi_tmF2A, special)
 		{ __LINE__, 3.14159, "3.1  ", 2, 1 }, { __LINE__, -3.14159, "-3.1  ", 2, 1 },
 		{ __LINE__, DBL_MAX, "180.0e306", 2, 1 }, { __LINE__, -DBL_MAX, "-180.0e306", 2, 1 },
 		{ __LINE__, DBL_MAX * (1.0 + DBL_EPSILON), "INF", 2, 1 }, { __LINE__, -DBL_MAX * (1.0 + DBL_EPSILON), "-INF", 2, 1 },
+		{ __LINE__, 1e-306,"1.0e-306", 2, 1 },	{ __LINE__, -1e-306,"-1.0e-306", 2, 1 },
+		{ __LINE__, 1e-30,"1.0 q", 2, 1 },		{ __LINE__, -1e-30,"-1.0 q", 2, 1 },
+        { __LINE__, 1e30,"1.0 Q", 2, 1 },		{ __LINE__, -1e30,"-1.0 Q", 2, 1 },
+        { __LINE__, 1e306,"1.0e306", 2, 1 },	{ __LINE__, -1e306,"-1.0e306", 2, 1 },
 	};
 
 	test(tests_set);
+}
+
+TEST(vi_tmF2A, to_string)
+{	assert(0 == errno);
+	static const item_t tests_set[]
+	{	{ __LINE__, 0.0, "0.0  ", 2, 1 },
+		{ __LINE__, NAN, "NaN", 2, 1 }, { __LINE__, -NAN, "NaN", 2, 1 },
+		{ __LINE__, std::nextafter(0.0, 1.0), "0.0  ", 2, 1 }, { __LINE__, std::nextafter(-0.0, -1.0), "0.0  ", 2, 1 },
+		{ __LINE__, DBL_TRUE_MIN, "0.0  ", 2, 1 }, { __LINE__, -DBL_TRUE_MIN, "0.0  ", 2, 1 },
+		{ __LINE__, std::nextafter(DBL_TRUE_MIN, 1.0), "0.0  ", 2, 1 }, { __LINE__, std::nextafter(-DBL_TRUE_MIN, -1.0), "0.0  ", 2, 1 },
+		{ __LINE__, std::nextafter(DBL_MIN, 0.0), "0.0  ", 2, 1 }, { __LINE__, std::nextafter(-DBL_MIN, 0.0), "0.0  ", 2, 1 },
+		{ __LINE__, DBL_MIN, "22.0e-309", 2, 1 }, { __LINE__, -DBL_MIN, "-22.0e-309", 2, 1 },
+		{ __LINE__, 3.14159, "3.1  ", 2, 1 }, { __LINE__, -3.14159, "-3.1  ", 2, 1 },
+		{ __LINE__, DBL_MAX, "180.0e306", 2, 1 }, { __LINE__, -DBL_MAX, "-180.0e306", 2, 1 },
+		{ __LINE__, DBL_MAX * (1.0 + DBL_EPSILON), "INF", 2, 1 }, { __LINE__, -DBL_MAX * (1.0 + DBL_EPSILON), "-INF", 2, 1 },
+		{__LINE__, 0.0001, "100.0 u", 2, 1},	{__LINE__, -0.0001, "-100.0 u", 2, 1},
+		{__LINE__, 0.001, "1.0 m", 2, 1},		{__LINE__, -0.001, "-1.0 m", 2, 1},
+		{__LINE__, 100.0, "100000.0 m", 5, 1},	{__LINE__, -100.0, "-100000.0 m", 5, 1},
+		{__LINE__, 1000.0, "1000.0  ", 5, 1},	{__LINE__, -1000.0, "-1000.0  ", 5, 1},
+		{__LINE__, 1.19, "1.2  ", 2, 1},		{__LINE__, -1.19, "-1.2  ", 2, 1}, // simple
+		{__LINE__, 9.99, "10.0  ", 2, 1},		{__LINE__, -9.99, "-10.0  ", 2, 1},
+		{ __LINE__, 1.349, "1.3  ", 2, 1 },		{ __LINE__, -1.349, "-1.3  ", 2, 1 },
+		{ __LINE__, 1.35, "1.4  ", 2, 1 },		{ __LINE__, -1.35, "-1.4  ", 2, 1 }, // 0.5 rounding up.
+	};
+
+	assert(0 == errno || ERANGE == errno);
+	errno = 0; // Reset errno before running the tests
+
+	for (auto &test : tests_set)
+	{	assert(0 == errno);
+		const auto str = vi_tm::to_string(test.value_, test.significant_, test.decimal_);
+		EXPECT_EQ(str, test.expected_) << "Line of sample: " << test.line_;
+	}
 }
 
 TEST(vi_tmF2A, rounding)

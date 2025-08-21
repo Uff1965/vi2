@@ -103,7 +103,7 @@ endif()
 
 set_source_files_properties("timing.cpp"
 PROPERTIES
-    COMPILE_OPTIONS "$<$<CXX_COMPILER_ID:GNU>:-ffast-math>;$<$<CXX_COMPILER_ID:MSVC>:/fp:fast>"
+    COMPILE_OPTIONS "$<$<CXX_COMPILER_ID:GNU>:-Ofast -ffast-math>;$<$<CXX_COMPILER_ID:MSVC>:/fp:fast>"
     SKIP_PRECOMPILE_HEADERS ON
 )
 
@@ -142,14 +142,22 @@ if (WIN32)
             $<$<CONFIG:Debug>:   /MDd>
         )
     endif()
+
+    target_link_options(${PROJECT_NAME}
+    PRIVATE
+        $<$<CONFIG:Release>: /LTCG> # Link Time Code Generation for Release builds.
+        $<$<CONFIG:Debug>: /DEBUG> # Generate debug info for Debug builds.
+    )
 elseif (UNIX)
     target_compile_options(${PROJECT_NAME}
     PRIVATE
         -fvisibility=hidden # Hide symbols by default, only export those marked with VI_TM_EXPORTS.
         -Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
         -march=native # Switch on all instruction sets supported by the host CPU. Support FMA, AVX, AVX2, etc.
-        $<$<CONFIG:Release>: -O3 -s> # Optimize for speed, strip symbols.
+        $<$<CONFIG:Release>: -O3 -flto -s> # Optimize for speed, strip symbols.
     )
+
+    target_link_options(MyLib PUBLIC "$<$<CONFIG:Release>:-flto>")
 endif()
 
 #install:

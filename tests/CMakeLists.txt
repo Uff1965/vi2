@@ -75,4 +75,41 @@ endif()
 
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCE_FILES})
 
+if (WIN32)
+    target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+        WIN32_LEAN_AND_MEAN # Exclude rarely-used stuff from Windows headers.
+        NOMINMAX # WinAPI
+        $<$<CONFIG:Debug>: _DEBUG> # Microsoft debug RTL
+    )
+
+    target_compile_options(${PROJECT_NAME}
+    PRIVATE
+        /MP /nologo # Enable multi-processor compilation, disable logo.
+        /W4 # Set warning level 4.
+        /EHsc # Enable C++ exceptions.
+        /arch:AVX2 # Enable use AVX2 instruction set.
+        /Zi # Generate debug info
+        /Zc:__cplusplus # By default, Visual Studio always returns the value 199711L for the __cplusplus preprocessor macro.
+        $<$<CONFIG:Release>: /Ox /GL> # Ox include /O2 /Ob2 /Og /Oi /Ot /Oy /Gs /GF /Gy
+        $<$<CONFIG:Debug>: /Od /RTC1 /Zi /Ob0> # Enable runtime checks, debug info, no optimizations, disable function inlining.
+    )
+
+    target_link_options(${PROJECT_NAME}
+    PRIVATE
+        $<$<CONFIG:Release>: /LTCG> # Link Time Code Generation for Release builds.
+        $<$<CONFIG:Debug>: /DEBUG> # Generate debug info for Debug builds.
+    )
+elseif(UNIX)
+    target_compile_options(${PROJECT_NAME}
+    PRIVATE
+        -fvisibility=hidden # Hide symbols by default, only export those marked with VI_TM_EXPORTS.
+        -Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
+        -march=native # Switch on all instruction sets supported by the host CPU. Support FMA, AVX, AVX2, etc.
+        $<$<CONFIG:Release>: -O3 -flto -s> # Optimize for speed, strip symbols.
+    )
+
+    target_link_options(MyLib PUBLIC "$<$<CONFIG:Release>:-flto>")
+endif()
+
 set(BUILD_SHARED_LIBS ${_original_BUILD_SHARED_LIBS})
