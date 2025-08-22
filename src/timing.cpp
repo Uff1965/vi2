@@ -113,7 +113,16 @@ namespace
 	constexpr auto fp_ONE = static_cast<VI_TM_FP>(1);
 	constexpr auto fp_EPSILON = fp_limits_t::epsilon();
 
-	class alignas(std::hardware_constructive_interference_size) meterage_t
+#ifdef __cpp_lib_hardware_interference_size
+	using std::hardware_constructive_interference_size;
+#else
+	// Fallback for C++ versions that do not support std::hardware_constructive_interference_size.
+	// __cpp_lib_hardware_interference_size support was added in GCC v12.1 (Ubuntu 22.10 and Debian 12).
+	// Default cache line size for x86-64 architecture, typically 64 bytes.
+	constexpr std::size_t hardware_constructive_interference_size = 64;
+#endif
+
+	class alignas(hardware_constructive_interference_size) meterage_t
 	{	static_assert(std::is_standard_layout_v<vi_tmMeasurementStats_t>);
 		vi_tmMeasurementStats_t stats_;
 		VI_TM_THREADSAFE_ONLY(mutable adaptive_mutex_t mtx_);
