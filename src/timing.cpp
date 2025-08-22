@@ -113,6 +113,12 @@ namespace
 	constexpr auto fp_ONE = static_cast<VI_TM_FP>(1);
 	constexpr auto fp_EPSILON = fp_limits_t::epsilon();
 
+#ifdef __cpp_lib_hardware_interference_size
+	static_assert(__cpp_lib_hardware_interference_size >= 201703L);
+#else
+#	error "__cpp_lib_hardware_interference_size is not defined."
+#endif
+
 	class alignas(std::hardware_constructive_interference_size) meterage_t
 	{	static_assert(std::is_standard_layout_v<vi_tmMeasurementStats_t>);
 		vi_tmMeasurementStats_t stats_;
