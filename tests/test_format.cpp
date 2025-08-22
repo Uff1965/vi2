@@ -21,7 +21,7 @@ TEST(vi_tmF2A, common)
 	EXPECT_STREQ(buff.data(), "");
 	EXPECT_EQ(6, vi_tmF2A(nullptr, 1U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "");
-	EXPECT_EQ(6, vi_tmF2A(nullptr, buff.size() - 1U, 1.23456, 2, 1));
+	EXPECT_EQ(6, vi_tmF2A(nullptr, static_cast<unsigned>(buff.size()) - 1U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "");
 	EXPECT_EQ(6, vi_tmF2A(buff.data(), 0U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "");
@@ -29,7 +29,7 @@ TEST(vi_tmF2A, common)
 	EXPECT_STREQ(buff.data(), "");
 	EXPECT_EQ(6, vi_tmF2A(buff.data(), 6U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "1.2  ");
-	EXPECT_EQ(6, vi_tmF2A(buff.data(), buff.size() - 1U, 1.23456, 2, 1));
+	EXPECT_EQ(6, vi_tmF2A(buff.data(), static_cast<unsigned>(buff.size()) - 1U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "1.2  ");
 	errno = 0; // Reset errno for the next test
 }
@@ -52,7 +52,7 @@ void test(const item_t(&tests_set)[N])
 	{	assert(0 == errno);
 		std::string buff(32, '\0');
 		SCOPED_TRACE("Line of sample: "s + std::to_string(test.line_) + ". Expected: \'"s + test.expected_.data() + "\'; Actual: \'"s + buff.data() + "\'.");
-		const auto ret = vi_tmF2A(buff.data(), buff.size(), test.value_, test.significant_, test.decimal_);
+		const auto ret = vi_tmF2A(buff.data(), static_cast<unsigned>(buff.size()), test.value_, test.significant_, test.decimal_);
 		EXPECT_EQ(test.expected_.size() + 1, ret) << "Line of sample: " << test.line_;
 		EXPECT_STREQ(buff.data(), test.expected_.data()) << "Line of sample: " << test.line_;
 	}
