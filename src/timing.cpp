@@ -113,14 +113,16 @@ namespace
 	constexpr auto fp_ONE = static_cast<VI_TM_FP>(1);
 	constexpr auto fp_EPSILON = fp_limits_t::epsilon();
 
-#	pragma message( "__cplusplus = " VI_STRINGIZE( __cplusplus ))
 #ifdef __cpp_lib_hardware_interference_size
-#	pragma message( "__cpp_lib_hardware_interference_size = " VI_STRINGIZE( __cpp_lib_hardware_interference_size ))
+    using std::hardware_constructive_interference_size;
+    using std::hardware_destructive_interference_size;
 #else
-#	error "__cpp_lib_hardware_interference_size is not defined."
+    // 64 bytes on x86-64 ? L1_CACHE_BYTES ? L1_CACHE_SHIFT ? __cacheline_aligned
+    constexpr std::size_t hardware_constructive_interference_size = 64;
+    constexpr std::size_t hardware_destructive_interference_size = 64;
 #endif
 
-	class alignas(std::hardware_constructive_interference_size) meterage_t
+	class alignas(hardware_constructive_interference_size) meterage_t
 	{	static_assert(std::is_standard_layout_v<vi_tmMeasurementStats_t>);
 		vi_tmMeasurementStats_t stats_;
 		VI_TM_THREADSAFE_ONLY(mutable adaptive_mutex_t mtx_);
