@@ -171,7 +171,8 @@
 #define VI_STR_CONCAT_AUX( a, b ) a##b
 #define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
 #define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, VI_ID )
-#define VI_STRINGIZE(x) #x
+#define VI_STRINGIZE_AUX(x) #x
+#define VI_STRINGIZE(x) VI_STRINGIZE_AUX(x)
 // Auxiliary macros: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 typedef double VI_TM_FP; // Floating-point type used for timing calculations, typically double precision.
