@@ -113,6 +113,7 @@ namespace
 	constexpr auto fp_ONE = static_cast<VI_TM_FP>(1);
 	constexpr auto fp_EPSILON = fp_limits_t::epsilon();
 
+#	pragma message( "__cplusplus = " VI_STRINGIZE( __cplusplus ))
 #ifdef __cpp_lib_hardware_interference_size
 #	pragma message( "__cpp_lib_hardware_interference_size = " VI_STRINGIZE( __cpp_lib_hardware_interference_size ))
 #else
