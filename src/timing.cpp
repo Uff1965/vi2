@@ -114,12 +114,12 @@ namespace
 	constexpr auto fp_EPSILON = fp_limits_t::epsilon();
 
 #ifdef __cpp_lib_hardware_interference_size
-    using std::hardware_constructive_interference_size;
-    using std::hardware_destructive_interference_size;
+	using std::hardware_constructive_interference_size;
 #else
-    // 64 bytes on x86-64 ? L1_CACHE_BYTES ? L1_CACHE_SHIFT ? __cacheline_aligned
-    constexpr std::size_t hardware_constructive_interference_size = 64;
-    constexpr std::size_t hardware_destructive_interference_size = 64;
+	// Fallback for C++ versions that do not support std::hardware_constructive_interference_size.
+	// __cpp_lib_hardware_interference_size support was added in GCC v12.1 (Ubuntu 22.10 and Debian 12).
+	// Default cache line size for x86-64 architecture, typically 64 bytes.
+	constexpr std::size_t hardware_constructive_interference_size = 64;
 #endif
 
 	class alignas(hardware_constructive_interference_size) meterage_t
