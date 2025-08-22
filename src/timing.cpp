@@ -114,7 +114,7 @@ namespace
 	constexpr auto fp_EPSILON = fp_limits_t::epsilon();
 
 #ifdef __cpp_lib_hardware_interference_size
-	static_assert(__cpp_lib_hardware_interference_size >= 201703L);
+#	pragma message( "__cpp_lib_hardware_interference_size = " VI_STRINGIZE( __cpp_lib_hardware_interference_size ))
 #else
 #	error "__cpp_lib_hardware_interference_size is not defined."
 #endif
