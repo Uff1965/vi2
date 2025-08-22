@@ -1,7 +1,7 @@
 #include "test.h"
 
 #include <vi_timing/vi_timing.hpp>
-#include <vi_timing/vi_timing_aux.h>
+#include <vi_timing/vi_timing_aux.hpp>
 
 #include <gtest/gtest.h>
 

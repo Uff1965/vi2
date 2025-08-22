@@ -23,7 +23,6 @@
 #	pragma once
 
 #	include "vi_timing.h"
-#	include "vi_timing_aux.h"
 
 #ifdef VI_TM_DISABLE
 #	define VI_ID __LINE__
@@ -54,6 +53,8 @@
 
 namespace vi_tm
 {
+	// Initializes the global journal and sets up the report callback.
+#	define VI_TM_INIT(...) vi_tm::init_t VI_UNIC_ID(_vi_tm_) {__VA_ARGS__}
 	class init_t
 	{
 		std::string title_ = "Timing report:\n";
@@ -162,31 +163,11 @@ namespace vi_tm
 			}
 		}
 	}; // class probe_t
-
-	inline std::string to_string(double val, unsigned char sig = 2U, unsigned char dec = 1U)
-	{	std::string result;
-		result.resize(sig + (9 + 1 + 1), '\0'); // "-00S.Se-308"
-		const auto len = vi_tmF2A(result.data(), static_cast<unsigned char>(result.size()), val, sig, dec);
-		result.resize(len - 1);
-		return result;
-	}
 } // namespace vi_tm
 
-	// Initializes the global journal and sets up the report callback.
-#	define VI_TM_INIT(...) vi_tm::init_t VI_UNIC_ID(_vi_tm_) {__VA_ARGS__}
-
-// VI_[N]DEBUG_ONLY macro: Expands to its argument only in debug builds, otherwise expands to nothing.
-#	if VI_TM_DEBUG
-#		define VI_TM_NDEBUG_ONLY(t)
-#		define VI_TM_DEBUG_ONLY(t) t
-#	else
-#		define VI_TM_NDEBUG_ONLY(t) t
-#		define VI_TM_DEBUG_ONLY(t)
-#	endif
-
-	// The VI_TM macro creates a probe_t object with a unique identifier based on the line number.
-	// It stores the pointer to the named measurer entry in a static variable. Therefore, it cannot 
-	// be called with different measurement names.
+// The VI_TM macro creates a probe_t object with a unique identifier based on the line number.
+// It stores the pointer to the named measurer entry in a static variable. Therefore, it cannot 
+// be called with different measurement names.
 #	define VI_TM(...) \
 		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t { \
 			static const auto meas = vi_tmMeasurement(VI_TM_HGLOBAL, name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
@@ -199,17 +180,18 @@ namespace vi_tm
 			return vi_tm::probe_t{meas, cnt}; \
 		}(__VA_ARGS__)
 
-	// This macro is used to create a probe_t object with the function name as the measurement name.
+// This macro is used to create a probe_t object with the function name as the measurement name.
 #	define VI_TM_FUNC VI_TM(VI_FUNCNAME)
 
-	// Generates a report for the global journal.
+// Generates a report for the global journal.
 #	define VI_TM_REPORT(...) vi_tmReport(VI_TM_HGLOBAL, __VA_ARGS__)
 
-	// Resets the data of the specified measure entry in global journal. The handle remains valid.
+// Resets the data of the specified measure entry in global journal. The handle remains valid.
 #	define VI_TM_RESET(name) vi_tmMeasurementReset(vi_tmMeasurement(VI_TM_HGLOBAL, (name)))
 
-	// Full version string of the library (Example: "0.1.0.2506151515R static").
-#	define VI_TM_FULLVERSION static_cast<const char*>(vi_tmStaticInfo(VI_TM_INFO_VERSION))
+// Full version string of the library (Example: "0.1.0.2506151515R static").
+#	define VI_TM_FULLVERSION() (const char*)vi_tmStaticInfo(VI_TM_INFO_VERSION)
+
 #endif // #ifdef __cplusplus
 #endif // #ifdef VI_TM_DISABLE #else
 #endif // #ifndef VI_TIMING_VI_TIMING_H

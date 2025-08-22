@@ -1,4 +1,5 @@
 #include <vi_timing/vi_timing.hpp>
+#include <vi_timing/vi_timing_aux.hpp>
 
 #ifdef VI_HAS_GTEST
 #	include <gtest/gtest.h>
@@ -35,7 +36,7 @@ namespace
 
 		stream <<
 			"Information about the \'vi_timing\' library:\n"
-			"\tVersion: " << VI_TM_FULLVERSION << "\n"
+			"\tVersion: " << VI_TM_FULLVERSION() << "\n"
 			"\tGit describe: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DESCRIBE)) << "\n"
 			"\tGit commit date and time: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DATETIME)) << "\n";
 		endl(stream);

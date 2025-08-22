@@ -20,6 +20,7 @@ set(FILE_GROUP
     "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing.h"
     "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing.hpp"
     "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing_aux.h"
+    "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing_aux.hpp"
     "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing_proxy.hpp"
 )
 source_group("Interface files" FILES ${FILE_GROUP})

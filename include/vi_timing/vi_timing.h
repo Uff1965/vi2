@@ -165,6 +165,15 @@
 #	define VI_OPTIMIZE_OFF
 #	define VI_OPTIMIZE_ON
 #endif
+
+// VI_[N]DEBUG_ONLY macro: Expands to its argument only in debug builds, otherwise expands to nothing.
+#if VI_TM_DEBUG
+#	define VI_TM_NDEBUG_ONLY(t)
+#	define VI_TM_DEBUG_ONLY(t) t
+#else
+#	define VI_TM_NDEBUG_ONLY(t) t
+#	define VI_TM_DEBUG_ONLY(t)
+#endif
  
 // Stringification and token-pasting macros for unique identifier generation.
 #define VI_ID __LINE__ // An identifier based on the line number does not significantly reduce applicability compared to __COUNTER__, but it does facilitate debugging.
