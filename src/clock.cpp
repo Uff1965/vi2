@@ -55,19 +55,21 @@
 		return result;
 	}
 #elif __ARM_ARCH >= 8 // ARMv8 (RaspberryPi4)
+	// Mark this function as naked; fastcall is ignored on AArch64
+	__attribute__((naked, fastcall))
 	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
-	{	uint64_t result;
-		asm volatile
-		(	// too slow: "dmb ish\n\t" // Ensure all previous memory accesses are complete before reading the timer
-			"isb\n\t" // Ensure the instruction stream is synchronized
-			"mrs %0, cntvct_el0\n\t" // Read the current value of the system timer
-			"isb\n\t" // Ensure the instruction stream is synchronized again
-			: "=r"(result) // Output operand: result will hold the current timer value
-			: // No input operands
-			: "memory" // Clobber memory to ensure the compiler does not reorder instructions
+	{
+		__asm__ volatile(
+			// Synchronize the instruction stream
+			"isb\n\t"
+			// Read the current timer value into x0 (return register)
+			"mrs   x0, cntvct_el0\n\t"
+			// Synchronize the instruction stream again
+			"isb\n\t"
+			// Return (x0 already contains the result)
+			"ret\n"
 		);
-		return result;
-	}
+}
 #elif __ARM_ARCH >= 6 // ARMv6 (RaspberryPi1B+)
 #	include <cassert>
 #	include <cerrno>
