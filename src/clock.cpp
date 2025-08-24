@@ -54,22 +54,6 @@
 		_mm_lfence();
 		return result;
 	}
-#elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)) // GCC on Intel
-	VI_TM_TICK impl_vi_tmGetTicks(void) noexcept __attribute__((naked));
-
-	VI_TM_TICK impl_vi_tmGetTicks(void) noexcept
-	{
-		asm volatile(
-			"rdtscp\n\t"
-			"shl $32, %%rdx\n\t"
-			"or  %%rdx, %%rax\n\t"
-			"lfence\n\t"
-			"ret\n\t"
-			:
-			:
-			: "rax", "rdx", "rcx"
-		);
-	}
 #elif __ARM_ARCH >= 8 // ARMv8 (RaspberryPi4)
 	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
 	{	uint64_t result;
