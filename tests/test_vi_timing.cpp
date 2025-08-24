@@ -89,28 +89,25 @@ namespace
 
 int main(int argc, char** argv)
 {
-	const bool gtest_list_tests = std::any_of(argv, argv + argc, [](auto arg) { return "--gtest_list_tests"sv == arg; });
-
-	if (!gtest_list_tests)
+	::testing::InitGoogleTest(&argc, argv);
+	if (!::testing::GTEST_FLAG(list_tests))
 	{	header(std::cout);
 		vi_WarmUp();
 		metrics(std::cout);
 		endl(std::cout);
 	}
 
-    ::testing::InitGoogleTest(&argc, argv);
-	::benchmark::Initialize(&argc, argv);
-
-	if (::benchmark::ReportUnrecognizedArguments(argc, argv))
-	{	return 1;
-    }
-
 	if (auto ret = RUN_ALL_TESTS())
 	{	return ret;
 	}
 
-	if (!gtest_list_tests)
-	{	endl(std::cout);
+	if (!::testing::GTEST_FLAG(list_tests))
+	{	::benchmark::Initialize(&argc, argv);
+		if (::benchmark::ReportUnrecognizedArguments(argc, argv))
+		{	return 1;
+		}
+
+		endl(std::cout);
 		std::cout << "Benchmark:\n";
 		::benchmark::RunSpecifiedBenchmarks();
 	}
