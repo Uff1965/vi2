@@ -177,4 +177,4 @@
 #	error "You need to define function(s) for your OS and CPU"
 #endif
 
-extern "C" vi_tmGetTicks_t *vi_tmGetTicks = impl_vi_tmGetTicks;
+vi_tmGetTicks_t *vi_tmGetTicks = impl_vi_tmGetTicks;
