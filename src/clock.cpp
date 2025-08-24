@@ -49,16 +49,18 @@
 		return result;
 	}
 #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)) // GCC on Intel
-#	include <x86intrin.h>
- 	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
-	{	uint32_t _;
-		// The RDTSCP instruction is not a serializing instruction, but it does wait until all previous instructions have executed.
-		const uint64_t result = __rdtscp(&_);
-		// «If software requires RDTSCP to be executed prior to execution of any subsequent instruction
-		// (including any memory accesses), it can execute LFENCE immediately after RDTSCP» -
-		// Intel® 64 and IA-32 Architectures Software Developer’s Manual: Vol.2B. P.4-553.
-		_mm_lfence();
-		return result;
+	VI_TM_TICK impl_vi_tmGetTicks(void) noexcept __attribute__((naked))
+	{
+		asm volatile(
+			"rdtscp\n\t"
+			"shl $32, %%rdx\n\t"
+			"or  %%rdx, %%rax\n\t"
+			"lfence\n\t"
+			"ret\n\t"
+			:
+			:
+			: "rax", "rdx", "rcx"
+		);
 	}
 #elif __ARM_ARCH >= 8 // ARMv8 (RaspberryPi4)
 	__attribute__((naked, fastcall)) // Mark this function as naked; fastcall is ignored on AArch64
