@@ -83,23 +83,23 @@ namespace
 		return result;
 	}
 
-	template <auto F, typename... Args, std::size_t... Is>
-	constexpr auto multiple_invoke_aux(std::index_sequence<Is...>, Args&&... args)
-	{	using return_t = std::invoke_result_t<decltype(F), Args...>;
+	template <typename F, typename... Args, std::size_t... Is>
+	constexpr auto multiple_invoke_aux(std::index_sequence<Is...>, F *fn, Args&&... args)
+	{	using return_t = std::invoke_result_t<F, Args...>;
 		if constexpr (std::is_void_v<return_t>)
-		{	((static_cast<void>(Is), std::invoke(F, args...)), ...);
+		{	((static_cast<void>(Is), std::invoke(fn, args...)), ...);
 		}
 		else
-		{	volatile return_t results[sizeof...(Is)] {(static_cast<void>(Is), std::invoke(F, args...))...};
+		{	volatile return_t results[sizeof...(Is)] {(static_cast<void>(Is), std::invoke(fn, args...))...};
 			return results[sizeof...(Is) - 1U]; // Return the last result.
 		}
 	}
 
 	// Invoke a F function N times without overhead costs for organizing the cycle.
-	template <unsigned N, auto F, typename... Args>
-	constexpr auto multiple_invoke(Args&&... args)
+	template <unsigned N, typename F, typename... Args>
+	constexpr auto multiple_invoke(F *fn, Args&&... args)
 	{	static_assert(N > 0);
-		return multiple_invoke_aux<F, Args...>(std::make_index_sequence<N>{}, std::forward<Args>(args)...);
+		return multiple_invoke_aux<F, Args...>(std::make_index_sequence<N>{}, fn, std::forward<Args>(args)...);
 	}
 
 	template<typename It>
@@ -112,8 +112,8 @@ namespace
 		return (n % 2U) != 0 ? *mid : (*mid + *std::max_element(b, mid)) / 2U;
 	}
 
-	template <unsigned N, auto F, typename... Args>
-	double calc_duration_ticks(Args&&... args)
+	template <unsigned N, typename F, typename... Args>
+	double calc_duration_ticks(F *fn, Args&&... args)
 	{	constexpr auto REPEAT = 512U;
 		constexpr auto SIZE = 31U;
 
@@ -122,7 +122,7 @@ namespace
 		for (auto &d : diff)
 		{	const auto s = start_tick();
 			for (auto rpt = 0U; rpt < REPEAT; rpt++)
-			{	multiple_invoke<N, F, Args...>(args...);
+			{	multiple_invoke<N, F, Args...>(fn, args...);
 			}
 			const auto f = vi_tmGetTicks();
 			d = f - s;
@@ -133,12 +133,12 @@ namespace
 		return static_cast<double>(median(diff.begin() + CACHE_WARMUP, diff.end())) / static_cast<double>(REPEAT);
 	}
 
-	template <auto F, typename... Args>
-	double calc_diff_ticks(Args&&... args)
+	template <typename F, typename... Args>
+	double calc_diff_ticks(F *fn, Args&&... args)
 	{	constexpr auto BASE = 2U;
 		constexpr auto EXTRA = 5U;
-		const double full = calc_duration_ticks<BASE + EXTRA, F>(args...);
-		const double base = calc_duration_ticks<BASE, F>(args...);
+		const double full = calc_duration_ticks<BASE + EXTRA>(fn, args...);
+		const double base = calc_duration_ticks<BASE>(fn, args...);
 		return (full - base) / static_cast<double>(EXTRA);
 	}
 
@@ -191,14 +191,14 @@ namespace
 	}
 
 	auto meas_cost_calling_tick_function()
-	{	return calc_diff_ticks<vi_tmGetTicks>();
+	{	return calc_diff_ticks(vi_tmGetTicks);
 	}
 
 	auto meas_duration_with_caching()
 	{	double result{};
 		if (const auto journal = create_journal(); verify(!!journal))
 		{	if (const auto m = vi_tmMeasurement(journal.get(), SERVICE_NAME); verify(!!m))
-			{	result = calc_diff_ticks<body_measuring_with_caching>(m);
+			{	result = calc_diff_ticks(body_measuring_with_caching, m);
 			}
 		}
 		return result;
@@ -206,7 +206,7 @@ namespace
 
 	auto meas_duration()
 	{	auto journal = create_journal();
-		return (verify(!!journal)) ? calc_diff_ticks<body_duration>(journal.get(), SERVICE_NAME) : 0.0;
+		return (verify(!!journal)) ? calc_diff_ticks(body_duration, journal.get(), SERVICE_NAME) : 0.0;
 	}
 } // namespace
 

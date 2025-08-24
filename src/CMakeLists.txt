@@ -25,13 +25,12 @@ set(FILE_GROUP
 source_group("Interface files" FILES ${FILE_GROUP})
 list(APPEND SOURCE_FILES ${FILE_GROUP})
 
-set(FILE_GROUP
+list(APPEND SOURCE_FILES
     "misc.h"
     "version.h"
 )
-list(APPEND SOURCE_FILES ${FILE_GROUP})
 
-set(FILE_GROUP
+list(APPEND SOURCE_FILES
     "version.cpp"
     "clock.cpp"
     "misc.cpp"
@@ -39,7 +38,19 @@ set(FILE_GROUP
     "report.cpp"
     "timing.cpp"
 )
-list(APPEND SOURCE_FILES ${FILE_GROUP})
+
+#if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+#    enable_language(ASM_MASM)
+#    list(APPEND SOURCE_FILES "clock_msvc.asm")
+#    set_source_files_properties("clock_msvc.asm"
+#    PROPERTIES
+#        LANGUAGE ASM_MASM
+#        COMPILE_FLAGS ""
+#        COMPILE_OPTIONS ""
+#    )
+#endif()
+
+message(STATUS "CMAKE_ASM_MASMFLAGS: ${CMAKE_ASM_MASMFLAGS}")
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 

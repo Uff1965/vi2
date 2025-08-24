@@ -87,9 +87,15 @@
 #		define VI_TM_CALL
 #	endif
 
-#	ifdef VI_TM_EXPORTS
-#		define VI_TM_API __declspec(dllexport)
-#	elif VI_TM_SHARED
+#	if ! VI_TM_SHARED
+#		define VI_TM_API
+
+#		if VI_TM_DEBUG
+#			pragma comment(lib, "vi_timing_d.lib")
+#		else
+#			pragma comment(lib, "vi_timing.lib")
+#		endif
+#	elif ! defined(VI_TM_EXPORTS)
 #		define VI_TM_API __declspec(dllimport)
 
 #		if VI_TM_DEBUG
@@ -98,13 +104,7 @@
 #			pragma comment(lib, "vi_timing_s.lib")
 #		endif
 #	else
-#		define VI_TM_API
-
-#		if VI_TM_DEBUG
-#			pragma comment(lib, "vi_timing_d.lib")
-#		else
-#			pragma comment(lib, "vi_timing.lib")
-#		endif
+#		define VI_TM_API __declspec(dllexport)
 #	endif
 #elif defined (__GNUC__) || defined(__clang__)
 #	ifdef __i386__
@@ -175,6 +175,17 @@
 #define VI_STRINGIZE(x) VI_STRINGIZE_AUX(x)
 // Auxiliary macros: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+#ifdef __cplusplus
+extern "C" {
+#	define VI_NODISCARD [[nodiscard]]
+#	define VI_NOEXCEPT noexcept
+#	define VI_DEF(v) =(v)
+#else
+#	define VI_NODISCARD
+#	define VI_NOEXCEPT
+#	define VI_DEF(v)
+#endif
+
 typedef double VI_TM_FP; // Floating-point type used for timing calculations, typically double precision.
 typedef size_t VI_TM_SIZE; // Size type used for counting events, typically size_t.
 typedef uint64_t VI_TM_TICK; // !!! UNSIGNED !!! Represents a tick count (typically from a high-resolution timer).
@@ -183,6 +194,7 @@ typedef struct vi_tmMeasurement_t *VI_TM_HMEAS; // Opaque handle to a measuremen
 typedef struct vi_tmMeasurementsJournal_t *VI_TM_HJOUR; // Opaque handle to a measurements journal.
 typedef int (VI_TM_CALL *vi_tmMeasEnumCb_t)(VI_TM_HMEAS meas, void* ctx); // Callback type for enumerating measurements; returning non-zero aborts enumeration.
 typedef int (VI_SYS_CALL *vi_tmReportCb_t)(const char* str, void* ctx); // Callback type for report function. ABI must be compatible with std::fputs!
+typedef /*VI_NODISCARD*/ VI_TM_TICK (VI_TM_CALL vi_tmGetTicks_t)(void) VI_NOEXCEPT;
 
 // vi_tmMeasurementStats_t: Structure holding statistics for a timing measurement.
 // This structure is used to store the number of calls, total time spent, and other statistical data for a measurement.
@@ -261,23 +273,12 @@ typedef enum vi_tmReportFlags_e
 
 #define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global journal handle, used for global measurements.
 
-#ifdef __cplusplus
-extern "C" {
-#	define VI_NODISCARD [[nodiscard]]
-#	define VI_NOEXCEPT noexcept
-#	define VI_DEF(v) =(v)
-#else
-#	define VI_NODISCARD
-#	define VI_NOEXCEPT
-#	define VI_DEF(v)
-#endif
-
 // Main functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	/// <summary>
 	/// This function is used to measure time intervals with fine precision.
 	/// </summary>
 	/// <returns>A current tick count.</returns>
-	VI_TM_API VI_NODISCARD VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT;
+	extern VI_TM_API vi_tmGetTicks_t *vi_tmGetTicks;
 
 	/// <summary>
 	/// Initializes the global journal.

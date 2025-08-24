@@ -30,21 +30,27 @@
 #if VI_TM_USE_STDCLOCK
 	// Use standard clock
 #	include <time.h> // for timespec_get
-	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
+	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
 	{	struct timespec ts;
 		(void)timespec_get(&ts, TIME_UTC);
 		return 1000000000U * ts.tv_sec + ts.tv_nsec;
 	}
-#elif defined(_M_X64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__) // MSC or GCC on Intel
-#	if _MSC_VER >= 1800
-#		include <intrin.h>
-#		pragma intrinsic(__rdtscp, __rdtsc, _mm_lfence)
-#	elif defined(__GNUC__)
-#		include <x86intrin.h>
-#	else
-#		error "Undefined compiler"
-#	endif
- 	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
+#elif _MSC_VER >= 1800 && (defined(_M_X64) || defined(_M_IX86)) // MSC on Intel
+#	include <intrin.h>
+#	pragma intrinsic(__rdtscp, __rdtsc, _mm_lfence)
+ 	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
+	{	uint32_t _;
+		// The RDTSCP instruction is not a serializing instruction, but it does wait until all previous instructions have executed.
+		const uint64_t result = __rdtscp(&_);
+		// «If software requires RDTSCP to be executed prior to execution of any subsequent instruction
+		// (including any memory accesses), it can execute LFENCE immediately after RDTSCP» -
+		// Intel® 64 and IA-32 Architectures Software Developer’s Manual: Vol.2B. P.4-553.
+		_mm_lfence();
+		return result;
+	}
+#elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)) // GCC on Intel
+#	include <x86intrin.h>
+ 	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
 	{	uint32_t _;
 		// The RDTSCP instruction is not a serializing instruction, but it does wait until all previous instructions have executed.
 		const uint64_t result = __rdtscp(&_);
@@ -55,19 +61,13 @@
 		return result;
 	}
 #elif __ARM_ARCH >= 8 // ARMv8 (RaspberryPi4)
-	// Mark this function as naked; fastcall is ignored on AArch64
-	__attribute__((naked, fastcall))
-	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
-	{
-		__asm__ volatile(
-			// Synchronize the instruction stream
-			"isb\n\t"
-			// Read the current timer value into x0 (return register)
-			"mrs   x0, cntvct_el0\n\t"
-			// Synchronize the instruction stream again
-			"isb\n\t"
-			// Return (x0 already contains the result)
-			"ret\n"
+	__attribute__((naked, fastcall)) // Mark this function as naked; fastcall is ignored on AArch64
+	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
+	{	__asm__ volatile(
+			"isb\n\t"					// Synchronize the instruction stream
+			"mrs x0, cntvct_el0\n\t"	// Read the current timer value into x0 (return register)
+			"isb\n\t"					// Synchronize the instruction stream again
+			"ret\n"						// Return (x0 already contains the result)
 		);
 }
 #elif __ARM_ARCH >= 6 // ARMv6 (RaspberryPi1B+)
@@ -142,7 +142,7 @@
 		return result;
 	}
 
-	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
+	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
 	{	VI_TM_TICK result = 0;
 
 		static const volatile uint32_t *const timer_base = get_timer_base();
@@ -161,14 +161,14 @@
 	}
 #elif defined(_WIN32) // Windows
 #	include <Windows.h>
-	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
+	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
 	{	LARGE_INTEGER cnt;
 		QueryPerformanceCounter(&cnt);
 		return cnt.QuadPart;
 	}
 #elif defined(__linux__)
 #	include <time.h>
-	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
+	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
 	{	struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
 		return 1'000'000'000U * ts.tv_sec + ts.tv_nsec;
@@ -176,3 +176,5 @@
 #else
 #	error "You need to define function(s) for your OS and CPU"
 #endif
+
+extern "C" vi_tmGetTicks_t *vi_tmGetTicks = impl_vi_tmGetTicks;
