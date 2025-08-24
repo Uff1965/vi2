@@ -49,7 +49,9 @@
 		return result;
 	}
 #elif defined(__GNUC__) && (defined(__x86_64__) || defined(__i386__)) // GCC on Intel
-	VI_TM_TICK impl_vi_tmGetTicks(void) noexcept __attribute__((naked))
+	VI_TM_TICK impl_vi_tmGetTicks(void) noexcept __attribute__((naked));
+
+	VI_TM_TICK impl_vi_tmGetTicks(void) noexcept
 	{
 		asm volatile(
 			"rdtscp\n\t"
