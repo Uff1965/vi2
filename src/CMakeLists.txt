@@ -39,19 +39,6 @@ list(APPEND SOURCE_FILES
     "timing.cpp"
 )
 
-#if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-#    enable_language(ASM_MASM)
-#    list(APPEND SOURCE_FILES "clock_msvc.asm")
-#    set_source_files_properties("clock_msvc.asm"
-#    PROPERTIES
-#        LANGUAGE ASM_MASM
-#        COMPILE_FLAGS ""
-#        COMPILE_OPTIONS ""
-#    )
-#endif()
-
-message(STATUS "CMAKE_ASM_MASMFLAGS: ${CMAKE_ASM_MASMFLAGS}")
-
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 set_target_properties(${PROJECT_NAME}
@@ -136,7 +123,7 @@ if (WIN32)
         /arch:AVX2 # Enable use AVX2 instruction set.
         /Zi # Generate debug info
         /Zc:__cplusplus # By default, Visual Studio always returns the value 199711L for the __cplusplus preprocessor macro.
-        $<$<CONFIG:Release>: /Ox /GL> # Ox include /O2 /Ob2 /Og /Oi /Ot /Oy /Gs /GF /Gy
+        $<$<CONFIG:Release>: /O2 /GL> # /O2 include /Og /Oi /Ot /Oy /Ob2 /GF /Gy
         $<$<CONFIG:Debug>: /Od /RTC1 /Zi /Ob0> # Enable runtime checks, debug info, no optimizations, disable function inlining.
     )
 

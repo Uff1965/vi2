@@ -35,9 +35,15 @@
 		(void)timespec_get(&ts, TIME_UTC);
 		return 1000000000U * ts.tv_sec + ts.tv_nsec;
 	}
-#elif _MSC_VER >= 1800 && (defined(_M_X64) || defined(_M_IX86)) // MSC on Intel
-#	include <intrin.h>
-#	pragma intrinsic(__rdtscp, __rdtsc, _mm_lfence)
+#elif defined(_M_X64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__) // MSC or GCC on Intel
+#	if _MSC_VER >= 1800
+#		include <intrin.h>
+#		pragma intrinsic(__rdtscp, __rdtsc, _mm_lfence)
+#	elif defined(__GNUC__)
+#		include <x86intrin.h>
+#	else
+#		error "Undefined compiler"
+#	endif
  	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
 	{	uint32_t _;
 		// The RDTSCP instruction is not a serializing instruction, but it does wait until all previous instructions have executed.
@@ -65,15 +71,19 @@
 		);
 	}
 #elif __ARM_ARCH >= 8 // ARMv8 (RaspberryPi4)
-	__attribute__((naked, fastcall)) // Mark this function as naked; fastcall is ignored on AArch64
 	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
-	{	__asm__ volatile(
-			"isb\n\t"					// Synchronize the instruction stream
-			"mrs x0, cntvct_el0\n\t"	// Read the current timer value into x0 (return register)
-			"isb\n\t"					// Synchronize the instruction stream again
-			"ret\n"						// Return (x0 already contains the result)
+	{	uint64_t result;
+		asm volatile
+		(	// too slow: "dmb ish\n\t" // Ensure all previous memory accesses are complete before reading the timer
+			"isb\n\t" // Ensure the instruction stream is synchronized
+			"mrs %0, cntvct_el0\n\t" // Read the current value of the system timer
+			"isb\n\t" // Ensure the instruction stream is synchronized again
+			: "=r"(result) // Output operand: result will hold the current timer value
+			: // No input operands
+			: "memory" // Clobber memory to ensure the compiler does not reorder instructions
 		);
-}
+		return result;
+	}
 #elif __ARM_ARCH >= 6 // ARMv6 (RaspberryPi1B+)
 #	include <cassert>
 #	include <cerrno>
