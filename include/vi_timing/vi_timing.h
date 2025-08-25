@@ -354,10 +354,7 @@ typedef enum vi_tmReportFlags_e
     /// <param name="m">A handle to the measurement object to be updated.</param>
     /// <param name="src">Pointer to the source measurement statistics to merge.</param>
     /// <returns>This function does not return a value.</returns>
-    VI_TM_API void VI_TM_CALL vi_tmMeasurementMerge(
-		VI_TM_HMEAS VI_RESTRICT m,
-		const vi_tmMeasurementStats_t* VI_RESTRICT src
-	) VI_NOEXCEPT;
+    VI_TM_API void VI_TM_CALL vi_tmMeasurementMerge(VI_TM_HMEAS m, const vi_tmMeasurementStats_t* src) VI_NOEXCEPT;
 
     /// <summary>
     /// Retrieves measurement information from a VI_TM_HMEAS object, including its name and statistics.
@@ -366,12 +363,8 @@ typedef enum vi_tmReportFlags_e
     /// <param name="name">Pointer to a string pointer that will receive the name of the measurement. Can be nullptr if not needed.</param>
     /// <param name="dst">Pointer to a vi_tmMeasurementStats_t structure that will receive the measurement statistics. Can be nullptr if not needed.</param>
     /// <returns>This function does not return a value.</returns>
-	VI_TM_API void VI_TM_CALL vi_tmMeasurementGet(
-		VI_TM_HMEAS VI_RESTRICT m,
-		const char **name,
-		vi_tmMeasurementStats_t* VI_RESTRICT dst
-	);
-	
+	VI_TM_API void VI_TM_CALL vi_tmMeasurementGet(VI_TM_HMEAS m, const char **name, vi_tmMeasurementStats_t *dst);
+
 	/// <summary>
 	/// Resets the measurement state for the specified measurement handle. The handle remains valid.
 	/// </summary>

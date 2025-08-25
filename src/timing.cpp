@@ -428,7 +428,7 @@ void VI_TM_CALL vi_tmMeasurementStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TD
 }
 
 void VI_TM_CALL vi_tmMeasurementStatsMerge(vi_tmMeasurementStats_t* VI_RESTRICT dst, const vi_tmMeasurementStats_t* VI_RESTRICT src) noexcept
-{	if(!verify(nullptr != dst) || !verify(nullptr != src) || dst == src || 0U == src->calls_)
+{	if(!verify(!!dst) || !verify(!!src) || dst == src || 0U == src->calls_)
 	{	return;
 	}
 
@@ -504,11 +504,11 @@ void VI_TM_CALL vi_tmMeasurementAdd(VI_TM_HMEAS meas, VI_TM_TDIFF tick_diff, VI_
 {	if (verify(meas)) { meas->second.add(tick_diff, cnt); }
 }
 
-void VI_TM_CALL vi_tmMeasurementMerge(VI_TM_HMEAS VI_RESTRICT meas, const vi_tmMeasurementStats_t * VI_RESTRICT src) noexcept
+void VI_TM_CALL vi_tmMeasurementMerge(VI_TM_HMEAS meas, const vi_tmMeasurementStats_t *src) noexcept
 {	if (verify(meas)) { meas->second.merge(*src); }
 }
 
-void VI_TM_CALL vi_tmMeasurementGet(VI_TM_HMEAS VI_RESTRICT meas, const char* *name, vi_tmMeasurementStats_t * VI_RESTRICT data)
+void VI_TM_CALL vi_tmMeasurementGet(VI_TM_HMEAS meas, const char* *name, vi_tmMeasurementStats_t *data)
 {	if (verify(meas))
 	{	if (name) { *name = meas->first.c_str(); }
 		if (data) { *data = meas->second.get(); }
