@@ -168,7 +168,12 @@
  
 #ifdef __cplusplus
 extern "C" {
-#	define VI_NODISCARD [[nodiscard]]
+#	if __cplusplus >= 201703L && __has_cpp_attribute(nodiscard)
+#		define VI_NODISCARD [[nodiscard]]
+#	else
+#		error "C++17 or later is required."
+#		define VI_NODISCARD
+#endif
 #	define VI_NOEXCEPT noexcept
 #	define VI_DEF(v) =(v)
 #else
