@@ -1,3 +1,6 @@
+// This is an independent project of an individual developer. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 #include "benchmark.h"
 
 #include <vi_timing/vi_timing.hpp>
@@ -9,7 +12,7 @@
 VI_TM_TICK stdclock(void) noexcept
 {	timespec ts;
 	(void)std::timespec_get(&ts, TIME_UTC);
-	return 1'000'000'000U * ts.tv_sec + ts.tv_nsec;
+	return 1'000'000'000U * ts.tv_sec + ts.tv_nsec; //-V104
 }
 
 static void BM_timespec_get(benchmark::State& state) {

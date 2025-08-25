@@ -420,13 +420,13 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 		}
 
 		case VI_TM_INFO_GIT_DESCRIBE: // Returns a pointer to the Git describe string (e.g., "v0.10.0-3-g96b37d4-dirty").
-			return VI_TM_GIT_DESCRIBE.data();
+			return misc::VI_TM_GIT_DESCRIBE.data();
 
 		case VI_TM_INFO_GIT_COMMIT: // Returns a pointer to the Git commit hash (e.g., "96b37d49d235140e86f6f6c246bc7f166ab773aa").
-			return VI_TM_GIT_COMMIT.data();
+			return misc::VI_TM_GIT_COMMIT.data();
 
 		case VI_TM_INFO_GIT_DATETIME: // Returns a pointer to the Git commit date and time string (e.g., "2025-07-26 18:17:04 +0300").
-			return VI_TM_GIT_DATETIME.data();
+			return misc::VI_TM_GIT_DATETIME.data();
 
 		case VI_TM_INFO_RESOLUTION: // Returns a pointer to the clock resolution in ticks (double).
 		{	static const double resolution = properties_t::props().clock_resolution_ticks_;
@@ -485,13 +485,13 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 	}
 } // vi_tmStaticInfo(vi_tmInfo_e info)
 
-unsigned VI_TM_CALL vi_tmF2A(char *buff, unsigned sz, double val, unsigned char sig, unsigned char dec)
+VI_TM_SIZE VI_TM_CALL vi_tmF2A(char *buff, VI_TM_SIZE sz, VI_TM_FP val, unsigned char sig, unsigned char dec)
 {	auto str = misc::to_string(val, sig, dec);
-	const unsigned result = static_cast<unsigned>(str.size()) + 1U;
+	const auto result = str.size() + 1U;
 	
 	if (nullptr != buff && 0U != sz)
 	{	if (result > sz)
-		{	str.resize(static_cast<std::size_t>(sz - 1U)); // Resize to fit the buffer, leaving space for null-termination.
+		{	str.resize(sz - 1U); // Resize to fit the buffer, leaving space for null-termination.
 		}
 
 		std::memcpy(buff, str.data(), str.size() + 1);

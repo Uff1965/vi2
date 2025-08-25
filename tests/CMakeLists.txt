@@ -17,6 +17,9 @@ set(_original_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS OFF) # Disable shared libraries for tests to ensure they are built as static libraries.
 
 set(SOURCE_FILES)
+set(FILE_GROUP "tests.pvsconfig")
+source_group("Extras" FILES ${FILE_GROUP})
+list(APPEND SOURCE_FILES ${FILE_GROUP})
 
 if (VI_TM_ENABLE_TESTS)
     include(cmake/gtest.cmake)

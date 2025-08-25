@@ -377,9 +377,8 @@ void VI_TM_CALL vi_tmMeasurementStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TD
 	assert(VI_EXIT_SUCCESS == vi_tmMeasurementStatsIsValid(meas));
 
 #if VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
-	const auto f_dur = static_cast<VI_TM_FP>(dur);
 	const auto f_cnt = static_cast<VI_TM_FP>(cnt);
-	const auto f_val = f_dur / f_cnt;
+	const auto f_val = static_cast<VI_TM_FP>(dur) / f_cnt;
 #endif
 
 	if (0U == meas->calls_++)

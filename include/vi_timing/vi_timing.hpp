@@ -185,8 +185,8 @@ namespace vi_tm
 	inline std::string to_string(double val, unsigned char sig = 2U, unsigned char dec = 1U)
 	{	std::string result;
 		result.resize(sig + (9 + 1 + 1), '\0'); // "-00S.Se-308"
-		const auto len = vi_tmF2A(result.data(), static_cast<unsigned char>(result.size()), val, sig, dec);
-		result.resize(len - 1);
+		const auto len = vi_tmF2A(result.data(), result.size(), val, sig, dec);
+		result.resize(len - 1U);
 		return result;
 	}
 } // namespace vi_tm

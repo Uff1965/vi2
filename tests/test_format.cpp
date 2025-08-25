@@ -1,3 +1,6 @@
+// This is an independent project of an individual developer. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 #include "test.h"
 
 #include <vi_timing/vi_timing.hpp>
@@ -16,27 +19,26 @@ using namespace std::literals;
 
 TEST(vi_tmF2A, common)
 {	assert(0 == errno);
-	std::string buff(32, '\0');
-	EXPECT_EQ(6, vi_tmF2A(nullptr, 0U, 1.23456, 2, 1));
+	std::string buff(32, '\0'); //-V112
+	EXPECT_EQ(6U, vi_tmF2A(nullptr, 0U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "");
-	EXPECT_EQ(6, vi_tmF2A(nullptr, 1U, 1.23456, 2, 1));
+	EXPECT_EQ(6U, vi_tmF2A(nullptr, 1U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "");
-	EXPECT_EQ(6, vi_tmF2A(nullptr, static_cast<unsigned>(buff.size()) - 1U, 1.23456, 2, 1));
+	EXPECT_EQ(6U, vi_tmF2A(nullptr, buff.size() - 1U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "");
-	EXPECT_EQ(6, vi_tmF2A(buff.data(), 0U, 1.23456, 2, 1));
+	EXPECT_EQ(6U, vi_tmF2A(buff.data(), 0U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "");
-	EXPECT_EQ(6, vi_tmF2A(buff.data(), 1U, 1.23456, 2, 1));
+	EXPECT_EQ(6U, vi_tmF2A(buff.data(), 1U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "");
-	EXPECT_EQ(6, vi_tmF2A(buff.data(), 6U, 1.23456, 2, 1));
+	EXPECT_EQ(6U, vi_tmF2A(buff.data(), 6U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "1.2  ");
-	EXPECT_EQ(6, vi_tmF2A(buff.data(), static_cast<unsigned>(buff.size()) - 1U, 1.23456, 2, 1));
+	EXPECT_EQ(6U, vi_tmF2A(buff.data(), buff.size() - 1U, 1.23456, 2, 1));
 	EXPECT_STREQ(buff.data(), "1.2  ");
 	errno = 0; // Reset errno for the next test
 }
 
 struct item_t
-{
-	int line_;
+{	int line_;
 	double value_;
 	std::string_view expected_;
 	unsigned char significant_;
@@ -50,9 +52,9 @@ void test(const item_t(&tests_set)[N])
 
 	for (auto &test : tests_set)
 	{	assert(0 == errno);
-		std::string buff(32, '\0');
+		std::string buff(32, '\0'); //-V112
 		SCOPED_TRACE("Line of sample: "s + std::to_string(test.line_) + ". Expected: \'"s + test.expected_.data() + "\'; Actual: \'"s + buff.data() + "\'.");
-		const auto ret = vi_tmF2A(buff.data(), static_cast<unsigned>(buff.size()), test.value_, test.significant_, test.decimal_);
+		const auto ret = vi_tmF2A(buff.data(), buff.size(), test.value_, test.significant_, test.decimal_);
 		EXPECT_EQ(test.expected_.size() + 1, ret) << "Line of sample: " << test.line_;
 		EXPECT_STREQ(buff.data(), test.expected_.data()) << "Line of sample: " << test.line_;
 	}
