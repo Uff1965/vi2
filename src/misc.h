@@ -13,12 +13,6 @@
 
 #define verify(v) [](bool b) constexpr noexcept { assert(b); return b; }(static_cast<bool>(v)) // Define for displaying the __FILE__ and __LINE__ during debugging.
 
-#if _MSC_VER
-#	define MS_WARN(s) _Pragma(VI_STRINGIZE(warning(s)))
-#else
-#	define MS_WARN(s)
-#endif
-
 namespace misc
 {
 #ifdef __cpp_lib_source_location

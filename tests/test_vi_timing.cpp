@@ -18,13 +18,9 @@
 using namespace std::literals;
 namespace ch = std::chrono;
 
-#if _MSC_VER
-#	define MS_WARN(s) _Pragma(VI_STRINGIZE(warning(s)))
-#else
-#	define MS_WARN(s)
-#endif
-
 VI_TM_INIT(vi_tmReportCb_t{});
+//VI_TM_INIT(+[]() noexcept ->VI_TM_TICK { return clock(); });
+//VI_TM_INIT(+[]() noexcept ->VI_TM_TICK { timespec ts; (void)timespec_get(&ts, TIME_UTC); return 1'000'000'000U * ts.tv_sec + ts.tv_nsec; });
 
 namespace
 {

@@ -134,7 +134,6 @@ namespace
 		void merge(const vi_tmMeasurementStats_t & VI_RESTRICT src) VI_RESTRICT noexcept;
 		vi_tmMeasurementStats_t get() const noexcept;
 		void reset() noexcept;
-MS_WARN(suppress: 4324)
 	};
 
 	using storage_t = std::unordered_map<std::string, meterage_t>;
@@ -171,7 +170,7 @@ public:
 	int for_each_measurement(const F &fn); // Calls the function fn for each measurement in the journal, while this function returns 0. Returns the return code of the function fn if it returned a nonzero value, or 0 if all measurements were processed.
 	void clear();
 	// Global journal management functions.
-	static int global_init(); // Initialize the global journal.
+	static int global_init(vi_tmGetTicks_t *fn); // Initialize the global journal.
 	static int global_finit();
 	static auto& from_handle(VI_TM_HJOUR journal); // Get the journal from the handle or return the global journal.
 	bool used() const noexcept { return !unused_; } // Check if the journal has been used.
@@ -255,12 +254,19 @@ void vi_tmMeasurementsJournal_t::clear()
 	storage_.clear();
 }
 
-int vi_tmMeasurementsJournal_t::global_init()
+int vi_tmMeasurementsJournal_t::global_init(vi_tmGetTicks_t *fn)
 {	std::lock_guard lg{global_mtx_};
 
-	if (global_initialized_++ == 0U)
+	if (0U == global_initialized_++)
 	{	auto& global = from_handle(VI_TM_HGLOBAL);
 		(void)verify(VI_EXIT_SUCCESS == global.init());
+		if (fn)
+		{	assert(!!vi_tmGetTicksPtr);
+			vi_tmGetTicksPtr = fn;
+		}
+	}
+	else if(!verify(!fn))
+	{	return VI_EXIT_FAILURE;
 	}
 	return VI_EXIT_SUCCESS;
 }
@@ -268,9 +274,11 @@ int vi_tmMeasurementsJournal_t::global_init()
 int vi_tmMeasurementsJournal_t::global_finit()
 {	std::lock_guard lg{global_mtx_};
 
-	if (verify(0U != global_initialized_) && 0U == --global_initialized_)
+	if (verify(0U != global_initialized_) && (0U == --global_initialized_))
 	{	auto& global = from_handle(VI_TM_HGLOBAL);
-		(void)verify(VI_EXIT_SUCCESS == global.finit());
+		if (!verify(VI_EXIT_SUCCESS == global.finit()))
+		{	return VI_EXIT_FAILURE;
+		}
 	}
 	return VI_EXIT_SUCCESS;
 }
@@ -453,12 +461,12 @@ void VI_TM_CALL vi_tmMeasurementStatsMerge(vi_tmMeasurementStats_t* VI_RESTRICT 
 	assert(VI_EXIT_SUCCESS == vi_tmMeasurementStatsIsValid(dst));
 }
 
-int VI_TM_CALL vi_tmInit()
-{	return vi_tmMeasurementsJournal_t::global_init();
+int VI_TM_CALL vi_tmInit(vi_tmGetTicks_t *fn)
+{	return vi_tmMeasurementsJournal_t::global_init(fn);
 }
 
 void VI_TM_CALL vi_tmFinit(void)
-{	vi_tmMeasurementsJournal_t::global_finit();
+{	verify(VI_EXIT_SUCCESS == vi_tmMeasurementsJournal_t::global_finit());
 }
 
 VI_TM_HJOUR VI_TM_CALL vi_tmJournalCreate(unsigned flags, void *reserved)

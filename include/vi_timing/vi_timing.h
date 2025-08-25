@@ -166,15 +166,6 @@
 #	define VI_OPTIMIZE_ON
 #endif
  
-// Stringification and token-pasting macros for unique identifier generation.
-#define VI_ID __LINE__ // An identifier based on the line number does not significantly reduce applicability compared to __COUNTER__, but it does facilitate debugging.
-#define VI_STR_CONCAT_AUX( a, b ) a##b
-#define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
-#define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, VI_ID )
-#define VI_STRINGIZE_AUX(x) #x
-#define VI_STRINGIZE(x) VI_STRINGIZE_AUX(x)
-// Auxiliary macros: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
 #ifdef __cplusplus
 extern "C" {
 #	define VI_NODISCARD [[nodiscard]]
@@ -274,17 +265,21 @@ typedef enum vi_tmReportFlags_e
 #define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global journal handle, used for global measurements.
 
 // Main functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+	extern VI_TM_API vi_tmGetTicks_t *vi_tmGetTicksPtr;
+
 	/// <summary>
 	/// This function is used to measure time intervals with fine precision.
 	/// </summary>
 	/// <returns>A current tick count.</returns>
-	extern VI_TM_API vi_tmGetTicks_t *vi_tmGetTicks;
+	inline VI_NODISCARD VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT
+	{	return vi_tmGetTicksPtr();
+	}
 
 	/// <summary>
 	/// Initializes the global journal.
 	/// </summary>
 	/// <returns>If successful, returns 0.</returns>
-	VI_TM_API int VI_TM_CALL vi_tmInit(void);
+	VI_TM_API int VI_TM_CALL vi_tmInit(vi_tmGetTicks_t *fn VI_DEF(NULL));
 
 	/// <summary>
 	/// Deinitializes the global journal.

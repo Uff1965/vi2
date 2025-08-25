@@ -31,9 +31,9 @@
 	// Use standard clock
 #	include <time.h> // for timespec_get
 	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
-	{	struct timespec ts;
+	{	timespec ts;
 		(void)timespec_get(&ts, TIME_UTC);
-		return 1000000000U * ts.tv_sec + ts.tv_nsec;
+		return 1'000'000'000U * ts.tv_sec + ts.tv_nsec;
 	}
 #elif defined(_M_X64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__) // MSC or GCC on Intel
 #	if _MSC_VER >= 1800
@@ -175,4 +175,4 @@
 #	error "You need to define function(s) for your OS and CPU"
 #endif
 
-vi_tmGetTicks_t *vi_tmGetTicks = impl_vi_tmGetTicks;
+vi_tmGetTicks_t *vi_tmGetTicksPtr = impl_vi_tmGetTicks;

@@ -25,15 +25,15 @@
 #	include "vi_timing.h"
 #	include "vi_timing_aux.h"
 
-#ifdef VI_TM_DISABLE
-#	define VI_ID __LINE__
-#	define VI_STR_CONCAT_AUX( a, b ) a##b
-#	define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
-#	define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, VI_ID )
-#	define VI_STRINGIZE(x) #x
+#define VI_ID __LINE__
+#define VI_STR_CONCAT_AUX( a, b ) a##b
+#define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
+#define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, VI_ID )
+#define VI_STRINGIZE(x) #x
 
+#ifdef VI_TM_DISABLE
 	// Fallback macros for timing functions
-#	define VI_TM_INIT(...) static const int VI_UNIC_ID(vi_tm__) = 0
+#	define VI_TM_INIT(...) static const int vi_tm__UNIC_ID = 0
 #	define VI_TM(...) const int VI_UNIC_ID(vi_tm__) = 0
 #	define VI_TM_FUNC ((void)0)
 #	define VI_TM_REPORT(...) ((void)0)
@@ -60,25 +60,38 @@ namespace vi_tm
 		vi_tmReportCb_t callback_function_ = vi_tmReportCb;
 		void* callback_data_ = nullptr;
 		unsigned flags_ = vi_tmShowDuration | vi_tmShowResolution | vi_tmSortBySpeed;
+		vi_tmGetTicks_t *vi_tmGetTicks_ = nullptr;
 
 		init_t(const init_t &) = delete;
 		init_t& operator=(const init_t &) = delete;
 
 		template<typename... Args>
-		void init(Args&&... args)
-		{	(init_aux(std::forward<Args>(args)), ...);
-			[[maybe_unused]] const auto result = vi_tmInit();
-			assert(0 == result);
+		int init(Args&&... args)
+		{	int result = 0;
+			((result |= init_aux(std::forward<Args>(args))), ...);
+			result |= vi_tmInit(vi_tmGetTicks_);
+			return result;
 		}
 
 		template<typename T>
-		void init_aux(T &&v)
-		{	if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportFlags_e>)
+		int init_aux(T &&v)
+		{	int result = 0;
+			if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportFlags_e>)
 			{	flags_ |= v;
 			}
 			else if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportCb_t>)
-			{	assert(vi_tmReportCb == callback_function_);
+			{	if(vi_tmReportCb != callback_function_)
+				{	assert(false); // Callback function already set.
+					result = __LINE__;
+				}
 				callback_function_ = v;
+			}
+			else if constexpr (std::is_same_v<std::decay_t<T>, vi_tmGetTicks_t*>)
+			{	if(vi_tmGetTicks_)
+				{	assert(false); // Tick function already set.
+					result = __LINE__;
+				}
+				vi_tmGetTicks_ = v;
 			}
 			else if constexpr (std::is_same_v<T, decltype(title_)>)
 			{	title_ = std::forward<T>(v);
@@ -87,15 +100,21 @@ namespace vi_tm
 			{	title_ = v;
 			}
 			else if constexpr (std::is_pointer_v<T>)
-			{	assert(static_cast<void*>(stdout) == callback_data_);
+			{	if(static_cast<void*>(stdout) != callback_data_)
+				{	assert(false); // Callback data already set.
+					result = __LINE__;
+				}
 				callback_data_ = v;
 			}
 			else
 			{	assert(false); // Unknown parameter type.
+				result = __LINE__;
 			}
+
+			return result;
 		}
 	public:
-		init_t() { init(); } // Default flags and other settings.
+		init_t() { auto ret = init(); (void)ret; assert(0 == ret); } // Default flags and other settings.
 		template<typename... Args> explicit init_t(Args&&... args)
 			: flags_{0U}
 		{	init(std::forward<Args>(args)...);
@@ -173,7 +192,7 @@ namespace vi_tm
 } // namespace vi_tm
 
 	// Initializes the global journal and sets up the report callback.
-#	define VI_TM_INIT(...) vi_tm::init_t VI_UNIC_ID(_vi_tm_) {__VA_ARGS__}
+#	define VI_TM_INIT(...) vi_tm::init_t vi_tm__UNIC_ID {__VA_ARGS__}
 
 // VI_[N]DEBUG_ONLY macro: Expands to its argument only in debug builds, otherwise expands to nothing.
 #	if VI_TM_DEBUG
