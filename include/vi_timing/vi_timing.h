@@ -79,6 +79,7 @@
 
 // Define: VI_SYS_CALL, VI_TM_CALL and VI_TM_API vvvvvvvvvvvvvv
 #if defined(_MSC_VER)
+
 #	ifdef _M_IX86 // x86 architecture
 #		define VI_SYS_CALL __cdecl
 #		define VI_TM_CALL __fastcall
@@ -89,23 +90,12 @@
 
 #	if ! VI_TM_SHARED
 #		define VI_TM_API
-
-#		if VI_TM_DEBUG
-#			pragma comment(lib, "vi_timing_d.lib")
-#		else
-#			pragma comment(lib, "vi_timing.lib")
-#		endif
 #	elif ! defined(VI_TM_EXPORTS)
 #		define VI_TM_API __declspec(dllimport)
-
-#		if VI_TM_DEBUG
-#			pragma comment(lib, "vi_timing_sd.lib")
-#		else
-#			pragma comment(lib, "vi_timing_s.lib")
-#		endif
 #	else
 #		define VI_TM_API __declspec(dllexport)
 #	endif
+
 #elif defined (__GNUC__) || defined(__clang__)
 #	ifdef __i386__
 #		define VI_SYS_CALL __attribute__((cdecl))
@@ -448,5 +438,48 @@ typedef enum vi_tmReportFlags_e
 
 #		include "vi_timing.hpp"
 #	endif
+
+#if defined(_MSC_VER) && !VI_TM_EXPORTS
+// Filename suffix
+#	if VI_TM_DEBUG || VI_TM_SHARED || VI_TM_THREADSAFE || VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
+#		define VI_S_UNDERSCORE "_"
+#	else
+#		define VI_S_UNDERSCORE
+#	endif
+#	if VI_TM_DEBUG
+#		define VI_S_DEBUG "d"
+#	else
+#		define VI_S_DEBUG
+#	endif
+#	if VI_TM_SHARED
+#		define VI_S_SHARED "s"
+#	else
+#		define VI_S_SHARED
+#	endif
+#	if VI_TM_THREADSAFE
+#		define VI_S_THREADSAFE "t"
+#	else
+#		define VI_S_THREADSAFE
+#	endif
+#	if VI_TM_STAT_USE_RAW
+#		define VI_S_STAT_USE_RAW "r"
+#	else
+#		define VI_S_STAT_USE_RAW
+#	endif
+#	if VI_TM_STAT_USE_FILTER
+#		define VI_S_STAT_USE_FILTER "f"
+#	else
+#		define VI_S_STAT_USE_FILTER
+#	endif
+#	if VI_TM_STAT_USE_MINMAX
+#		define VI_S_STAT_USE_MINMAX "m"
+#	else
+#		define VI_S_STAT_USE_MINMAX
+#	endif
+
+#	define VI_SUFFIX VI_S_UNDERSCORE VI_S_STAT_USE_RAW VI_S_STAT_USE_FILTER VI_S_STAT_USE_MINMAX VI_S_THREADSAFE VI_S_SHARED VI_S_DEBUG
+
+#	pragma comment(lib, "vi_timing" VI_SUFFIX ".lib")
+#endif // defined(_MSC_VER)
 
 #endif // #ifndef VI_TIMING_VI_TIMING_C_H

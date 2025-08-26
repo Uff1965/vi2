@@ -22,6 +22,13 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+if(BUILD_SHARED_LIBS)
+    set(VI_TM_SHARED 1)
+endif()
+
+include("cmake/make_suffix.cmake")
+make_name_suffix(VI_TM_NAME_SUFFIX)
+
 include("cmake/GenerateVersion.cmake") # Include the script to generate version information.
 get_version_from_git(VI_GIT)
 message(STATUS "VI_GIT_DESCRIBE: ${VI_GIT_DESCRIBE}")
