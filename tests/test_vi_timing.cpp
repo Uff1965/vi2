@@ -21,8 +21,8 @@
 using namespace std::literals;
 namespace ch = std::chrono;
 
-VI_TM_INIT();
-//VI_TM_INIT(vi_tmReportCb_t{});
+//VI_TM_INIT();
+VI_TM_INIT(vi_tmReportCb_t{});
 //VI_TM_INIT(vi_tmGetTicksPtr);
 //VI_TM_INIT(+[]() noexcept ->VI_TM_TICK { timespec ts; (void)timespec_get(&ts, TIME_UTC); return 1'000'000'000U * ts.tv_sec + ts.tv_nsec; });
 //VI_TM_INIT(+[]() noexcept ->VI_TM_TICK { return clock(); });
@@ -49,10 +49,10 @@ namespace
 		stream << "Library version: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_VERSION)) << ".\n";
 		stream <<
 			"Information about the \'vi_timing\' library:\n"
-			"\tVersion: " << VI_TM_FULLVERSION << "\n"
-			"\tLibrary build flags: " << (flags.empty() ? "<none>" : flags) << "\n"
-			"\tGit describe: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DESCRIBE)) << "\n"
-			"\tGit commit date and time: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DATETIME)) << "\n";
+			"\tVersion: " << VI_TM_FULLVERSION << ";\n"
+			"\tBuild flags: " << (flags.empty() ? "<none>" : flags) << ";\n"
+			"\tGit describe: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DESCRIBE)) << ";\n"
+			"\tGit commit date and time: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DATETIME)) << ".\n";
 		endl(stream);
 
 		const auto unit = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_UNIT));

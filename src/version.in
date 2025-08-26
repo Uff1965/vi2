@@ -4,6 +4,6 @@
 constexpr unsigned VI_TM_VERSION_MAJOR = @PROJECT_VERSION_MAJOR@+0U;
 constexpr unsigned VI_TM_VERSION_MINOR = @PROJECT_VERSION_MINOR@+0U;
 constexpr unsigned VI_TM_VERSION_PATCH = @PROJECT_VERSION_PATCH@+0U;
-constexpr std::string_view VI_TM_GIT_DESCRIBE = "@GIT_DESCRIBE@";
-constexpr std::string_view VI_TM_GIT_COMMIT = "@GIT_COMMIT@";
-constexpr std::string_view VI_TM_GIT_DATETIME = "@GIT_DATETIME@";
+constexpr std::string_view VI_TM_GIT_DESCRIBE = "@VI_GIT_DESCRIBE@";
+constexpr std::string_view VI_TM_GIT_COMMIT = "@VI_GIT_COMMIT@";
+constexpr std::string_view VI_TM_GIT_DATETIME = "@VI_GIT_DATETIME@";
