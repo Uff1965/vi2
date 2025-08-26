@@ -54,10 +54,10 @@
 #	define VI_TM_THREADSAFE 1
 #endif
 
-// Set VI_TM_STAT_USE_BASE macro to FALSE to skip basic statistics collection (cnt, sum).
+// Set VI_TM_STAT_USE_RAW macro to FALSE to skip basic statistics collection (cnt, sum).
 // Library rebuild required
-#ifndef VI_TM_STAT_USE_BASE
-#	define VI_TM_STAT_USE_BASE 1
+#ifndef VI_TM_STAT_USE_RAW
+#	define VI_TM_STAT_USE_RAW 1
 #endif
 
 // Set the VI_TM_STAT_USE_FILTER macro to FALSE to skip correlation coefficient calculation
@@ -192,7 +192,7 @@ typedef /*VI_NODISCARD*/ VI_TM_TICK (VI_TM_CALL vi_tmGetTicks_t)(void) VI_NOEXCE
 // !!!Use the vi_tmMeasurementStatsReset function to reset the structure to its initial state!!!
 typedef struct vi_tmMeasurementStats_t
 {	VI_TM_SIZE calls_;		// The number of times the measurement was invoked.
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 	VI_TM_SIZE cnt_;		// The number of all measured events, including discarded ones.
 	VI_TM_TDIFF sum_;		// Total time spent measuring all events, in ticks.
 #endif

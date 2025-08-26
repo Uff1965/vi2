@@ -465,7 +465,7 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 #if VI_TM_THREADSAFE
 				| vi_tmThreadsafe
 #endif
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 				| vi_tmStatUseBase
 #endif
 #if VI_TM_STAT_USE_FILTER

@@ -72,27 +72,13 @@ target_compile_definitions(${PROJECT_NAME}
 PRIVATE
     VI_TM_EXPORTS=1
     $<$<CONFIG:Release>: NDEBUG>
+PUBLIC
+    VI_TM_SHARED=$<IF:$<BOOL:${BUILD_SHARED_LIBS}>,1,0>
+    VI_TM_THREADSAFE=$<IF:$<BOOL:${VI_TM_THREADSAFE}>,1,0>
+    VI_TM_STAT_USE_RAW=$<IF:$<BOOL:${VI_TM_STAT_USE_RAW}>,1,0>
+    VI_TM_STAT_USE_FILTER=$<IF:$<BOOL:${VI_TM_STAT_USE_FILTER}>,1,0>
+    VI_TM_STAT_USE_MINMAX=$<IF:$<BOOL:${VI_TM_STAT_USE_MINMAX}>,1,0>
 )
-
-if(BUILD_SHARED_LIBS)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VI_TM_SHARED=1)
-endif()
-
-if (VI_TM_STAT_USE_BASE)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VI_TM_STAT_USE_BASE=1)
-endif()
-
-if (VI_TM_STAT_USE_FILTER)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VI_TM_STAT_USE_FILTER=1)
-endif()
-
-if (VI_TM_THREADSAFE)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VI_TM_THREADSAFE=1)
-endif()
-
-if (VI_TM_STAT_USE_MINMAX)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC VI_TM_STAT_USE_MINMAX=1)
-endif()
 
 #target_precompile_headers(${PROJECT_NAME}
 #PRIVATE

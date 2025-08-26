@@ -21,7 +21,7 @@ TEST_F(ViTimingJournalFixture, measurement)
 	vi_tmMeasurementGet(meas, &pname, &stats);
 	EXPECT_STREQ(pname, name);
 	EXPECT_EQ(stats.calls_, 0) << "New measurement should have zero calls";
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 	EXPECT_EQ(stats.cnt_, 0) << "Count of measured events should be 0";
     EXPECT_EQ(stats.sum_, 0) << "Total time should be 0";
 #endif
@@ -49,7 +49,7 @@ TEST_F(ViTimingJournalFixture, Journal)
     vi_tmMeasurementStats_t stats{};
     vi_tmMeasurementGet(meas, nullptr, &stats);
     EXPECT_EQ(stats.calls_, CNT) << "Number of calls should be " << CNT;
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 	EXPECT_EQ(stats.cnt_, CNT * AMT) << "Count of measured events should be " << CNT * AMT;
     EXPECT_EQ(stats.sum_, CNT * DUR) << "Total time should be " << CNT * DUR;
 #endif
@@ -61,7 +61,7 @@ TEST_F(ViTimingJournalFixture, Journal)
     vi_tmMeasurementGet(meas, nullptr, &stats);
     // Check that the number of calls is reset
     EXPECT_EQ(stats.calls_, 0) << "After journal reset, statistics should be reset";
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 	EXPECT_EQ(stats.cnt_, 0) << "Count of measured events should be 0";
     EXPECT_EQ(stats.sum_, 0) << "Total time should be 0";
 #endif
@@ -102,7 +102,7 @@ TEST(misc, vi_tmStaticInfo)
     }
 
     {
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
         constexpr auto flag = vi_tmStatUseBase;
 #else
 		constexpr auto flag = 0U;

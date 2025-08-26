@@ -39,7 +39,7 @@ namespace
 			flags += (flg & vi_tmDebug)? "VI_TM_DEBUG, ": "";
 			flags += (flg & vi_tmShared)? "VI_TM_SHARED, ": "";
 			flags += (flg & vi_tmThreadsafe)? "VI_TM_THREADSAFE, ": "";
-			flags += (flg & vi_tmStatUseBase)? "VI_TM_STAT_USE_BASE, ": "";
+			flags += (flg & vi_tmStatUseBase)? "VI_TM_STAT_USE_RAW, ": "";
 			flags += (flg & vi_tmStatUseFilter)? "VI_TM_STAT_USE_FILTER, ": "";
 			flags += (flg & vi_tmStatUseMinMax)? "VI_TM_STAT_USE_MINMAX, ": "";
 			if(!flags.empty())

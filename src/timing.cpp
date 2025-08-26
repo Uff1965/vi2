@@ -289,7 +289,7 @@ int VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *meas)
 	{	return VI_EXIT_FAILURE;
 	}
 
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 	if (!verify((0U != meas->cnt_) == (0U != meas->calls_))) return VI_EXIT_FAILURE; // cnt_ and calls_ must be both zero or both non-zero.
 	if (!verify(meas->cnt_ >= meas->calls_)) return VI_EXIT_FAILURE; // cnt_ must be greater than or equal to calls_.
 #endif
@@ -310,7 +310,7 @@ int VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *meas)
 	}
 #endif
 
-#if VI_TM_STAT_USE_BASE && VI_TM_STAT_USE_MINMAX
+#if VI_TM_STAT_USE_RAW && VI_TM_STAT_USE_MINMAX
 	if (meas->calls_ == 1U && !verify(static_cast<VI_TM_FP>(meas->sum_) == meas->min_ * meas->cnt_)) return VI_EXIT_FAILURE; // If there is only one call, sum_ must equal min_ multiplied by cnt_.
 	if (meas->calls_ >= 1U && !verify(static_cast<VI_TM_FP>(meas->sum_) >= meas->max_)) return VI_EXIT_FAILURE; // sum_ must be greater than or equal to max_.
 #endif
@@ -332,7 +332,7 @@ int VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *meas)
 	}
 #endif
 
-#if VI_TM_STAT_USE_BASE && VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RAW && VI_TM_STAT_USE_FILTER
 	if (!verify(meas->flt_cnt_ <= static_cast<VI_TM_FP>(meas->cnt_))) return VI_EXIT_FAILURE; // flt_cnt_ must be less than or equal to cnt_.
 #endif
 
@@ -352,7 +352,7 @@ void VI_TM_CALL vi_tmMeasurementStatsReset(vi_tmMeasurementStats_t *meas) noexce
 	}
 
 	meas->calls_ = 0U;
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 	meas->cnt_ = 0U;
 	meas->sum_ = 0U;
 #endif
@@ -383,7 +383,7 @@ void VI_TM_CALL vi_tmMeasurementStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TD
 
 	if (0U == meas->calls_++)
 	{	// No complex calculations are required for the first (and possibly only) call.
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 		meas->cnt_ = cnt;
 		meas->sum_ = dur;
 #endif
@@ -399,7 +399,7 @@ void VI_TM_CALL vi_tmMeasurementStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TD
 	}
 	else
 	{
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 		meas->cnt_ += cnt;
 		meas->sum_ += dur;
 #endif
@@ -435,7 +435,7 @@ void VI_TM_CALL vi_tmMeasurementStatsMerge(vi_tmMeasurementStats_t* VI_RESTRICT 
 	assert(VI_EXIT_SUCCESS == vi_tmMeasurementStatsIsValid(src));
 
 	dst->calls_ += src->calls_;
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 	dst->cnt_ += src->cnt_;
 	dst->sum_ += src->sum_;
 #endif
@@ -547,7 +547,7 @@ namespace
 				vi_tmMeasurementGet(m, &name, &md);
 				{	assert(!!name && 0 == std::strcmp(name, NAME));
 					assert(md.calls_ == std::size(samples_simple));
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 					assert(md.cnt_ == md.calls_);
 					assert(md.sum_ == std::accumulate(std::begin(samples_simple), std::end(samples_simple), 0U));
 #endif
@@ -657,7 +657,7 @@ namespace
 			assert(name && std::strlen(name) + 1 == std::size(NAME) && 0 == std::strcmp(name, NAME));
 #	if VI_TM_STAT_USE_FILTER
 			assert(md.calls_ == std::size(samples_simple) + std::size(samples_multiple) + std::size(samples_exclude));
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 			assert(md.cnt_ == std::size(samples_simple) + M * std::size(samples_multiple) + std::size(samples_exclude));
 #endif
 			assert(md.flt_cnt_ == static_cast<VI_TM_FP>(exp_flt_cnt));
@@ -666,7 +666,7 @@ namespace
 			assert(std::abs(s - exp_flt_stddev) / exp_flt_stddev < DBG_EPS);
 #	else
 			assert(md.calls_ == std::size(samples_simple) + std::size(samples_multiple));
-#if VI_TM_STAT_USE_BASE
+#if VI_TM_STAT_USE_RAW
 			assert(md.cnt_ == std::size(samples_simple) + M * std::size(samples_multiple));
 			assert(std::abs(static_cast<VI_TM_FP>(md.sum_) / md.cnt_ - exp_flt_mean) < DBG_EPS);
 #endif
