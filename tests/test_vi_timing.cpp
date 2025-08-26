@@ -33,9 +33,23 @@ namespace
 
 		stream << "Start: " << std::put_time(std::localtime(&tm), "%F %T.\n") << std::endl;
 
+		std::string flags;
+		{	const auto flg = *static_cast<const unsigned *>(vi_tmStaticInfo(VI_TM_INFO_FLAGS));
+			flags += (flg & vi_tmDebug)? "VI_TM_DEBUG, ": "";
+			flags += (flg & vi_tmShared)? "VI_TM_SHARED, ": "";
+			flags += (flg & vi_tmThreadsafe)? "VI_TM_THREADSAFE, ": "";
+			flags += (flg & vi_tmStatUseBase)? "VI_TM_STAT_USE_BASE, ": "";
+			flags += (flg & vi_tmStatUseFilter)? "VI_TM_STAT_USE_FILTER, ": "";
+			flags += (flg & vi_tmStatUseMinMax)? "VI_TM_STAT_USE_MINMAX, ": "";
+			if(!flags.empty())
+			{	flags.resize(flags.size() - 2U);
+			}
+		}
+		stream << "Library version: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_VERSION)) << ".\n";
 		stream <<
 			"Information about the \'vi_timing\' library:\n"
 			"\tVersion: " << VI_TM_FULLVERSION << "\n"
+			"\tLibrary build flags: " << (flags.empty() ? "<none>" : flags) << "\n"
 			"\tGit describe: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DESCRIBE)) << "\n"
 			"\tGit commit date and time: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DATETIME)) << "\n";
 		endl(stream);
