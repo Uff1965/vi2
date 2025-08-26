@@ -13,6 +13,12 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(googletest)
 
+set_target_properties(gtest_main
+PROPERTIES
+	EXCLUDE_FROM_ALL TRUE
+	EXCLUDE_FROM_DEFAULT_BUILD TRUE
+)
+
 set_target_properties(gtest
 PROPERTIES
 	ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib/debug

@@ -480,6 +480,6 @@ typedef enum vi_tmReportFlags_e
 #	define VI_SUFFIX VI_S_UNDERSCORE VI_S_STAT_USE_RAW VI_S_STAT_USE_FILTER VI_S_STAT_USE_MINMAX VI_S_THREADSAFE VI_S_SHARED VI_S_DEBUG
 
 #	pragma comment(lib, "vi_timing" VI_SUFFIX ".lib")
-#endif // defined(_MSC_VER)
+#endif // #if defined(_MSC_VER) && !VI_TM_EXPORTS
 
 #endif // #ifndef VI_TIMING_VI_TIMING_C_H
