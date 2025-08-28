@@ -49,17 +49,16 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON) # Enable folder structure in IDEs
 # Set project name and version based on the generated version information.
 project(vi VERSION ${VI_GIT_VERSION_NUMBER} LANGUAGES NONE)
 
+if (VI_TM_ENABLE_TESTS)
+    include(CTest)
+endif()
+
 add_subdirectory(src)
 
 if (VI_TM_ENABLE_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
-if (VI_TM_ENABLE_TESTS OR VI_TM_ENABLE_BENCHMARK)
-    if (VI_TM_ENABLE_TESTS)
-        enable_testing()
-        include(CTest)
-    endif()
-
+if ( BUILD_TESTING OR VI_TM_ENABLE_BENCHMARK)
     add_subdirectory(tests)
 endif()
