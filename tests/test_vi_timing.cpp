@@ -11,6 +11,7 @@
 #	include <benchmark/benchmark.h>
 #endif
 
+#include <algorithm>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
@@ -100,32 +101,42 @@ namespace
 
 		vi_CurrentThreadAffinityRestore();
 	}
+
+	bool any_gtest_arg(int argc, char **argv)
+	{	static constexpr auto sample = "--gtest_"sv;
+		return std::any_of(
+			argv,
+			argv + argc,
+			[](const char *a)
+			{	return std::string_view{ a }.substr(0, sample.size()) == sample;
+			}
+		);
+	}
 }
 
 int main(int argc, char** argv)
 {
+	const auto gtest_arg = any_gtest_arg(argc, argv);
 	::testing::InitGoogleTest(&argc, argv);
-	if (!::testing::GTEST_FLAG(list_tests))
+	if (!gtest_arg)
 	{	header(std::cout);
 		vi_WarmUp();
 		metrics(std::cout);
 		endl(std::cout);
 	}
 
-	if (auto ret = RUN_ALL_TESTS())
+	if (const auto ret = RUN_ALL_TESTS(); gtest_arg || !!ret )
 	{	return ret;
 	}
 
-	if (!::testing::GTEST_FLAG(list_tests))
-	{	::benchmark::Initialize(&argc, argv);
-		if (::benchmark::ReportUnrecognizedArguments(argc, argv))
-		{	return 1;
-		}
-
-		endl(std::cout);
-		std::cout << "Benchmark:\n";
-		::benchmark::RunSpecifiedBenchmarks();
+	::benchmark::Initialize(&argc, argv);
+	if (::benchmark::ReportUnrecognizedArguments(argc, argv))
+	{	return 1;
 	}
+
+	endl(std::cout);
+	std::cout << "Benchmark:\n";
+	::benchmark::RunSpecifiedBenchmarks();
 
 	return 0;
 }
