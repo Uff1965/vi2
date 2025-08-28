@@ -1,4 +1,4 @@
-function(make_name_suffix OUT_VAR)
+function(vi_make_name_suffix OUT_VAR)
 	set(_flags "")
 
 	if(VI_TM_STAT_USE_RAW)

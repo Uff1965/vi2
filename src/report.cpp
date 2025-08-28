@@ -260,14 +260,17 @@ metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, un
 	{	return; // If the measurement is invalid or has no calls, we do not create a metering_t.
 	}
 
-	const auto &props = misc::properties_t::props();
-	const auto correction_ticks = (0U == (flags & vi_tmDoNotSubtractOverhead)) ? props.clock_overhead_ticks_ : 0.0;
-
 // calls_
 	calls_ = meas.calls_;
 
+	(void)flags;
+
+#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
+	const auto &props = misc::properties_t::props();
+	const auto correction_ticks = (0U == (flags & vi_tmDoNotSubtractOverhead)) ? props.clock_overhead_ticks_ : 0.0;
+
 // cnt_, sum_ and sum_txt_
-#if VI_TM_STAT_USE_RAW
+#	if VI_TM_STAT_USE_RAW
 	cnt_ = meas.cnt_;
 	try
 	{	std::ostringstream str_stream;
@@ -287,10 +290,10 @@ metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, un
 	{	sum_ = props.seconds_per_tick_ * total_ticks;
 		sum_txt_ = to_string(sum_);
 	}
-#endif
+#	endif
 
 // average, limit, cv_ and cv_txt_
-#if VI_TM_STAT_USE_FILTER
+#	if VI_TM_STAT_USE_FILTER
 	const auto limit_ticks = props.clock_resolution_ticks_ / std::sqrt(meas.flt_cnt_);
 	const auto avg_ticks = meas.flt_avg_ - correction_ticks;
 
@@ -311,13 +314,13 @@ metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, un
 			cv_txt_ += '%';
 		}
 	}
-#elif VI_TM_STAT_USE_RAW
+#	elif VI_TM_STAT_USE_RAW
 	const auto limit_ticks = props.clock_resolution_ticks_ / std::sqrt(static_cast<VI_TM_FP>(meas.cnt_));
 	const auto avg_ticks = total_ticks / static_cast<double>(meas.cnt_);
-#endif
+#	endif
 
 // average_, average_txt_ and cnt_txt_
-#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER
+#	if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER
 	if (avg_ticks <= std::max(limit_ticks, props.clock_resolution_ticks_ * 1e-2))
 	{	average_txt_ = Insignificant;
 	}
@@ -325,10 +328,10 @@ metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, un
 	{	average_ = props.seconds_per_tick_ * avg_ticks;
 		average_txt_ = to_string(average_);
 	}
-#endif
+#	endif
 
 // min_, max_, min_txt_ and max_txt_
-#if VI_TM_STAT_USE_MINMAX
+#	if VI_TM_STAT_USE_MINMAX
 	if (meas.calls_ != 0U)
 	{	// If there is more than one measurement, the minimum and maximum values are meaningful.
 		if (const auto ticks = meas.min_ - correction_ticks; ticks <= props.clock_resolution_ticks_)
@@ -347,7 +350,8 @@ metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, un
 			max_txt_ = to_string(max_);
 		}
 	}
-#endif
+#	endif
+#endif // #if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
 }
 
 formatter_t::formatter_t(const std::vector<metering_t> &itms, unsigned flags)

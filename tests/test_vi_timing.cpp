@@ -29,26 +29,26 @@ VI_TM_INIT(vi_tmReportCb_t{});
 
 namespace
 {
+	std::string flags2string(unsigned flg)
+	{	std::string result;
+		result += (flg & vi_tmStatUseBase)? "VI_TM_STAT_USE_RAW, ": "";
+		result += (flg & vi_tmStatUseFilter)? "VI_TM_STAT_USE_FILTER, ": "";
+		result += (flg & vi_tmStatUseMinMax)? "VI_TM_STAT_USE_MINMAX, ": "";
+		result += (flg & vi_tmThreadsafe)? "VI_TM_THREADSAFE, ": "";
+		result += (flg & vi_tmShared)? "VI_TM_SHARED, ": "";
+		result += (flg & vi_tmDebug)? "VI_TM_DEBUG, ": "";
+		if(!result.empty())
+		{	result.resize(result.size() - 2U);
+		}
+		return result;
+	}
+
 	void header(std::ostream& stream)
 	{	const auto tm = ch::system_clock::to_time_t(ch::system_clock::now());
+		const std::string flags = flags2string(*static_cast<const unsigned *>(vi_tmStaticInfo(VI_TM_INFO_FLAGS)));
 
 		stream << "Start: " << std::put_time(std::localtime(&tm), "%F %T.\n") << std::endl;
-
-		std::string flags;
-		{	const auto flg = *static_cast<const unsigned *>(vi_tmStaticInfo(VI_TM_INFO_FLAGS));
-			flags += (flg & vi_tmDebug)? "VI_TM_DEBUG, ": "";
-			flags += (flg & vi_tmShared)? "VI_TM_SHARED, ": "";
-			flags += (flg & vi_tmThreadsafe)? "VI_TM_THREADSAFE, ": "";
-			flags += (flg & vi_tmStatUseBase)? "VI_TM_STAT_USE_RAW, ": "";
-			flags += (flg & vi_tmStatUseFilter)? "VI_TM_STAT_USE_FILTER, ": "";
-			flags += (flg & vi_tmStatUseMinMax)? "VI_TM_STAT_USE_MINMAX, ": "";
-			if(!flags.empty())
-			{	flags.resize(flags.size() - 2U);
-			}
-		}
-		stream << "Library version: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_VERSION)) << ".\n";
-		stream <<
-			"Information about the \'vi_timing\' library:\n"
+		stream << "Information about the \'vi_timing\' library:\n"
 			"\tVersion: " << VI_TM_FULLVERSION << ";\n"
 			"\tBuild flags: " << (flags.empty() ? "<none>" : flags) << ";\n"
 			"\tGit describe: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DESCRIBE)) << ";\n"

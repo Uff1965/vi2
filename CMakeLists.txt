@@ -26,14 +26,15 @@ if(BUILD_SHARED_LIBS)
     set(VI_TM_SHARED 1)
 endif()
 
-include("cmake/make_suffix.cmake")
-make_name_suffix(VI_TM_NAME_SUFFIX)
-
 include("cmake/GenerateVersion.cmake") # Include the script to generate version information.
-get_version_from_git(VI_GIT)
+vi_get_version_from_git(VI_GIT)
 message(STATUS "VI_GIT_DESCRIBE: ${VI_GIT_DESCRIBE}")
 message(STATUS "\tVI_GIT_VERSION_NUMBER: ${VI_GIT_VERSION_NUMBER}")
 message(STATUS "\tVI_GIT_VERSION_LABEL: ${VI_GIT_VERSION_LABEL}")
+
+include("cmake/make_suffix.cmake")
+vi_make_name_suffix(VI_TM_NAME_SUFFIX)
+message(STATUS "VI_TM_NAME_SUFFIX: ${VI_TM_NAME_SUFFIX}")
 
 set(VI_TM_OUTPUT "${CMAKE_SOURCE_DIR}/bin")
 foreach(CONFIG_TYPE IN ITEMS "" "_DEBUG" "_RELEASE")
@@ -55,8 +56,9 @@ if (VI_TM_ENABLE_EXAMPLES)
 endif()
 
 if (VI_TM_ENABLE_TESTS OR VI_TM_ENABLE_BENCHMARK)
-    if (VI_TIMING_ENABLE_TESTS)
+    if (VI_TM_ENABLE_TESTS)
         enable_testing()
+        include(CTest)
     endif()
 
     add_subdirectory(tests)

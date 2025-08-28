@@ -36,16 +36,11 @@
 #endif
 
 // Used high-performance timing methods (e.g., platform-specific optimizations like ASM).
-// Set the VI_TM_USE_STDCLOCK macro to TRUE to switch to standard C11 `timespec_get()`.
-// Requires library rebuild.
-#ifndef VI_TM_USE_STDCLOCK
-#	define VI_TM_USE_STDCLOCK 0
-#endif
+// Uncomment the next line to switch to the standard C11 function `timespec_get()`. Requires library rebuild.
+//#	define VI_TM_USE_STDCLOCK 1
 
-// If VI_TM_SHARED macro is TRUE, the library is a shared library.
-#ifndef VI_TM_SHARED
-#	define VI_TM_SHARED 0
-#endif
+// Uncomment the next line to build the library as a SHARED library. Requires library rebuild.
+//#	define VI_TM_SHARED 1
 
 // Set VI_TM_THREADSAFE to FALSE to disable thread safety.
 // Improves performance in single-threaded applications.
@@ -67,11 +62,8 @@
 #	define VI_TM_STAT_USE_FILTER 1
 #endif
 
-// Set the VI_TM_STAT_USE_MINMAX macro to TRUE to store minimum and maximum measurement values.
-// Library rebuild required
-#ifndef VI_TM_STAT_USE_MINMAX
-#	define VI_TM_STAT_USE_MINMAX 0
-#endif
+// Uncomment the next line to store minimum and maximum measurement values. Library rebuild required
+//#	define VI_TM_STAT_USE_MINMAX 1
 
 // If VI_TM_EXPORTS defined, the library is built as a shared and exports its functions.
 

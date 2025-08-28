@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 
 find_package(Git REQUIRED)
 
-function(get_version_from_git VAR_NAME)
+function(vi_get_version_from_git VAR_NAME)
 	if(NOT GIT_FOUND)
 		set(${VAR_NAME}_COMMIT "unknown" PARENT_SCOPE)
 		set(${VAR_NAME}_DATETIME "unknown" PARENT_SCOPE)
