@@ -261,8 +261,8 @@ int vi_tmMeasurementsJournal_t::global_init(vi_tmGetTicks_t *fn)
 	{	auto& global = from_handle(VI_TM_HGLOBAL);
 		(void)verify(VI_EXIT_SUCCESS == global.init());
 		if (fn)
-		{	assert(!!vi_tmGetTicksPtr);
-			vi_tmGetTicksPtr = fn;
+		{	assert(!!vi_tmGetTicksPtr__internal__);
+			vi_tmGetTicksPtr__internal__ = fn;
 		}
 	}
 	else if(!verify(!fn))

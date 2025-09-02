@@ -34,6 +34,11 @@ if (VI_TM_ENABLE_TESTS)
         "test_misc.cpp"
         "test_vi_timing.cpp"
     )
+
+    if(VI_TM_THREADSAFE)
+        list(APPEND FILE_GROUP "test_multithreaded.cpp")
+    endif()
+
     list(APPEND SOURCE_FILES ${FILE_GROUP})
 
     target_link_libraries(${PROJECT_NAME}

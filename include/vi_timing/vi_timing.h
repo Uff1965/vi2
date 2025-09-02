@@ -247,14 +247,15 @@ typedef enum vi_tmReportFlags_e
 #define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global journal handle, used for global measurements.
 
 // Main functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-	extern VI_TM_API vi_tmGetTicks_t *vi_tmGetTicksPtr; // Is for internal use only. Do not use it directly in your code!
+	// Is for internal use only. Do not use it directly in your code!
+	extern VI_TM_API vi_tmGetTicks_t *vi_tmGetTicksPtr__internal__;
 
 	/// <summary>
 	/// This function is used to measure time intervals with fine precision.
 	/// </summary>
 	/// <returns>A current tick count.</returns>
 	VI_NODISCARD inline VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT
-	{	return vi_tmGetTicksPtr();
+	{	return vi_tmGetTicksPtr__internal__();
 	}
 
 	/// <summary>
