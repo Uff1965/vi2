@@ -19,6 +19,7 @@ namespace
 	constexpr char THREADFUNC_NAME[] = "threadFunc";
 	constexpr char THREADFUNCLOOP_NAME[] = "threadFunc loop";
 	constexpr auto CNT = 1'000;
+	constexpr auto AMN = 2;
 	const auto numThreads = 2U * std::thread::hardware_concurrency();
 	std::mt19937 gen{/*std::random_device{}()*/ };
 	std::uniform_int_distribution dis{ 1, 3 };
@@ -32,7 +33,7 @@ namespace
 		}
 
 		for (auto i = 0; i < CNT; ++i)
-		{	VI_TM(THREADFUNCLOOP_NAME);
+		{	VI_TM(THREADFUNCLOOP_NAME, AMN);
 		}
 	}
 }
@@ -51,13 +52,15 @@ TEST(vi_timing, vi_tmMultithreaded)
 
 	vi_tmMeasurementStats_t stats;
 
-	auto m = vi_tmMeasurement(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
-	vi_tmMeasurementGet(m, nullptr, &stats);
-	ASSERT_EQ(vi_tmMeasurementStatsIsValid(&stats), 0);
-	ASSERT_EQ(stats.calls_, numThreads * CNT);
-
-	m = vi_tmMeasurement(VI_TM_HGLOBAL, THREADFUNC_NAME);
+	auto m = vi_tmMeasurement(VI_TM_HGLOBAL, THREADFUNC_NAME);
 	vi_tmMeasurementGet(m, nullptr, &stats);
 	ASSERT_EQ(vi_tmMeasurementStatsIsValid(&stats), 0);
 	ASSERT_EQ(stats.calls_, numThreads);
+	ASSERT_EQ(stats.cnt_, stats.calls_);
+
+	m = vi_tmMeasurement(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
+	vi_tmMeasurementGet(m, nullptr, &stats);
+	ASSERT_EQ(vi_tmMeasurementStatsIsValid(&stats), 0);
+	ASSERT_EQ(stats.calls_, numThreads * CNT);
+	ASSERT_EQ(stats.cnt_, stats.calls_ * AMN);
 }
