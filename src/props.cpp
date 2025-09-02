@@ -102,22 +102,23 @@ namespace
 		return multiple_invoke_aux<F, Args...>(std::make_index_sequence<N>{}, fn, std::forward<Args>(args)...);
 	}
 
-	template<typename It>
-	auto median(It b, It e)
-	{	const auto n = e - b;
-		assert(n > 0);
-		auto mid = b + n / 2U;
-		std::nth_element(b, mid, e);
+	template<typename C>
+	auto median_part(C &c, std::size_t skip = 0U)
+	{	assert(std::size(c) > skip);
+		auto const b = std::next(std::begin(c) + skip);
+		const auto n = std::size(c) - skip;
+		auto mid = std::next(b, n / 2);
+		std::nth_element(b, mid, std::end(c));
 
-		return (n % 2U) != 0 ? *mid : (*mid + *std::max_element(b, mid)) / 2U;
+		return (n % 2) != 0 ? *mid : (*mid + *std::max_element(b, mid)) / 2;
 	}
 
 	template <unsigned N, typename F, typename... Args>
 	double calc_duration_ticks(F *fn, Args&&... args)
-	{	constexpr auto REPEAT = 512U;
-		constexpr auto SIZE = 31U;
-
+	{	constexpr auto SIZE = 31U;
 		std::array<VI_TM_TICK, SIZE + CACHE_WARMUP> diff;
+		constexpr auto REPEAT = 512U;
+		
 		std::this_thread::yield(); // Reduce likelihood of thread interruption during measurement.
 		for (auto &d : diff)
 		{	const auto s = start_tick();
@@ -130,7 +131,7 @@ namespace
 
 		// First CACHE_WARMUP elements are for warming up the cache, so we ignore them.
 		// Obtain the median value among the remaining ones.
-		return static_cast<double>(median(diff.begin() + CACHE_WARMUP, diff.end())) / static_cast<double>(REPEAT);
+		return static_cast<double>(median_part(diff, CACHE_WARMUP)) / static_cast<double>(REPEAT);
 	}
 
 	template <typename F, typename... Args>
@@ -172,7 +173,7 @@ namespace
 			item = last - first;
 		}
 		// First CACHE_WARMUP elements are for warming up the cache, so we ignore them.
-		return static_cast<double>(median(arr.begin() + CACHE_WARMUP, arr.end())) / static_cast<double>(N);
+		return static_cast<double>(median_part(arr, CACHE_WARMUP)) / static_cast<double>(N);
 	}
 
 	auto meas_seconds_per_tick()
