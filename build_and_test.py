@@ -210,7 +210,7 @@ def main():
 
 	print("All combinations have been successfully assembled and tested.")
 #	print(f"[FINISH ALL] [{(datetime.datetime.now() - start_all).total_seconds():.3f}s].\n")
-	print(f"[FINISH ALL] [{format_duration((datetime.datetime.now() - start_all).total_seconds())}].\n")
+	print(f"[FINISH ALL] [Elapsed: {format_duration((datetime.datetime.now() - start_all).total_seconds())}].\n")
 
 if __name__ == "__main__":
 	main()
