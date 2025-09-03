@@ -80,7 +80,7 @@ def parse_params()->argparse.Namespace:
 		"--path-to-result",
 		type=pathlib.Path,
 		metavar="<dir>",
-		default="_bin",
+		default="bin",
 		help="Explicitly specify a target directory."
 	)
 	parser.add_argument(
@@ -159,9 +159,10 @@ def main():
 		print(f"[START] {name}: {start.strftime("%H:%M:%S")}")
 
 		build_dir = os.path.join(test_root, "_build_" + suffix)
+		print(f"build_dir: \'{build_dir}\'")
 		if os.path.exists(build_dir) and os.path.isdir(build_dir):
 			shutil.rmtree(build_dir, onerror=remove_readonly)
-#		os.makedirs(build_dir)
+
 
 		print("Configuring CMake:")
 		params = ["cmake", "-S", str(path_to_source), "-B", str(build_dir), f"-DCMAKE_BUILD_TYPE={build_config}", f"-DVI_TM_OUTPUT_PATH={str(path_to_result)}"]
@@ -188,6 +189,7 @@ def main():
 		run(params)
 		print("Run the tests - done")
 
+		shutil.rmtree(build_dir, onerror=remove_readonly)
 		print(f"[FINISH] {name} [{(datetime.datetime.now() - start).total_seconds():.3f}s]\n")
 
 	print("All combinations have been successfully assembled and tested.")
