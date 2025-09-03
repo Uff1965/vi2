@@ -127,7 +127,7 @@ def filter_suffix(suffix: str, suffix_filters: str)->bool:
 
 def main():
 	start_all = datetime.datetime.now()
-	print(f"[START ALL]: {start_all.strftime("%H:%M:%S")}")
+	print(f"[START ALL]: {start_all.strftime('%H:%M:%S')}")
 
 	PARAMS = parse_params()
 	
@@ -156,7 +156,7 @@ def main():
 		name = "vi_timing_" + suffix
 
 		start = datetime.datetime.now()
-		print(f"[START] {name}: {start.strftime("%H:%M:%S")}")
+		print(f"[START] {name}: {start.strftime('%H:%M:%S')}")
 
 		build_dir = os.path.join(test_root, "_build_" + suffix)
 		print(f"build_dir: \'{build_dir}\'")
