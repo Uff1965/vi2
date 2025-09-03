@@ -10,6 +10,22 @@ import shutil
 import stat
 import subprocess
 
+def format_duration(seconds: float) -> str:
+	hours = int(seconds // 3600)
+	minutes = int((seconds % 3600) // 60)
+	secs = seconds % 60
+
+	parts = []
+	if hours > 0:
+		parts.append(f"{hours}h")
+	if minutes > 0 or hours > 0:
+		parts.append(f"{minutes}m")
+		parts.append(f"{int(secs)}s")
+	else:
+		parts.append(f"{secs:.1f}s")
+
+	return ' '.join(parts)
+
 def get_cmake_property(key: str) -> str | None:
 	"""
 	Get the value of a CMake system property from `cmake --system-information`.
@@ -123,7 +139,7 @@ def folder_prepare(path: str):
 		os.makedirs(path)
 
 def filter_suffix(suffix: str, suffix_filters: str)->bool:
-	return suffix_filters and suffix not in suffix_filters
+	return suffix_filters and any(char not in suffix for char in suffix_filters)
 
 def main():
 	start_all = datetime.datetime.now()
@@ -193,7 +209,8 @@ def main():
 		print(f"[FINISH] {name} [{(datetime.datetime.now() - start).total_seconds():.3f}s]\n")
 
 	print("All combinations have been successfully assembled and tested.")
-	print(f"[FINISH ALL] [{(datetime.datetime.now() - start_all).total_seconds():.3f}s].\n")
+#	print(f"[FINISH ALL] [{(datetime.datetime.now() - start_all).total_seconds():.3f}s].\n")
+	print(f"[FINISH ALL] [{format_duration((datetime.datetime.now() - start_all).total_seconds())}].\n")
 
 if __name__ == "__main__":
 	main()
