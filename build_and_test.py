@@ -11,19 +11,20 @@ import stat
 import subprocess
 
 def format_duration(seconds: float) -> str:
-	hours = int(seconds // 3600)
-	minutes = int((seconds % 3600) // 60)
-	secs = seconds % 60
+	hours, secs = divmod(round(seconds, 1), 3600)
+	hours = int(hours)
+	minutes, secs = divmod(secs, 60)
+	minutes = int(minutes)
 
 	parts = []
 	if hours > 0:
 		parts.append(f"{hours}h")
-	if minutes > 0 or hours > 0:
+		parts.append(f"{minutes:02d}m")
+	elif minutes > 0:
 		parts.append(f"{minutes}m")
-		parts.append(f"{int(secs)}s")
+		parts.append(f"{int(secs):02d}s")
 	else:
-		parts.append(f"{secs:.1f}s")
-
+		parts.append(f"{float(secs):.1f}s")
 	return ' '.join(parts)
 
 def get_cmake_property(key: str) -> str | None:
@@ -209,7 +210,6 @@ def main():
 		print(f"[FINISH] {name} [{(datetime.datetime.now() - start).total_seconds():.3f}s]\n")
 
 	print("All combinations have been successfully assembled and tested.")
-#	print(f"[FINISH ALL] [{(datetime.datetime.now() - start_all).total_seconds():.3f}s].\n")
 	print(f"[FINISH ALL] [Elapsed: {format_duration((datetime.datetime.now() - start_all).total_seconds())}].\n")
 
 if __name__ == "__main__":
