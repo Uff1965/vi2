@@ -65,14 +65,18 @@ TEST(vi_tmMultithreaded, Add)
 		ASSERT_EQ(vi_tmMeasurementStatsIsValid(&stats), 0);
 		ASSERT_EQ(stats.calls_, numThreads);
 		ASSERT_EQ(stats.cnt_, stats.calls_ * CNT);
+#if VI_TM_STAT_USE_RAW
 		ASSERT_EQ(stats.sum_, stats.calls_ * DUR);
+#endif
 
 		m = vi_tmMeasurement(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
 		vi_tmMeasurementGet(m, nullptr, &stats);
 		ASSERT_EQ(vi_tmMeasurementStatsIsValid(&stats), 0);
 		ASSERT_EQ(stats.calls_, numThreads * LOOP_COUNT);
 		ASSERT_EQ(stats.cnt_, stats.calls_ * CNT);
+#if VI_TM_STAT_USE_RAW
 		ASSERT_EQ(stats.sum_, stats.calls_ * DUR);
+#endif
 	}
 }
 
@@ -112,6 +116,8 @@ TEST(vi_tmMultithreaded, AddGetReset)
 		ASSERT_EQ(vi_tmMeasurementStatsIsValid(&stats), 0);
 		ASSERT_EQ(stats.calls_, 0U);
 		ASSERT_EQ(stats.cnt_, 0U);
+#if VI_TM_STAT_USE_RAW
 		ASSERT_EQ(stats.sum_, 0);
+#endif
 	}
 }

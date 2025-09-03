@@ -4,6 +4,7 @@ import argparse
 import datetime
 import itertools
 import os
+import pathlib
 import shlex
 import shutil
 import stat
@@ -54,27 +55,45 @@ def run(cmd, cwd=None):
 PROJECT_ROOT = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
 
 def parse_params()->argparse.Namespace:
-	parser = argparse.ArgumentParser(description="Automate testing for all CMake option combinations")
+	parser = argparse.ArgumentParser(
+		description="Automate testing for all CMake option combinations",
+		formatter_class=argparse.ArgumentDefaultsHelpFormatter
+	)
 	parser.add_argument(
 		"-S",
 		"--path-to-source",
+		type=pathlib.Path,
+		metavar="<dir>",
 		default=PROJECT_ROOT,
 		help="Explicitly specify a source directory."
 	)
 	parser.add_argument(
 		"-B",
 		"--path-to-build",
-		default=PROJECT_ROOT,
+		type=pathlib.Path,
+		metavar="<dir>",
+		default="_tests",
 		help="Explicitly specify a build directory."
 	)
 	parser.add_argument(
 		"-T",
 		"--path-to-result",
-		default=os.path.join(PROJECT_ROOT, "bin"),
+		type=pathlib.Path,
+		metavar="<dir>",
+		default="_bin",
 		help="Explicitly specify a target directory."
 	)
 	parser.add_argument(
+		"-C",
+		"--build-config",
+		type=str,
+		metavar="<config>",
+		default="Release",
+		help="Choose configuration to test."
+	)
+	parser.add_argument(
 		"params",
+		type=str,
 		nargs="*",
 		help='Build suffixes (e.g. "rfm"). If omitted, all combos will be tested.'
 	)
@@ -122,9 +141,10 @@ def main():
 
 	path_to_result = PARAMS.path_to_result
 	if not os.path.isabs(path_to_result):
-		path_to_result = os.path.abspath(os.path.join(PROJECT_ROOT, path_to_result))
+		path_to_result = os.path.abspath(os.path.join(test_root, path_to_result))
 
 	suffix_filters = PARAMS.params
+	build_config = PARAMS.build_config;
 
 	folder_prepare(test_root)
 
@@ -144,23 +164,23 @@ def main():
 #		os.makedirs(build_dir)
 
 		print("Configuring CMake:")
-		params = ["cmake", "-S", path_to_source, "-B", build_dir, "-DCMAKE_BUILD_TYPE=Release", f"-DVI_TM_OUTPUT_PATH={path_to_result}"]
+		params = ["cmake", "-S", str(path_to_source), "-B", str(build_dir), f"-DCMAKE_BUILD_TYPE={build_config}", f"-DVI_TM_OUTPUT_PATH={str(path_to_result)}"]
 		params += options
 		run(params)
 		print("Configuring CMake - done\n")
 
 		print("Build the project:")
-		run(["cmake", "--build", build_dir, "--config", "Release"])
+		run(["cmake", "--build", str(build_dir), "--config", build_config])
 		print("Build the project - done\n")
 
 		# Run the tests; the script will terminate upon the first error.
 
-		params = ["ctest", "--test-dir", build_dir, "--output-on-failure"]
+		params = ["ctest", "--test-dir", str(build_dir), "--output-on-failure"]
 		match get_cmake_property("CMAKE_CXX_COMPILER_ID"):
 			case "GNU" | "Clang":
 				None
 			case "MSVC":
-				params += ["--build-config", "Release"]
+				params += ["--build-config", build_config]
 			case _:
 				print("Warning: Unknown compiler, skipping tests.")
 
