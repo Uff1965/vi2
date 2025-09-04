@@ -23,7 +23,10 @@ namespace
 	constexpr auto LOOP_COUNT = 32'768U;
 	constexpr auto CNT = 2U;
 	constexpr auto DUR = 4U;
-	const auto numThreads = 4U * std::thread::hardware_concurrency();
+	const std::size_t numThreads = []
+		{	constexpr auto minThreads = 4U;
+			return minThreads + std::thread::hardware_concurrency();
+		}();
 }
 
 TEST(vi_tmMultithreaded, Add)
@@ -49,7 +52,7 @@ TEST(vi_tmMultithreaded, Add)
 
 	{	std::vector<std::thread> threads;
 		threads.reserve(numThreads);
-		for (unsigned i = 0; i < numThreads; ++i)
+		for (auto i = numThreads; i; --i)
 		{	threads.emplace_back(threadFunc, i);
 		}
 
@@ -100,7 +103,7 @@ TEST(vi_tmMultithreaded, AddGetReset)
 
 	{	std::vector<std::thread> threads;
 		threads.reserve(numThreads);
-		for (unsigned i = 0; i < numThreads; ++i)
+		for (auto i = numThreads; i; --i)
 		{	threads.emplace_back(threadFunc, i);
 		}
 

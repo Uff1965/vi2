@@ -24,7 +24,7 @@ namespace ch = std::chrono;
 
 VI_TM_INIT();
 //VI_TM_INIT(vi_tmReportCb_t{});
-//VI_TM_INIT(vi_tmGetTicksPtr__internal__);
+//VI_TM_INIT(vi_tmGetTicksPtr_INTERNAL_);
 //VI_TM_INIT(+[]() noexcept ->VI_TM_TICK { timespec ts; (void)timespec_get(&ts, TIME_UTC); return 1'000'000'000U * ts.tv_sec + ts.tv_nsec; });
 //VI_TM_INIT(+[]() noexcept ->VI_TM_TICK { return clock(); });
 

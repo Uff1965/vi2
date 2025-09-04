@@ -40,16 +40,24 @@
 # Rule filters should be written without '#' character.
 
 # VI_TIMING ############################################################
-//-V:assert:2528,2570
-//-V:VI_TM:2528,2570,2571
+//V_EXCLUDE_PATH *\_*\*
 
-//V_EXCLUDE_PATH *\_build*\*
+#//V_ASSERT_CONTRACT, assertMacro:verify
+#//-V:verify:2528, 2570
+
+#//V_ASSERT_CONTRACT, assertMacro:assert
+//-V:assert:2528,2570
+
 //-V:vi_tmStaticInfo:206
 //-V:vi_tmStaticInfo:2571
+
+//-V:VI_TM:2528,2570,2571
 //-V:VI_TM_FULLVERSION:2571
 //-V:VI_TM_HGLOBAL:2571
 
-//-V:ASSERT_NE:2561
-
 //-V:...:2528
 //-V::128
+
+#Google Test
+//-V:ASSERT_EQ:2561
+//-V:ASSERT_NE:2561

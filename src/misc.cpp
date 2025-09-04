@@ -135,10 +135,10 @@ namespace
 			static int fixate()
 			{	if (0 == cnt_++)
 				{	const auto prev = set_affinity();
-					if (!verify(prev.has_value()))
+					if (!verify(!!prev))
 					{	return VI_EXIT_FAILURE;
 					}
-					previous_affinity_ = *prev;
+					previous_affinity_ = prev.value_or(AFFINITY_ZERO);
 				}
 				return VI_EXIT_SUCCESS;
 			}

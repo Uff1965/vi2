@@ -40,6 +40,8 @@
 # Rule filters should be written without '#' character.
 
 # VI_TIMING ############################################################
+//V_EXCLUDE_PATH *\_*\*
+
 #//V_ASSERT_CONTRACT, assertMacro:assert
 //-V:assert:2528,2570
 

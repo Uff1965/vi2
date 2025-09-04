@@ -248,14 +248,14 @@ typedef enum vi_tmReportFlags_e
 
 // Main functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	// Is for internal use only. Do not use it directly in your code!
-	extern VI_TM_API vi_tmGetTicks_t *vi_tmGetTicksPtr__internal__;
+	extern VI_TM_API vi_tmGetTicks_t *vi_tmGetTicksPtr_INTERNAL_;
 
 	/// <summary>
 	/// This function is used to measure time intervals with fine precision.
 	/// </summary>
 	/// <returns>A current tick count.</returns>
 	VI_NODISCARD inline VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT
-	{	return vi_tmGetTicksPtr__internal__();
+	{	return vi_tmGetTicksPtr_INTERNAL_();
 	}
 
 	/// <summary>

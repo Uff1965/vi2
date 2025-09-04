@@ -175,4 +175,4 @@
 #	error "You need to define function(s) for your OS and CPU"
 #endif
 
-vi_tmGetTicks_t *vi_tmGetTicksPtr__internal__ = impl_vi_tmGetTicks;
+vi_tmGetTicks_t *vi_tmGetTicksPtr_INTERNAL_ = impl_vi_tmGetTicks;
