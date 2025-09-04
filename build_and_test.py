@@ -138,9 +138,10 @@ def get_pair(combo)-> tuple[str, list[str]]:
 
 	return suffix, params
 
-def folder_prepare(path: str):
-	if not os.path.exists(path):
-		os.makedirs(path)
+def folder_remake(path: str):
+	if os.path.exists(path):
+		shutil.rmtree(path, onerror=remove_readonly)
+	os.makedirs(path)
 
 def skip_suffix(suffix: str, filters: list[str]) -> bool:
 	if not filters:
@@ -168,17 +169,17 @@ def main():
 	test_root = PARAMS.path_to_build
 	if not os.path.isabs(test_root):
 		test_root = os.path.abspath(os.path.join(PROJECT_ROOT, test_root))
+	folder_remake(test_root)
 
 	path_to_result = PARAMS.path_to_result
 	if not os.path.isabs(path_to_result):
 		path_to_result = os.path.abspath(os.path.join(test_root, path_to_result))
+	folder_remake(path_to_result)
 
 	suffix_filters = PARAMS.filters
 	suffix_filters = ["" if item == EMPTY else item for item in suffix_filters]
 
 	build_config = PARAMS.build_config;
-
-	folder_prepare(test_root)
 
 	counter = 0
 	for combo in itertools.product([False, True], repeat=len(OPTIONS)):
@@ -224,7 +225,7 @@ def main():
 		print("Run the tests - done")
 
 		shutil.rmtree(build_dir, onerror=remove_readonly)
-		print(f"[FINISH] {name} [{(datetime.datetime.now() - start).total_seconds():.3f}s]\n")
+		print(f"[FINISH] {name} [Elapsed: {format_duration((datetime.datetime.now() - start).total_seconds())}]\n")
 
 	print(f"All {counter} combinations have been successfully assembled and tested.")
 	print()
