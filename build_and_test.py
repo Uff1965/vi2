@@ -192,38 +192,38 @@ def main():
 		start = datetime.datetime.now()
 		print(f"[START] {name}: {start.strftime('%H:%M:%S')}")
 
-#		build_dir = os.path.join(test_root, "_build_" + suffix)
-#		print(f"build_dir: \'{build_dir}\'")
-#		if os.path.exists(build_dir) and os.path.isdir(build_dir):
-#			shutil.rmtree(build_dir, onerror=remove_readonly)
-#
-#
-#		print("Configuring CMake:")
-#		params = ["cmake", "-S", str(path_to_source), "-B", str(build_dir), f"-DCMAKE_BUILD_TYPE={build_config}", f"-DVI_TM_OUTPUT_PATH={str(path_to_result)}"]
-#		params += options
-#		run(params)
-#		print("Configuring CMake - done\n")
-#
-#		print("Build the project:")
-#		run(["cmake", "--build", str(build_dir), "--config", build_config])
-#		print("Build the project - done\n")
-#
-#		# Run the tests; the script will terminate upon the first error.
-#
-#		params = ["ctest", "--test-dir", str(build_dir), "--output-on-failure"]
-#		match get_cmake_property("CMAKE_CXX_COMPILER_ID"):
-#			case "GNU" | "Clang":
-#				None
-#			case "MSVC":
-#				params += ["--build-config", build_config]
-#			case _:
-#				print("Warning: Unknown compiler, skipping tests.")
-#
-#		print("Run the tests:")
-#		run(params)
-#		print("Run the tests - done")
-#
-#		shutil.rmtree(build_dir, onerror=remove_readonly)
+		build_dir = os.path.join(test_root, "_build_" + suffix)
+		print(f"build_dir: \'{build_dir}\'")
+		if os.path.exists(build_dir) and os.path.isdir(build_dir):
+			shutil.rmtree(build_dir, onerror=remove_readonly)
+
+
+		print("Configuring CMake:")
+		params = ["cmake", "-S", str(path_to_source), "-B", str(build_dir), f"-DCMAKE_BUILD_TYPE={build_config}", f"-DVI_TM_OUTPUT_PATH={str(path_to_result)}"]
+		params += options
+		run(params)
+		print("Configuring CMake - done\n")
+
+		print("Build the project:")
+		run(["cmake", "--build", str(build_dir), "--config", build_config])
+		print("Build the project - done\n")
+
+		# Run the tests; the script will terminate upon the first error.
+
+		params = ["ctest", "--test-dir", str(build_dir), "--output-on-failure"]
+		match get_cmake_property("CMAKE_CXX_COMPILER_ID"):
+			case "GNU" | "Clang":
+				None
+			case "MSVC":
+				params += ["--build-config", build_config]
+			case _:
+				print("Warning: Unknown compiler, skipping tests.")
+
+		print("Run the tests:")
+		run(params)
+		print("Run the tests - done")
+
+		shutil.rmtree(build_dir, onerror=remove_readonly)
 		print(f"[FINISH] {name} [{(datetime.datetime.now() - start).total_seconds():.3f}s]\n")
 
 	print(f"All {counter} combinations have been successfully assembled and tested.")
