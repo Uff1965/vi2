@@ -225,7 +225,7 @@ def main():
 		print("Run the tests - done")
 
 		shutil.rmtree(build_dir, onerror=remove_readonly)
-		print(f"[FINISH] {name} [Elapsed: {format_duration((datetime.datetime.now() - start).total_seconds())}]\n")
+		print(f"[FINISH] {counter}:{name} [Elapsed: {format_duration((datetime.datetime.now() - start).total_seconds())}]\n")
 
 	print(f"All {counter} combinations have been successfully assembled and tested.")
 	print()
