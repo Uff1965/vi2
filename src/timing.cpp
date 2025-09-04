@@ -166,8 +166,7 @@ public:
 	int init();
 	int finit();
 	auto& try_emplace(const char *name); // Get a reference to the measurement by name, creating it if it does not exist.
-	template<typename F>
-	int for_each_measurement(const F &fn); // Calls the function fn for each measurement in the journal, while this function returns 0. Returns the return code of the function fn if it returned a nonzero value, or 0 if all measurements were processed.
+	int for_each_measurement(vi_tmMeasEnumCb_t fn, void *ctx); // Calls the function fn for each measurement in the journal, while this function returns 0. Returns the return code of the function fn if it returned a nonzero value, or 0 if all measurements were processed.
 	void clear();
 	// Global journal management functions.
 	static int global_init(vi_tmGetTicks_t *fn); // Initialize the global journal.
@@ -235,13 +234,15 @@ inline auto& vi_tmMeasurementsJournal_t::try_emplace(const char *name)
 	return *storage_.try_emplace(name).first;
 }
 
-template<typename F>
-int vi_tmMeasurementsJournal_t::for_each_measurement(const F &fn)
+int vi_tmMeasurementsJournal_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void *ctx)
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lock{ storage_guard_ });
 	unused_ = false; // No need to report. The user probebly make a report himself.
+	if (!fn)
+	{	return 0;
+	}
 	for (auto &it : storage_)
 	{	if (!it.first.empty())
-		{	if (const auto breaker = fn(it))
+		{	if (const auto breaker = fn(static_cast<VI_TM_HMEAS>(&it), ctx))
 			{	return breaker;
 			}
 		}
@@ -488,11 +489,7 @@ void VI_TM_CALL vi_tmJournalReset(VI_TM_HJOUR journal) noexcept
 }
 
 int VI_TM_CALL vi_tmMeasurementEnumerate(VI_TM_HJOUR journal, vi_tmMeasEnumCb_t fn, void *ctx)
-{	return vi_tmMeasurementsJournal_t::from_handle(journal).for_each_measurement
-	(	[fn, ctx](storage_t::value_type &i)
-		{	return fn(static_cast<VI_TM_HMEAS>(&i), ctx);
-		}
-	);
+{	return vi_tmMeasurementsJournal_t::from_handle(journal).for_each_measurement(fn, ctx);
 }
 
 VI_TM_HMEAS VI_TM_CALL vi_tmMeasurement(VI_TM_HJOUR journal, const char *name)

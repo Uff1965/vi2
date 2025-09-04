@@ -22,8 +22,8 @@
 using namespace std::literals;
 namespace ch = std::chrono;
 
-//VI_TM_INIT();
-VI_TM_INIT(vi_tmReportCb_t{});
+VI_TM_INIT();
+//VI_TM_INIT(vi_tmReportCb_t{});
 //VI_TM_INIT(vi_tmGetTicksPtr__internal__);
 //VI_TM_INIT(+[]() noexcept ->VI_TM_TICK { timespec ts; (void)timespec_get(&ts, TIME_UTC); return 1'000'000'000U * ts.tv_sec + ts.tv_nsec; });
 //VI_TM_INIT(+[]() noexcept ->VI_TM_TICK { return clock(); });
@@ -124,6 +124,9 @@ int main(int argc, char** argv)
 		metrics(std::cout);
 		endl(std::cout);
 	}
+	else
+	{	vi_tmMeasurementEnumerate(VI_TM_HGLOBAL, nullptr, nullptr); // Switch-off the default timing report output.
+	}
 
 	if (const auto ret = RUN_ALL_TESTS(); gtest_arg || !!ret )
 	{	return ret;
@@ -137,6 +140,7 @@ int main(int argc, char** argv)
 	endl(std::cout);
 	std::cout << "Benchmark:\n";
 	::benchmark::RunSpecifiedBenchmarks();
+	endl(std::cout);
 
 	return 0;
 }

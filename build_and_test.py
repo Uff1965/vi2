@@ -9,6 +9,7 @@ import shlex
 import shutil
 import stat
 import subprocess
+import sys
 
 def format_duration(seconds: float) -> str:
 	hours, secs = divmod(round(seconds, 1), 3600)
@@ -70,10 +71,12 @@ def run(cmd, cwd=None):
 	result = subprocess.run(cmd, cwd=cwd, check=True)
 
 PROJECT_ROOT = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
+EMPTY = "__EMPTY__"
 
 def parse_params()->argparse.Namespace:
 	parser = argparse.ArgumentParser(
-		description="Automate testing for all CMake option combinations",
+		description="A utility for automatically configuring, building, and testing the viTiming library with different combinations of options.",
+		epilog = "Example usage:\n\tpython build_and_test.py -S . -B _tests -T _bin -C Release rf '\"\"'",
 		formatter_class=argparse.ArgumentDefaultsHelpFormatter
 	)
 	parser.add_argument(
@@ -109,10 +112,10 @@ def parse_params()->argparse.Namespace:
 		help="Choose configuration to test."
 	)
 	parser.add_argument(
-		"params",
+		"filters",
 		type=str,
 		nargs="*",
-		help='Build suffixes (e.g. "rfm"). If omitted, all combos will be tested.'
+		help=f"Build suffixes (e.g. 'rfm'). '{EMPTY}' or '\"\"' to pass an empty filter to Windows CMD. If omitted, all combos will be tested."
 	)
 
 	return parser.parse_args()
@@ -139,12 +142,22 @@ def folder_prepare(path: str):
 	if not os.path.exists(path):
 		os.makedirs(path)
 
-def filter_suffix(suffix: str, suffix_filters: str)->bool:
-	return suffix_filters and any(char not in suffix for char in suffix_filters)
+def skip_suffix(suffix: str, filters: list[str]) -> bool:
+	if not filters:
+		return False
+
+	suffix_set = set(suffix)
+
+	if not suffix_set:
+		return all(f for f in filters)
+
+	return not any(f and set(f) <= suffix_set for f in filters)
 
 def main():
 	start_all = datetime.datetime.now()
 	print(f"[START ALL]: {start_all.strftime('%H:%M:%S')}")
+	print(f"Agrs: {sys.argv}")
+	print()
 
 	PARAMS = parse_params()
 	
@@ -160,56 +173,66 @@ def main():
 	if not os.path.isabs(path_to_result):
 		path_to_result = os.path.abspath(os.path.join(test_root, path_to_result))
 
-	suffix_filters = PARAMS.params
+	suffix_filters = PARAMS.filters
+	suffix_filters = ["" if item == EMPTY else item for item in suffix_filters]
+
 	build_config = PARAMS.build_config;
 
 	folder_prepare(test_root)
 
+	counter = 0
 	for combo in itertools.product([False, True], repeat=len(OPTIONS)):
 		suffix, options = get_pair(combo)
-		if filter_suffix(suffix, suffix_filters):
+		if skip_suffix(suffix, suffix_filters):
 			continue
 
+		counter += 1
 		name = "vi_timing_" + suffix
 
 		start = datetime.datetime.now()
 		print(f"[START] {name}: {start.strftime('%H:%M:%S')}")
 
-		build_dir = os.path.join(test_root, "_build_" + suffix)
-		print(f"build_dir: \'{build_dir}\'")
-		if os.path.exists(build_dir) and os.path.isdir(build_dir):
-			shutil.rmtree(build_dir, onerror=remove_readonly)
-
-
-		print("Configuring CMake:")
-		params = ["cmake", "-S", str(path_to_source), "-B", str(build_dir), f"-DCMAKE_BUILD_TYPE={build_config}", f"-DVI_TM_OUTPUT_PATH={str(path_to_result)}"]
-		params += options
-		run(params)
-		print("Configuring CMake - done\n")
-
-		print("Build the project:")
-		run(["cmake", "--build", str(build_dir), "--config", build_config])
-		print("Build the project - done\n")
-
-		# Run the tests; the script will terminate upon the first error.
-
-		params = ["ctest", "--test-dir", str(build_dir), "--output-on-failure"]
-		match get_cmake_property("CMAKE_CXX_COMPILER_ID"):
-			case "GNU" | "Clang":
-				None
-			case "MSVC":
-				params += ["--build-config", build_config]
-			case _:
-				print("Warning: Unknown compiler, skipping tests.")
-
-		print("Run the tests:")
-		run(params)
-		print("Run the tests - done")
-
-		shutil.rmtree(build_dir, onerror=remove_readonly)
+#		build_dir = os.path.join(test_root, "_build_" + suffix)
+#		print(f"build_dir: \'{build_dir}\'")
+#		if os.path.exists(build_dir) and os.path.isdir(build_dir):
+#			shutil.rmtree(build_dir, onerror=remove_readonly)
+#
+#
+#		print("Configuring CMake:")
+#		params = ["cmake", "-S", str(path_to_source), "-B", str(build_dir), f"-DCMAKE_BUILD_TYPE={build_config}", f"-DVI_TM_OUTPUT_PATH={str(path_to_result)}"]
+#		params += options
+#		run(params)
+#		print("Configuring CMake - done\n")
+#
+#		print("Build the project:")
+#		run(["cmake", "--build", str(build_dir), "--config", build_config])
+#		print("Build the project - done\n")
+#
+#		# Run the tests; the script will terminate upon the first error.
+#
+#		params = ["ctest", "--test-dir", str(build_dir), "--output-on-failure"]
+#		match get_cmake_property("CMAKE_CXX_COMPILER_ID"):
+#			case "GNU" | "Clang":
+#				None
+#			case "MSVC":
+#				params += ["--build-config", build_config]
+#			case _:
+#				print("Warning: Unknown compiler, skipping tests.")
+#
+#		print("Run the tests:")
+#		run(params)
+#		print("Run the tests - done")
+#
+#		shutil.rmtree(build_dir, onerror=remove_readonly)
 		print(f"[FINISH] {name} [{(datetime.datetime.now() - start).total_seconds():.3f}s]\n")
 
-	print("All combinations have been successfully assembled and tested.")
+	print(f"All {counter} combinations have been successfully assembled and tested.")
+	print()
+	print("Reminder:")
+	print(f"Source directory: \'{path_to_source}\'.")
+	print(f"Build directory: \'{test_root}\'.")
+	print(f"Target directory: \'{path_to_result}\'.")
+	print()
 	print(f"[FINISH ALL] [Elapsed: {format_duration((datetime.datetime.now() - start_all).total_seconds())}].\n")
 
 if __name__ == "__main__":
