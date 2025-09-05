@@ -476,12 +476,12 @@ int formatter_t::print_metering(const metering_t &i, const F &fn) const
 	str.imbue(std::locale(str.getloc(), new misc::space_out));
 
 	n_++;
-	const char fill = ((0U != guideline_interval_) &&
+	const char fill_symbol = ((0U != guideline_interval_) &&
 		(0U == n_ % static_cast<std::size_t>(guideline_interval_))) ? UNDERSCORE : ' ';
 
 	str <<
 		std::setw(max_len_number_) << n_ << ". " << 
-		std::left << std::setfill(fill) <<
+		std::left << std::setfill(fill_symbol) <<
 		std::setw(width_column(vi_tmSortByName)) << i.name_ << ": " <<
 		std::right << std::setfill(' ') <<
 #if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER
