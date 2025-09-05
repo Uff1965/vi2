@@ -184,6 +184,9 @@ def main():
 	counter = 0
 	for combo in itertools.product([False, True], repeat=len(OPTIONS)):
 		suffix, options = get_pair(combo)
+		if build_config.upper() == "DEBUG":
+			suffix += "d"
+
 		if skip_suffix(suffix, suffix_filters):
 			continue
 
@@ -197,7 +200,6 @@ def main():
 		print(f"build_dir: \'{build_dir}\'")
 		if os.path.exists(build_dir) and os.path.isdir(build_dir):
 			shutil.rmtree(build_dir, onerror=remove_readonly)
-
 
 		print("Configuring CMake:")
 		params = ["cmake", "-S", str(path_to_source), "-B", str(build_dir), f"-DCMAKE_BUILD_TYPE={build_config}", f"-DVI_TM_OUTPUT_PATH={str(path_to_result)}"]
