@@ -48,7 +48,15 @@ namespace
 	{	const auto tm = ch::system_clock::to_time_t(ch::system_clock::now());
 		const std::string flags = flags2string(*static_cast<const unsigned *>(vi_tmStaticInfo(VI_TM_INFO_FLAGS)));
 
-		stream << "Start: " << std::put_time(std::localtime(&tm), "%F %T.\n") << std::endl;
+		std::tm tm_buf;
+#ifdef _MSC_VER
+		if (localtime_s(&tm_buf, &tm))
+		{	assert(false);
+		}
+#else
+		localtime_r(&tm, &tm_buf);
+#endif
+		stream << "Start: " << std::put_time(&tm_buf, "%F %T.\n") << std::endl;
 		stream << "Information about the \'vi_timing\' library:\n"
 			"\tVersion: " << VI_TM_FULLVERSION << ";\n"
 			"\tBuild flags: " << (flags.empty() ? "<none>" : flags) << ";\n"

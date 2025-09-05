@@ -254,10 +254,8 @@ typedef enum vi_tmReportFlags_e
 	/// This function is used to measure time intervals with fine precision.
 	/// </summary>
 	/// <returns>A current tick count.</returns>
-	VI_NODISCARD inline VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT
-	{	return vi_tmGetTicksPtr_INTERNAL_();
-	}
-
+	#define vi_tmGetTicks vi_tmGetTicksPtr_INTERNAL_
+	
 	/// <summary>
 	/// Initializes the global journal.
 	/// </summary>

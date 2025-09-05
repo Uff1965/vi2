@@ -31,7 +31,7 @@ namespace
 
 TEST(vi_tmMultithreaded, Add)
 {
-	auto threadFunc = [](unsigned)
+	auto threadFunc = [](std::size_t)
 		{	std::mt19937 gen{/*std::random_device{}()*/ };
 			std::uniform_int_distribution dis{ 0, 3 };
 			static auto const mfunc = vi_tmMeasurement(VI_TM_HGLOBAL, THREADFUNC_NAME_1);
@@ -86,7 +86,7 @@ TEST(vi_tmMultithreaded, Add)
 TEST(vi_tmMultithreaded, AddGetReset)
 {
 	static auto const mfunc = vi_tmMeasurement(VI_TM_HGLOBAL, THREADFUNC_NAME_2);
-	auto threadFunc = [](unsigned)
+	auto threadFunc = [](std::size_t)
 		{	std::mt19937 gen{/*std::random_device{}()*/ };
 			std::uniform_int_distribution dis{ 0, 3 };
 
