@@ -5,6 +5,7 @@ import datetime
 import itertools
 import os
 import pathlib
+import platform
 import shlex
 import shutil
 import stat
@@ -63,7 +64,7 @@ def format_duration(seconds: float) -> str:
 
     return ' '.join(parts)
 
-def get_cmake_property(key: str = "CMAKE_CXX_COMPILER_ID") -> str | None:
+def get_cmake_property(key: str = "CMAKE_CXX_COMPILER_ID", data: list[str] | None = None) -> str | None:
     """
     Get the value of a CMake system property from `cmake --system-information`.
 
@@ -72,25 +73,28 @@ def get_cmake_property(key: str = "CMAKE_CXX_COMPILER_ID") -> str | None:
     """
 
     try:
-        result = subprocess.run(
-            ["cmake", "--system-information"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            encoding="utf-8",
-            text=True,
-            check=True,
-        )
+        if data is None:
+            if not hasattr(get_cmake_property, "_cache"):
+                get_cmake_property._cache = subprocess.run(
+                    ["cmake", "--system-information"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    encoding="utf-8",
+                    text=True,
+                    check=True,
+                ).stdout.splitlines()
+            data = get_cmake_property._cache
     except FileNotFoundError:
         raise RuntimeError("CMake not found in PATH")
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Error running cmake: {e.stderr.strip()}")
 
-    for line in result.stdout.splitlines():
-        if key in line:
+    for line in data:
+        if line.startswith(f"{key}:") or line.startswith(f"{key} "):
             # support both "key: value" and 'key "value"' formats
             parts = line.split(":", 1)
             if len(parts) == 2:
-                return parts[1].strip().strip('"')
+                return parts[1].strip().strip('"').strip()
             parts = shlex.split(line)
             if len(parts) >= 2:
                 return parts[1]
@@ -216,6 +220,22 @@ def make_suffix(flags: list[str]) -> str:
 
     return result
 
+def make_setjobs()->list[str]:
+    result = []
+    generator = get_cmake_property("CMAKE_GENERATOR")
+    if generator is None:
+        return result
+
+    jobs = os.cpu_count() or 4
+
+    if "Ninja" in generator:
+        result = [f"-j{jobs}"]
+    elif "Makefiles" in generator:
+        result = ["--", f"-j{jobs}"]
+    elif "Visual Studio" in generator or "MSBuild" in generator:
+        result = ["--", f"/m:{jobs}"]
+    return result
+
 def folder_remake(path: str):
     # Remove the folder if it exists
     if os.path.exists(path):
@@ -242,7 +262,9 @@ def configuring(build_dir: str, options: list[str]):
 
 def build(build_dir: str):
         print("Build the project:")
-        run(["cmake", "--build", str(build_dir), "--config", build_config])
+        params = ["cmake", "--build", str(build_dir), "--config", build_config]
+        params += make_setjobs() #must be last
+        run(params)
         print("Build the project - done\n")
 
 def testing(build_dir: str):
