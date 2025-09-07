@@ -25,6 +25,7 @@
 #include "version.h" // For build number generation.
 #include "misc.h"
 
+#include <algorithm> // std::min_element, std::max_element
 #include <cassert> // assert()
 #include <chrono> // std::chrono::milliseconds
 #include <cmath> // std::sqrt
