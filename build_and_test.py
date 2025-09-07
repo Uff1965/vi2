@@ -212,7 +212,7 @@ def make_suffix(flags: list[str]) -> str:
             break  # Move to the next option after first match
 
     if build_config.upper() == "DEBUG":
-        suffix += "d"
+        result += "d"
 
     return result
 
