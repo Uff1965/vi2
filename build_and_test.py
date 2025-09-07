@@ -16,12 +16,12 @@ START_ALL = datetime.datetime.now()
 PROJECT_ROOT = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
 EMPTY = "__EMPTY__"
 OPTIONS = [
-    ("VI_TM_STAT_USE_RAW", 'r', True),
+    ("BUILD_SHARED_LIBS", 's', True),
+    ("VI_TM_DEBUG", 'd', False),
     ("VI_TM_STAT_USE_FILTER", 'f', True),
     ("VI_TM_STAT_USE_MINMAX", 'm', True),
+    ("VI_TM_STAT_USE_RAW", 'r', True),
     ("VI_TM_THREADSAFE", 't', True),
-    ("VI_TM_DEBUG", 'd', True),
-    ("BUILD_SHARED_LIBS", 's', True),
 ]
 
 counter = 0
@@ -276,10 +276,11 @@ def work(options: list[str]):
         testing(build_dir)
 
         shutil.rmtree(build_dir, onerror=remove_readonly)
-        print(f"[FINISH] {counter}:{name} ["
+        print(f"[FINISH] {counter}: {name} ["
             f"Elapsed: {format_duration((datetime.datetime.now() - start).total_seconds())} "
             f"(all: {format_duration((datetime.datetime.now() - START_ALL).total_seconds())})"
             "]\n")
+        print("*" * 60)
 
 def main():
     global counter
