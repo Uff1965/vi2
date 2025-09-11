@@ -52,7 +52,9 @@ if (VI_TM_ENABLE_TESTS)
         VI_HAS_GTEST=1
     )
 
-    gtest_discover_tests(${PROJECT_NAME})
+    gtest_discover_tests(${PROJECT_NAME}
+        DISCOVERY_TIMEOUT 30
+    )
 endif()
 
 if (VI_TM_ENABLE_BENCHMARK)

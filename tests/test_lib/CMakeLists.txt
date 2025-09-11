@@ -44,8 +44,6 @@ if (VI_TM_ENABLE_TESTS)
     PRIVATE
         VI_HAS_GTEST=1
     )
-
-#    gtest_discover_tests(${PROJECT_NAME})
 endif()
 
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCE_FILES})
