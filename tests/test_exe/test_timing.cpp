@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <cassert>
+#include <cmath> // std::sqrt, std::abs, std::fma
 #include <numeric> // std::accumulate
 
 namespace
