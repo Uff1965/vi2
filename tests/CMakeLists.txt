@@ -10,5 +10,5 @@ if (VI_TM_ENABLE_BENCHMARK)
     include(cmake/gbenchmark.cmake)
 endif()
 
-add_subdirectory(lib)
-add_subdirectory(exe)
+add_subdirectory(test_lib)
+add_subdirectory(test_exe)

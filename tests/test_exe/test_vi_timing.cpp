@@ -2,7 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
 
 #include <vi_timing/vi_timing.hpp>
-#include "../lib/header.h"
+#include "../test_lib/header.h"
 
 #ifdef VI_HAS_GTEST
 #	include <gtest/gtest.h>
