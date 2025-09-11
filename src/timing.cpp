@@ -33,10 +33,11 @@
 #include <cstring>
 #include <memory> // std::unique_ptr
 #include <mutex> // std::mutex, std::lock_guard
+#include <new>
 #include <numeric> // std::accumulate
 #include <string> // std::string
 #include <unordered_map> // unordered_map: "does not invalidate pointers or references to elements".
-#include <new>
+#include <utility>
 
 #if VI_TM_THREADSAFE
 #	ifdef __STDC_NO_ATOMICS__
@@ -158,7 +159,7 @@ private:
 	static inline std::atomic_flag hglobal_inited_ = ATOMIC_FLAG_INIT;
 	static inline std::size_t global_initialized_ = 0U;
 	static inline struct global_initialized_sentinel_t
-	{	~global_initialized_sentinel_t() { assert(0U == global_initialized_ && "The number of Finit calls must be equal to the number of Init calls!"); }
+	{	~global_initialized_sentinel_t() { assert(0U == global_initialized_ && "The number of vi_tmFinit calls must be equal to the number of vi_tmInit calls!"); }
 	} global_initialized_sentinel_;
 
 	storage_t storage_;
@@ -167,7 +168,7 @@ private:
 public:
 	vi_tmMeasurementsJournal_t(const vi_tmMeasurementsJournal_t &) = delete;
 	vi_tmMeasurementsJournal_t& operator=(const vi_tmMeasurementsJournal_t &) = delete;
-	explicit vi_tmMeasurementsJournal_t(bool need_report = false);
+	explicit vi_tmMeasurementsJournal_t(bool unused = false);
 	~vi_tmMeasurementsJournal_t();
 	int init();
 	int finit();
@@ -179,7 +180,7 @@ public:
 	static int global_finit();
 	static auto& from_handle(VI_TM_HJOUR journal); // Get the journal from the handle or return the global journal.
 	bool used() const noexcept { return !unused_; } // Check if the journal has been used.
-	void used(bool used) noexcept { unused_ = !used; } // Set the journal as used or unused.
+	bool used(bool used) noexcept { return !std::exchange(unused_, !used); } // Set the journal as used or unused.
 };
 
 vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t(bool unused)
@@ -257,11 +258,6 @@ int vi_tmMeasurementsJournal_t::global_finit()
 vi_tmMeasurementsJournal_t::~vi_tmMeasurementsJournal_t()
 {	if (unused_)
 	{	vi_tmReport(this, vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName);
-	}
-
-	if (this == &from_handle(VI_TM_HGLOBAL))
-	{	std::lock_guard lg{ global_mtx_ };
-		assert(0U == global_initialized_ && "The number of library initializations does not match the number of deinitializations!");
 	}
 }
 
