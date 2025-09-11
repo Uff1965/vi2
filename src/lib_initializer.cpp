@@ -7,7 +7,7 @@
 #include <cassert>
 #include <cstddef>
 
-#if defined(_WIN32)
+#if defined(_MSC_VER)
 void init();
 void cleanup();
 
@@ -25,23 +25,25 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		cleanup();
 		break;
 
+	case DLL_THREAD_ATTACH:
+	case DLL_THREAD_DETACH:
+		break;
+
 	default:
-		assert(DLL_THREAD_ATTACH == ul_reason_for_call || DLL_THREAD_DETACH == ul_reason_for_call);
+		assert(false && "Uknown ul_reason_for_call!");
 		break;
 	}
 	return TRUE;
 }
-#else
+#elif defined(_linu) || defined(__clang__)
 __attribute__((constructor)) void init();
 __attribute__((destructor)) void cleanup();
 #endif
 
-__declspec(dllexport) std::size_t vi_timing_init_counter = 0;
-
 void init()
-{	++vi_timing_init_counter;
+{
 }
 
 void cleanup()
-{	--vi_timing_init_counter;
+{
 }
