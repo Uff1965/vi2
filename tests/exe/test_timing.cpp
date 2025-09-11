@@ -144,7 +144,7 @@ namespace
 #	endif
 		EXPECT_EQ(md.flt_cnt_, static_cast<VI_TM_FP>(exp_flt_cnt));
 		EXPECT_LT(std::abs(md.flt_avg_ - exp_flt_mean) / exp_flt_mean, fp_EPSILON);
-		EXPECT_FLOAT_EQ((md.flt_avg_ - exp_flt_mean) / exp_flt_mean, fp_ZERO);
+		EXPECT_FLOAT_EQ((md.flt_avg_ - exp_flt_mean) / exp_flt_mean, fp_EPSILON);
 		const auto s = std::sqrt(md.flt_ss_ / (md.flt_cnt_));
 		const auto exp_flt_stddev = [] // The standard deviation of the samples that will be counted.
 			{
@@ -164,13 +164,13 @@ namespace
 				return std::sqrt(sum_squared_deviations / static_cast<VI_TM_FP>(exp_flt_cnt));
 			}();
 		EXPECT_LT(std::abs(s - exp_flt_stddev) / exp_flt_stddev, fp_EPSILON);
-		EXPECT_FLOAT_EQ((s - exp_flt_stddev) / exp_flt_stddev, fp_ZERO);
+		EXPECT_FLOAT_EQ((s - exp_flt_stddev) / exp_flt_stddev, fp_EPSILON);
 #else
 		EXPECT_EQ(md.calls_, std::size(samples_simple) + std::size(samples_multiple));
 #	if VI_TM_STAT_USE_RAW
 		EXPECT_EQ(md.cnt_, std::size(samples_simple) + M * std::size(samples_multiple));
 		EXPECT_LT(std::abs(static_cast<VI_TM_FP>(md.sum_) / md.cnt_ - exp_flt_mean), fp_EPSILON);
-		EXPECT_FLOAT_EQ((static_cast<VI_TM_FP>(md.sum_) / md.cnt_ - exp_flt_mean), fp_ZERO);
+		EXPECT_FLOAT_EQ((static_cast<VI_TM_FP>(md.sum_) / md.cnt_ - exp_flt_mean), fp_EPSILON);
 #	endif
 #endif
 	};
