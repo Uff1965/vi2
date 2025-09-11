@@ -62,6 +62,7 @@ cmake_path(
 
 message(STATUS "")
 message(STATUS "Options:")
+message(STATUS "\tCMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "\tCMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}")
 message(STATUS "\tVI_TM_OUTPUT_PATH: ${VI_TM_OUTPUT_PATH}")
 
