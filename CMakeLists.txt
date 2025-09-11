@@ -19,7 +19,7 @@ endif()
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug" CACHE STRING "Limited configs" FORCE)
 if(NOT DEFINED CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build.")
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
@@ -78,9 +78,6 @@ message(STATUS "\tVI_TM_ENABLE_TESTS: ${VI_TM_ENABLE_TESTS}")
 message(STATUS "\tVI_TM_ENABLE_BENCHMARK: ${VI_TM_ENABLE_BENCHMARK}")
 message(STATUS "\tVI_TM_ENABLE_EXAMPLES: ${VI_TM_ENABLE_EXAMPLES}")
 message(STATUS "")
-
-set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "Limited configs" FORCE)
-
 
 foreach(CONFIG_TYPE IN ITEMS "" "_DEBUG" "_RELEASE")
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY${CONFIG_TYPE}  ${VI_TM_OUTPUT_PATH})
