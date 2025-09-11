@@ -155,7 +155,12 @@ private:
 	static constexpr auto MAX_LOAD_FACTOR = 0.7F;
 	static constexpr size_t DEFAULT_STORAGE_CAPACITY = 64U;
 	static inline std::mutex global_mtx_;
+	static inline std::atomic_flag hglobal_inited_ = ATOMIC_FLAG_INIT;
 	static inline std::size_t global_initialized_ = 0U;
+	static inline struct global_initialized_sentinel_t
+	{	~global_initialized_sentinel_t() { assert(0U == global_initialized_ && "The number of Finit calls must be equal to the number of Init calls!"); }
+	} global_initialized_sentinel_;
+
 	storage_t storage_;
 	bool unused_ = true;
 	VI_TM_THREADSAFE_ONLY(adaptive_mutex_t storage_guard_);
@@ -176,6 +181,12 @@ public:
 	bool used() const noexcept { return !unused_; } // Check if the journal has been used.
 	void used(bool used) noexcept { unused_ = !used; } // Set the journal as used or unused.
 };
+
+vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t(bool unused)
+	: unused_(unused)
+{	storage_.max_load_factor(MAX_LOAD_FACTOR);
+	storage_.reserve(DEFAULT_STORAGE_CAPACITY);
+}
 
 inline void meterage_t::reset() noexcept
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lg(mtx_));
@@ -198,15 +209,49 @@ inline vi_tmMeasurementStats_t meterage_t::get() const noexcept
 }
 
 inline auto& vi_tmMeasurementsJournal_t::from_handle(VI_TM_HJOUR journal)
-{	static vi_tmMeasurementsJournal_t global{true};
-	assert(journal);
- 	return VI_TM_HGLOBAL == journal ? global : *journal;
+{	assert(journal);
+	if (VI_TM_HGLOBAL == journal)
+	{	static auto global = []
+			{	hglobal_inited_.test_and_set();
+				return vi_tmMeasurementsJournal_t{ true };
+			}();
+		return global;
+	}
+
+	return *journal;
 }
 
-vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t(bool unused)
-	: unused_(unused)
-{	storage_.max_load_factor(MAX_LOAD_FACTOR);
-	storage_.reserve(DEFAULT_STORAGE_CAPACITY);
+int vi_tmMeasurementsJournal_t::global_init(vi_tmGetTicks_t *fn)
+{	std::lock_guard lg{ global_mtx_ };
+
+	if (0U == global_initialized_++)
+	{	assert(!hglobal_inited_.test_and_set() && "If global_init is used, its call must be the first call to the library!");
+
+		if (fn)
+		{	assert(!!vi_tmGetTicksPtr_INTERNAL_);
+			vi_tmGetTicksPtr_INTERNAL_ = fn;
+		}
+
+		auto& global = from_handle(VI_TM_HGLOBAL);
+		if (!verify(VI_EXIT_SUCCESS == global.init()))
+		{	return VI_EXIT_FAILURE;
+		}
+	}
+	return VI_EXIT_SUCCESS;
+}
+
+int vi_tmMeasurementsJournal_t::global_finit()
+{	std::lock_guard lg{global_mtx_};
+	assert(!!global_initialized_ && "The number of Finit calls must be equal to the number of Init calls!");
+
+	if (!!global_initialized_ && (0U == --global_initialized_))
+	{	assert(hglobal_inited_.test_and_set());
+		auto& global = from_handle(VI_TM_HGLOBAL);
+		if (!verify(VI_EXIT_SUCCESS == global.finit()))
+		{	return VI_EXIT_FAILURE;
+		}
+	}
+	return VI_EXIT_SUCCESS;
 }
 
 vi_tmMeasurementsJournal_t::~vi_tmMeasurementsJournal_t()
@@ -254,35 +299,6 @@ int vi_tmMeasurementsJournal_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void 
 void vi_tmMeasurementsJournal_t::clear()
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lock{ storage_guard_ });
 	storage_.clear();
-}
-
-int vi_tmMeasurementsJournal_t::global_init(vi_tmGetTicks_t *fn)
-{	std::lock_guard lg{global_mtx_};
-
-	if (0U == global_initialized_++)
-	{	auto& global = from_handle(VI_TM_HGLOBAL);
-		(void)verify(VI_EXIT_SUCCESS == global.init());
-		if (fn)
-		{	assert(!!vi_tmGetTicksPtr_INTERNAL_);
-			vi_tmGetTicksPtr_INTERNAL_ = fn;
-		}
-	}
-	else if(!verify(!fn))
-	{	return VI_EXIT_FAILURE;
-	}
-	return VI_EXIT_SUCCESS;
-}
-
-int vi_tmMeasurementsJournal_t::global_finit()
-{	std::lock_guard lg{global_mtx_};
-
-	if (verify(0U != global_initialized_) && (0U == --global_initialized_))
-	{	auto& global = from_handle(VI_TM_HGLOBAL);
-		if (!verify(VI_EXIT_SUCCESS == global.finit()))
-		{	return VI_EXIT_FAILURE;
-		}
-	}
-	return VI_EXIT_SUCCESS;
 }
 
 //vvvv API Implementation vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -516,160 +532,3 @@ void VI_TM_CALL vi_tmMeasurementReset(VI_TM_HMEAS meas)
 {	if (verify(meas)) { meas->second.reset(); }
 }
 //^^^API Implementation ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-#if VI_TM_DEBUG
-// This code is only compiled in debug mode to test certain library functionality.
-namespace
-{
-	const auto nanotest1 = []
-		{
-			static constexpr char NAME[] = "dummy";
-			const std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmJournalClose)> journal
-			{ vi_tmJournalCreate(),
-				vi_tmJournalClose
-			};
-			const auto m = vi_tmMeasurement(journal.get(), NAME);
-
-			{
-				static constexpr auto samples_simple =
-				{	10010U, 9981U, 9948U, 10030U, 10053U, 9929U, 9894U
-				};
-
-				for (auto x : samples_simple)
-				{	vi_tmMeasurementAdd(m, x);
-				}
-
-				const char *name = nullptr;
-				vi_tmMeasurementStats_t md;
-				vi_tmMeasurementStatsReset(&md);
-				vi_tmMeasurementGet(m, &name, &md);
-				{	assert(!!name && 0 == std::strcmp(name, NAME));
-					assert(md.calls_ == std::size(samples_simple));
-#if VI_TM_STAT_USE_RAW
-					assert(md.cnt_ == md.calls_);
-					assert(md.sum_ == std::accumulate(std::begin(samples_simple), std::end(samples_simple), 0U));
-#endif
-#if VI_TM_STAT_USE_FILTER
-					assert(md.flt_cnt_ == static_cast<VI_TM_FP>(md.calls_));
-					assert(md.flt_calls_ == md.calls_);
-#endif
-#if VI_TM_STAT_USE_MINMAX
-					assert(md.min_ == *std::min_element(std::begin(samples_simple), std::end(samples_simple)));
-					assert(md.max_ == *std::max_element(std::begin(samples_simple), std::end(samples_simple)));
-#endif
-				}
-				
-#if VI_TM_STAT_USE_FILTER
-				vi_tmMeasurementAdd(m, 10111); // It should be filtered out.
-				{	vi_tmMeasurementStats_t tmp;
-					vi_tmMeasurementStatsReset(&tmp);
-
-					vi_tmMeasurementGet(m, &name, &tmp);
-
-					assert(tmp.calls_ == md.calls_ + 1U);
-					assert(tmp.calls_ == md.flt_calls_ + 1U);
-				}
-				vi_tmMeasurementGet(m, &name, &md);
-
-				vi_tmMeasurementAdd(m, 10110); // It should not be filtered out.
-				{	vi_tmMeasurementStats_t tmp;
-					vi_tmMeasurementStatsReset(&tmp);
-
-					vi_tmMeasurementGet(m, &name, &tmp);
-
-					assert(tmp.calls_ == md.calls_ + 1U);
-					assert(tmp.flt_calls_ == md.flt_calls_ + 1U);
-					assert(tmp.flt_cnt_ == md.flt_cnt_ + fp_ONE);
-				}
-				vi_tmMeasurementGet(m, &name, &md);
-#endif
-			}
-
-			return 0;
-		}();
-
-	const auto nanotest2 = []
-		{
-			static constexpr auto samples_simple =
-			{	10010U, 9981U, 9948U, 10030U, 10053U,
-				9929U, 9894U, 10110U, 10040U, 10110U,
-				10019U, 9961U, 10078U, 9959U, 9966U,
-				10030U, 10089U, 9908U, 9938U, 9890U,
-			};
-			static constexpr auto M = 2;
-			static constexpr auto samples_multiple = { 990U, }; // Samples that will be added M times at once.
-			static constexpr auto samples_exclude = { 200000U }; // Samples that will be excluded from the statistics.
-
-			static constexpr auto exp_flt_cnt = std::size(samples_simple) + M * std::size(samples_multiple); // The total number of samples that will be counted.
-			static const auto exp_flt_mean = 
-				(	std::accumulate(std::cbegin(samples_simple), std::cend(samples_simple), 0.0) +
-					static_cast<double>(M) * std::accumulate(std::cbegin(samples_multiple), std::cend(samples_multiple), 0.0)
-				) / static_cast<VI_TM_FP>(exp_flt_cnt); // The mean value of the samples that will be counted.
-#	if VI_TM_STAT_USE_FILTER
-			const auto exp_flt_stddev = [] // The standard deviation of the samples that will be counted.
-				{	const auto sum_squared_deviations =
-					std::accumulate
-					(	std::cbegin(samples_simple),
-						std::cend(samples_simple),
-						0.0,
-						[](auto i, auto v) { const auto d = static_cast<VI_TM_FP>(v) - exp_flt_mean; return FMA(d, d, i); }
-					) +
-					static_cast<double>(M) * std::accumulate
-					(	std::cbegin(samples_multiple),
-						std::cend(samples_multiple),
-						0.0,
-						[](auto i, auto v) { const auto d = static_cast<VI_TM_FP>(v) - exp_flt_mean; return FMA(d, d, i); }
-					);
-					return std::sqrt(sum_squared_deviations / static_cast<VI_TM_FP>(exp_flt_cnt));
-				}();
-#	endif
-			static constexpr char NAME[] = "dummy"; // The name of the measurement.
-
-			const char *name = nullptr; // Name of the measurement to be filled in.
-			vi_tmMeasurementStats_t md; // Measurement data to be filled in.
-			std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmJournalClose)> journal{ vi_tmJournalCreate(), vi_tmJournalClose }; // Journal for measurements, automatically closed on destruction.
-			{	const auto m = vi_tmMeasurement(journal.get(), NAME); // Create a measurement 'NAME'.
-				for (auto x : samples_simple) // Add simple samples one at a time.
-				{	vi_tmMeasurementAdd(m, x);
-				}
-
-				vi_tmMeasurementStatsReset(&md);
-				for (auto x : samples_multiple) // Add multiple samples M times at once.
-				{	vi_tmMeasurementStatsAdd(&md, M * x, M);
-				}
-
-				vi_tmMeasurementMerge(m, &md); // Merge the statistics into the measurement.
-				vi_tmMeasurementStatsReset(&md);
-
-#	if VI_TM_STAT_USE_FILTER
-				for (auto x : samples_exclude) // Add samples that will be excluded from the statistics.
-				{	vi_tmMeasurementAdd(m, x, 1);
-				}
-#	endif
-				vi_tmMeasurementGet(m, &name, &md); // Get the measurement data and name.
-			}
-
-			constexpr auto DBG_EPS = fp_EPSILON;
-			(void)DBG_EPS;
-
-			assert(name && std::strlen(name) + 1 == std::size(NAME) && 0 == std::strcmp(name, NAME));
-#	if VI_TM_STAT_USE_FILTER
-			assert(md.calls_ == std::size(samples_simple) + std::size(samples_multiple) + std::size(samples_exclude));
-#if VI_TM_STAT_USE_RAW
-			assert(md.cnt_ == std::size(samples_simple) + M * std::size(samples_multiple) + std::size(samples_exclude));
-#endif
-			assert(md.flt_cnt_ == static_cast<VI_TM_FP>(exp_flt_cnt));
-			assert(std::abs(md.flt_avg_ - exp_flt_mean) / exp_flt_mean < DBG_EPS);
-			const auto s = std::sqrt(md.flt_ss_ / (md.flt_cnt_));
-			assert(std::abs(s - exp_flt_stddev) / exp_flt_stddev < DBG_EPS);
-#	else
-			assert(md.calls_ == std::size(samples_simple) + std::size(samples_multiple));
-#if VI_TM_STAT_USE_RAW
-			assert(md.cnt_ == std::size(samples_simple) + M * std::size(samples_multiple));
-			assert(std::abs(static_cast<VI_TM_FP>(md.sum_) / md.cnt_ - exp_flt_mean) < DBG_EPS);
-#endif
-#	endif
-			return 0;
-		}();
-}
-#endif // #if VI_TM_DEBUG

@@ -2,6 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
 
 #include <vi_timing/vi_timing.hpp>
+#include "../lib/header.h"
 
 #ifdef VI_HAS_GTEST
 #	include <gtest/gtest.h>
@@ -144,6 +145,8 @@ int main(int argc, char** argv)
 	if (::benchmark::ReportUnrecognizedArguments(argc, argv))
 	{	return 1;
 	}
+
+	test_lib_func();
 
 	endl(std::cout);
 	std::cout << "Benchmark:\n";

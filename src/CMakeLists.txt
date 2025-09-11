@@ -40,6 +40,10 @@ list(APPEND SOURCE_FILES
     "timing.cpp"
 )
 
+if(BUILD_SHARED_LIBS)
+    list(APPEND SOURCE_FILES "lib_initializer.cpp")
+endif()
+
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 set_target_properties(${PROJECT_NAME}
@@ -80,11 +84,6 @@ PUBLIC
     VI_TM_STAT_USE_FILTER=$<IF:$<BOOL:${VI_TM_STAT_USE_FILTER}>,1,0>
     VI_TM_STAT_USE_MINMAX=$<IF:$<BOOL:${VI_TM_STAT_USE_MINMAX}>,1,0>
 )
-
-#target_precompile_headers(${PROJECT_NAME}
-#PRIVATE
-#    "pch.hpp"
-#)
 
 set_source_files_properties("timing.cpp"
 PROPERTIES
