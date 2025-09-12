@@ -55,12 +55,14 @@ extern "C"
 
 #elif defined(__GNUC__)
 
-void init_wrapper(void)    __attribute__((constructor(101)))
+__attribute__((constructor(101)))
+void init_wrapper(void)
 {
 	init();
 }
 
-void cleanup_wrapper(void) __attribute__((destructor(65000)))
+__attribute__((destructor(65000)))
+void cleanup_wrapper(void)
 {
 	cleanup();
 }
