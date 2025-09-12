@@ -1,49 +1,70 @@
 #if defined(_WIN32)
-#include <windows.h>
+#	include <windows.h>
 #else
-#include <dlfcn.h>
+#	include <dlfcn.h>
 #endif
 
 #include <cassert>
 #include <cstddef>
+#include <type_traits>
 
-#if defined(_MSC_VER)
-void init();
-void cleanup();
-
-BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
-{	(void)hModule;
-	(void)lpReserved;
-
-	switch (ul_reason_for_call)
-	{
-	case DLL_PROCESS_ATTACH:
-		init();
-		break;
-
-	case DLL_PROCESS_DETACH:
-		cleanup();
-		break;
-
-	case DLL_THREAD_ATTACH:
-	case DLL_THREAD_DETACH:
-		break;
-
-	default:
-		assert(false && "Uknown ul_reason_for_call!");
-		break;
-	}
-	return TRUE;
-}
-#elif defined(_linu) || defined(__clang__)
-__attribute__((constructor)) void init();
-__attribute__((destructor)) void cleanup();
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#	if defined(_M_IX86) || defined(__i386__)
+#		define HOOK_CC __cdecl
+#	else
+#		define HOOK_CC
+#	endif
+#else
+#	define HOOK_CC
 #endif
 
-void init()
+namespace
 {
+	using PFV = void (HOOK_CC *) (void) noexcept;
+
+	void HOOK_CC init(void) noexcept
+	{/**/
+	}
+	static_assert(std::is_same_v<PFV, decltype(&init)>);
+
+	void HOOK_CC cleanup(void) noexcept
+	{/**/
+	}
+	static_assert(std::is_same_v<PFV, decltype(&cleanup)>);
 }
 
-void cleanup()
+#if defined(_MSC_VER)
+#	pragma section(".CRT$XCU", read)
+#	pragma section(".CRT$XPU", read)
+
+extern "C"
 {
+	// .CRT$XCU: executed before main/DllMain, before global constructors.
+	extern __declspec(allocate(".CRT$XCU")) const PFV p_init_hook = init;
+	// .CRT$XPU — called when the module is unloaded, after global destructors and atexit() functions.
+	extern __declspec(allocate(".CRT$XPU")) const PFV p_cleanup_hook = cleanup;
 }
+
+#	if defined(_M_IX86)
+#		pragma comment(linker, "/include:_p_init_hook") // For x86, the symbol names have a leading underscore.
+#		pragma comment(linker, "/include:_p_cleanup_hook") 
+#	else
+#		pragma comment(linker, "/include:p_init_hook") // For x64 and ARM, no leading underscore.
+#		pragma comment(linker, "/include:p_cleanup_hook")
+#	endif
+
+#elif defined(__GNUC__)
+
+void init_wrapper(void)    __attribute__((constructor(101)))
+{
+	init();
+}
+
+void cleanup_wrapper(void) __attribute__((destructor(65000)))
+{
+	cleanup();
+}
+
+#else
+#	warning "Portable init/cleanup-hooks are not supported on this compiler"
+#endif  // Compiler branches

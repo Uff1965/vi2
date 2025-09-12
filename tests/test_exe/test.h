@@ -12,7 +12,7 @@ class ViTimingJournalFixture : public ::testing::Test
 	unique_journal_t journal_{ nullptr, vi_tmJournalClose };
 protected:
 	void SetUp() override
-	{   journal_.reset(vi_tmJournalCreate(0, nullptr));
+	{   journal_.reset(vi_tmJournalCreate());
 		ASSERT_NE(journal_, nullptr) << "vi_tmJournalCreate should return a valid descriptor";
 	}
 	auto journal() const noexcept { return journal_.get(); }

@@ -272,10 +272,7 @@ typedef enum vi_tmReportFlags_e
 	/// Creates a new journal object and returns a handle to it.
 	/// </summary>
 	/// <returns>A handle to the newly created journal object, or nullptr if memory allocation fails.</returns>
-	VI_TM_API VI_NODISCARD VI_TM_HJOUR VI_TM_CALL vi_tmJournalCreate(
-		unsigned flags VI_DEF(0U),
-		void* reserved VI_DEF(NULL)
-	);
+	VI_TM_API VI_NODISCARD VI_TM_HJOUR VI_TM_CALL vi_tmJournalCreate();
 
 	/// <summary>
 	/// Resets but does not delete all entries in the journal. All entry handles remain valid.

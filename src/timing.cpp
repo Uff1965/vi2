@@ -124,21 +124,45 @@ namespace
 	constexpr std::size_t hardware_constructive_interference_size = 64;
 #endif
 
+	/// <summary>
+	/// meterage_t is a class for collecting and managing timing measurement statistics.
+	/// </summary>
+	/// <remarks>
+	/// This class encapsulates a vi_tmMeasurementStats_t structure, which stores statistics such as
+	/// the number of calls, total and filtered event counts, sum of durations, minimum/maximum/average
+	/// values, and variance.
+	/// <para>
+	/// Note: If the corresponding preprocessor macros (VI_TM_STAT_USE_RAW, VI_TM_STAT_USE_FILTER, VI_TM_STAT_USE_MINMAX) are defined and set to a TRUE value only.
+	/// </para>
+	/// </remarks>
+	/// <para>Main features:</para>
+	/// <list type="bullet">
+	///   <item><description>add()    : Add a new measurement.</description></item>
+	///   <item><description>merge()  : Merge statistics from another structure.</description></item>
+	///   <item><description>get()    : Get the current statistics.</description></item>
+	///   <item><description>reset()  : Reset all statistics.</description></item>
+	/// </list>
+	/// <para>
+	/// <b>Thread safety:</b> All methods are thread-safe only if the macro <c>VI_TM_THREADSAFE</c> is defined and set to a nonzero value.
+	/// In this case, access to the data is protected by an adaptive mutex.
+	/// The class is aligned to the hardware cache line size to minimize false sharing in multithreaded scenarios.
+	/// </para>
 	class alignas(hardware_constructive_interference_size) meterage_t
-	{	static_assert(std::is_standard_layout_v<vi_tmMeasurementStats_t>);
+	{	static_assert(std::is_standard_layout_v<vi_tmMeasurementStats_t>); // Ensure standard layout for compatibility with C.
 		vi_tmMeasurementStats_t stats_;
 		VI_TM_THREADSAFE_ONLY(mutable adaptive_mutex_t mtx_);
 	public:
-		meterage_t() noexcept
-		{	vi_tmMeasurementStatsReset(&stats_);
-		}
+		meterage_t() noexcept { vi_tmMeasurementStatsReset(&stats_); }
 		void add(VI_TM_TDIFF val, VI_TM_SIZE cnt) noexcept;
-		void merge(const vi_tmMeasurementStats_t & VI_RESTRICT src) VI_RESTRICT noexcept;
+		void merge(const vi_tmMeasurementStats_t &src) noexcept;
 		vi_tmMeasurementStats_t get() const noexcept;
 		void reset() noexcept;
 	};
 
 	using storage_t = std::unordered_map<std::string, meterage_t>;
+	using jrn_finalizer_ctx_t = void*;
+	using jrn_finalizer_fn_t = int(*)(vi_tmMeasurementsJournal_t*, jrn_finalizer_ctx_t);
+	using jrn_finalizer_t = std::pair<jrn_finalizer_fn_t, jrn_finalizer_ctx_t>;
 }
 
 // 'vi_tmMeasurement_t' is simply an alias for a measurement entry in the storage map.
@@ -155,36 +179,39 @@ struct vi_tmMeasurementsJournal_t
 private:
 	static constexpr auto MAX_LOAD_FACTOR = 0.7F;
 	static constexpr size_t DEFAULT_STORAGE_CAPACITY = 64U;
-	static inline std::mutex global_mtx_;
-	static inline std::atomic_flag hglobal_inited_ = ATOMIC_FLAG_INIT;
-	static inline std::size_t global_initialized_ = 0U;
-	static inline struct global_initialized_sentinel_t
-	{	~global_initialized_sentinel_t() { assert(0U == global_initialized_ && "The number of vi_tmFinit calls must be equal to the number of vi_tmInit calls!"); }
-	} global_initialized_sentinel_;
 
 	storage_t storage_;
-	bool unused_ = true;
-	VI_TM_THREADSAFE_ONLY(adaptive_mutex_t storage_guard_);
+	VI_TM_THREADSAFE_ONLY(mutable adaptive_mutex_t storage_guard_);
+	jrn_finalizer_t finalizer_{};
 public:
 	vi_tmMeasurementsJournal_t(const vi_tmMeasurementsJournal_t &) = delete;
 	vi_tmMeasurementsJournal_t& operator=(const vi_tmMeasurementsJournal_t &) = delete;
-	explicit vi_tmMeasurementsJournal_t(bool unused = false);
+	vi_tmMeasurementsJournal_t();
 	~vi_tmMeasurementsJournal_t();
 	int init();
 	int finit();
 	auto& try_emplace(const char *name); // Get a reference to the measurement by name, creating it if it does not exist.
 	int for_each_measurement(vi_tmMeasEnumCb_t fn, void *ctx); // Calls the function fn for each measurement in the journal, while this function returns 0. Returns the return code of the function fn if it returned a nonzero value, or 0 if all measurements were processed.
 	void clear();
-	// Global journal management functions.
-	static int global_init(vi_tmGetTicks_t *fn); // Initialize the global journal.
-	static int global_finit();
-	static auto& from_handle(VI_TM_HJOUR journal); // Get the journal from the handle or return the global journal.
-	bool used() const noexcept { return !unused_; } // Check if the journal has been used.
-	bool used(bool used) noexcept { return !std::exchange(unused_, !used); } // Set the journal as used or unused.
+	jrn_finalizer_t get_finalizer() const noexcept;
+	jrn_finalizer_t set_finalizer(jrn_finalizer_t finalizer_) noexcept;
 };
 
-vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t(bool unused)
-	: unused_(unused)
+class GlobalJournal_t: protected vi_tmMeasurementsJournal_t
+{
+	static inline std::mutex global_mtx_;
+	static inline std::atomic_flag hglobal_inited_ = ATOMIC_FLAG_INIT;
+	static inline std::size_t global_initialized_ = 0U;
+public:
+	using vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t;
+	GlobalJournal_t& operator=(const GlobalJournal_t &) = delete;
+
+	static int global_init(vi_tmGetTicks_t *fn); // Initialize the global journal.
+	static int global_finit();
+	static vi_tmMeasurementsJournal_t& from_handle(VI_TM_HJOUR journal); // Get the journal from the handle or return the global journal.
+};
+
+vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t()
 {	storage_.max_load_factor(MAX_LOAD_FACTOR);
 	storage_.reserve(DEFAULT_STORAGE_CAPACITY);
 }
@@ -199,7 +226,7 @@ inline void meterage_t::add(VI_TM_TDIFF v, VI_TM_SIZE n) noexcept
 	vi_tmMeasurementStatsAdd(&stats_, v, n);
 }
 
-inline void meterage_t::merge(const vi_tmMeasurementStats_t & VI_RESTRICT src) VI_RESTRICT noexcept
+inline void meterage_t::merge(const vi_tmMeasurementStats_t &src) noexcept
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lg(mtx_));
 	vi_tmMeasurementStatsMerge(&stats_, &src);
 }
@@ -209,20 +236,32 @@ inline vi_tmMeasurementStats_t meterage_t::get() const noexcept
 	return stats_;
 }
 
-inline auto& vi_tmMeasurementsJournal_t::from_handle(VI_TM_HJOUR journal)
+inline vi_tmMeasurementsJournal_t& GlobalJournal_t::from_handle(VI_TM_HJOUR journal)
 {	assert(journal);
+
 	if (VI_TM_HGLOBAL == journal)
-	{	static auto global = []
+	{
+		static auto &global = []()->vi_tmMeasurementsJournal_t&
 			{	hglobal_inited_.test_and_set();
-				return vi_tmMeasurementsJournal_t{ true };
+
+				constexpr std::uintptr_t flags = vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName;
+				auto fn = [](vi_tmMeasurementsJournal_t *j, void *ctx)
+					{	const auto flags = reinterpret_cast<std::uintptr_t> (ctx);
+						return vi_tmReport(j, static_cast<unsigned>(flags));
+					};
+
+				static GlobalJournal_t result;
+				result.set_finalizer({ fn, reinterpret_cast<void*>(flags) });
+				return result;
 			}();
-		return global;
+
+		journal = &global;
 	}
 
 	return *journal;
 }
 
-int vi_tmMeasurementsJournal_t::global_init(vi_tmGetTicks_t *fn)
+int GlobalJournal_t::global_init(vi_tmGetTicks_t *fn)
 {	std::lock_guard lg{ global_mtx_ };
 
 	if (0U == global_initialized_++)
@@ -241,7 +280,7 @@ int vi_tmMeasurementsJournal_t::global_init(vi_tmGetTicks_t *fn)
 	return VI_EXIT_SUCCESS;
 }
 
-int vi_tmMeasurementsJournal_t::global_finit()
+int GlobalJournal_t::global_finit()
 {	std::lock_guard lg{global_mtx_};
 	assert(!!global_initialized_ && "The number of Finit calls must be equal to the number of Init calls!");
 
@@ -256,8 +295,8 @@ int vi_tmMeasurementsJournal_t::global_finit()
 }
 
 vi_tmMeasurementsJournal_t::~vi_tmMeasurementsJournal_t()
-{	if (unused_)
-	{	vi_tmReport(this, vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName);
+{	if (finalizer_.first)
+	{	finalizer_.first(this, finalizer_.second);
 	}
 }
 
@@ -278,7 +317,7 @@ inline auto& vi_tmMeasurementsJournal_t::try_emplace(const char *name)
 
 int vi_tmMeasurementsJournal_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void *ctx)
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lock{ storage_guard_ });
-	unused_ = false; // No need to report. The user probebly make a report himself.
+	finalizer_.first = nullptr; // No need to report. The user probebly make a report himself.
 	if (!fn)
 	{	return 0;
 	}
@@ -295,6 +334,16 @@ int vi_tmMeasurementsJournal_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void 
 void vi_tmMeasurementsJournal_t::clear()
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lock{ storage_guard_ });
 	storage_.clear();
+}
+
+jrn_finalizer_t vi_tmMeasurementsJournal_t::get_finalizer() const noexcept
+{	VI_TM_THREADSAFE_ONLY(std::lock_guard lock{ storage_guard_ });
+	return finalizer_;
+}
+
+jrn_finalizer_t vi_tmMeasurementsJournal_t::set_finalizer(jrn_finalizer_t finalizer) noexcept
+{	VI_TM_THREADSAFE_ONLY(std::lock_guard lock{ storage_guard_ });
+	return std::exchange(finalizer_, finalizer);
 }
 
 //vvvv API Implementation vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -475,17 +524,16 @@ void VI_TM_CALL vi_tmMeasurementStatsMerge(vi_tmMeasurementStats_t* VI_RESTRICT 
 }
 
 int VI_TM_CALL vi_tmInit(vi_tmGetTicks_t *fn)
-{	return vi_tmMeasurementsJournal_t::global_init(fn);
+{	return GlobalJournal_t::global_init(fn);
 }
 
 void VI_TM_CALL vi_tmFinit(void)
-{	verify(VI_EXIT_SUCCESS == vi_tmMeasurementsJournal_t::global_finit());
+{	verify(VI_EXIT_SUCCESS == GlobalJournal_t::global_finit());
 }
 
-VI_TM_HJOUR VI_TM_CALL vi_tmJournalCreate(unsigned flags, void *reserved)
-{	(void)reserved; // Reserved parameter, currently unused.
-	try
-	{	return new vi_tmMeasurementsJournal_t{0U != flags};
+VI_TM_HJOUR VI_TM_CALL vi_tmJournalCreate()
+{	try
+	{	return new vi_tmMeasurementsJournal_t;
 	}
 	catch (const std::bad_alloc &)
 	{	assert(false);
@@ -502,11 +550,11 @@ void VI_TM_CALL vi_tmJournalReset(VI_TM_HJOUR journal) noexcept
 }
 
 int VI_TM_CALL vi_tmMeasurementEnumerate(VI_TM_HJOUR journal, vi_tmMeasEnumCb_t fn, void *ctx)
-{	return vi_tmMeasurementsJournal_t::from_handle(journal).for_each_measurement(fn, ctx);
+{	return GlobalJournal_t::from_handle(journal).for_each_measurement(fn, ctx);
 }
 
 VI_TM_HMEAS VI_TM_CALL vi_tmMeasurement(VI_TM_HJOUR journal, const char *name)
-{	return static_cast<VI_TM_HMEAS>(&vi_tmMeasurementsJournal_t::from_handle(journal).try_emplace(name));
+{	return static_cast<VI_TM_HMEAS>(&GlobalJournal_t::from_handle(journal).try_emplace(name));
 }
 
 void VI_TM_CALL vi_tmMeasurementAdd(VI_TM_HMEAS meas, VI_TM_TDIFF tick_diff, VI_TM_SIZE cnt) noexcept
