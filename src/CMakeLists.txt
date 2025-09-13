@@ -40,10 +40,6 @@ list(APPEND SOURCE_FILES
     "timing.cpp"
 )
 
-if(BUILD_SHARED_LIBS)
-    list(APPEND SOURCE_FILES "lib_initializer.cpp")
-endif()
-
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 set_target_properties(${PROJECT_NAME}
