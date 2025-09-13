@@ -200,12 +200,13 @@ public:
 class GlobalJournal_t: protected vi_tmMeasurementsJournal_t
 {
 	static inline std::mutex global_mtx_;
-	static inline std::atomic_flag hglobal_inited_ = ATOMIC_FLAG_INIT;
-	static inline std::size_t global_initialized_ = 0U;
+	static inline std::atomic_flag global_inited_ = ATOMIC_FLAG_INIT;
+	static inline std::size_t global_init_cnt_ = 0U;
+	static std::unique_ptr<GlobalJournal_t> global_instance_;
 public:
 	using vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t;
 	GlobalJournal_t& operator=(const GlobalJournal_t &) = delete;
-
+	~GlobalJournal_t() = default;
 	static int global_init(vi_tmGetTicks_t *fn); // Initialize the global journal.
 	static int global_finit();
 	static vi_tmMeasurementsJournal_t& from_handle(VI_TM_HJOUR journal); // Get the journal from the handle or return the global journal.
@@ -242,17 +243,17 @@ inline vi_tmMeasurementsJournal_t& GlobalJournal_t::from_handle(VI_TM_HJOUR jour
 	if (VI_TM_HGLOBAL == journal)
 	{
 		static auto &global = []()->vi_tmMeasurementsJournal_t&
-			{	hglobal_inited_.test_and_set();
+			{	assert(!global_instance_);
 
-				constexpr std::uintptr_t flags = vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName;
 				auto fn = [](vi_tmMeasurementsJournal_t *j, void *ctx)
 					{	const auto flags = reinterpret_cast<std::uintptr_t> (ctx);
 						return vi_tmReport(j, static_cast<unsigned>(flags));
 					};
 
-				static GlobalJournal_t result;
-				result.set_finalizer({ fn, reinterpret_cast<void*>(flags) });
-				return result;
+				global_instance_.reset(new GlobalJournal_t{});
+				constexpr std::uintptr_t FLAGS = vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName;
+				global_instance_->set_finalizer({ fn, reinterpret_cast<void*>(FLAGS) });
+				return *global_instance_;
 			}();
 
 		journal = &global;
@@ -264,8 +265,8 @@ inline vi_tmMeasurementsJournal_t& GlobalJournal_t::from_handle(VI_TM_HJOUR jour
 int GlobalJournal_t::global_init(vi_tmGetTicks_t *fn)
 {	std::lock_guard lg{ global_mtx_ };
 
-	if (0U == global_initialized_++)
-	{	assert(!hglobal_inited_.test_and_set() && "If global_init is used, its call must be the first call to the library!");
+	if (0U == global_init_cnt_++)
+	{	assert(!global_inited_.test_and_set() && "If global_init is used, its call must be the first call to the library!");
 
 		if (fn)
 		{	assert(!!vi_tmGetTicksPtr_INTERNAL_);
@@ -282,10 +283,10 @@ int GlobalJournal_t::global_init(vi_tmGetTicks_t *fn)
 
 int GlobalJournal_t::global_finit()
 {	std::lock_guard lg{global_mtx_};
-	assert(!!global_initialized_ && "The number of Finit calls must be equal to the number of Init calls!");
+	assert(!!global_init_cnt_ && "The number of Finit calls must be equal to the number of Init calls!");
 
-	if (!!global_initialized_ && (0U == --global_initialized_))
-	{	assert(hglobal_inited_.test_and_set());
+	if (!!global_init_cnt_ && (0U == --global_init_cnt_))
+	{	assert(global_inited_.test_and_set());
 		auto& global = from_handle(VI_TM_HGLOBAL);
 		if (!verify(VI_EXIT_SUCCESS == global.finit()))
 		{	return VI_EXIT_FAILURE;
@@ -345,6 +346,18 @@ jrn_finalizer_t vi_tmMeasurementsJournal_t::set_finalizer(jrn_finalizer_t finali
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lock{ storage_guard_ });
 	return std::exchange(finalizer_, finalizer);
 }
+
+#ifdef _MSC_VER
+#	pragma warning(push)
+#	pragma warning(disable: 4073) // initializers put in library initialization area
+#	pragma init_seg(lib) // Objects in this group are constructed after the ones marked as compiler, but before any others.
+std::unique_ptr<GlobalJournal_t> GlobalJournal_t::global_instance_;
+#	pragma warning(pop)
+#else
+std::unique_ptr<GlobalJournal_t>
+	__attribute__((init_priority(200))) // init_priority range is 101..65535
+	GlobalJournal_t::global_instance_;
+#endif
 
 //vvvv API Implementation vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 int VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *meas) noexcept

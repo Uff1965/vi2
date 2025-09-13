@@ -3,7 +3,7 @@
 #include <vi_timing/vi_timing.hpp>
 //#include <gtest/gtest.h>
 
-VI_TM_INIT(vi_tmReportCb_t{});
+//VI_TM_INIT(vi_tmReportCb_t{});
 
 VI_TM("GLOBAL lib/source.cpp");
 

@@ -34,14 +34,18 @@ namespace
 }
 
 #if defined(_MSC_VER)
-#	pragma section(".CRT$XCU", read)
+#	define SECTION_C ".CRT$XCUA" // .CRT$XCU: executed before main/DllMain, before global constructors.
+#	define SECTION_T ".CRT$XPU" // .CRT$XPU — called when the module is unloaded, after global destructors and atexit() functions.
+
+#	pragma warning(1 : 5247)
+#	pragma warning(1 : 5248)
+
+#	pragma section(SECTION_C, read)
 #	pragma section(".CRT$XPU", read)
 
 extern "C"
-{
-	// .CRT$XCU: executed before main/DllMain, before global constructors.
-	extern __declspec(allocate(".CRT$XCU")) const PFV p_init_hook = init;
-	// .CRT$XPU — called when the module is unloaded, after global destructors and atexit() functions.
+{	// 'CRT initialization' https://learn.microsoft.com/en-us/cpp/c-runtime-library/crt-initialization#linker-features-for-initialization
+	extern __declspec(allocate(SECTION_C)) const PFV p_init_hook = init;
 	extern __declspec(allocate(".CRT$XPU")) const PFV p_cleanup_hook = cleanup;
 }
 
@@ -70,3 +74,5 @@ void cleanup_wrapper(void)
 #else
 #	warning "Portable init/cleanup-hooks are not supported on this compiler"
 #endif  // Compiler branches
+
+__declspec(dllexport) int yyyy = 0; // Dummy variable to allow /include linker directives.
