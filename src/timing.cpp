@@ -207,6 +207,7 @@ public:
 	using vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t;
 	GlobalJournal_t& operator=(const GlobalJournal_t &) = delete;
 	~GlobalJournal_t() = default;
+	static GlobalJournal_t& global_instance();
 	static int global_init(vi_tmGetTicks_t *fn); // Initialize the global journal.
 	static int global_finit();
 	static vi_tmMeasurementsJournal_t& from_handle(VI_TM_HJOUR journal); // Get the journal from the handle or return the global journal.
@@ -237,29 +238,28 @@ inline vi_tmMeasurementStats_t meterage_t::get() const noexcept
 	return stats_;
 }
 
+inline GlobalJournal_t& GlobalJournal_t::global_instance()
+{
+	static auto& global = []()->GlobalJournal_t&
+		{	assert(!global_instance_);
+			global_instance_ = std::make_unique<GlobalJournal_t>();
+
+			auto fn = +[](vi_tmMeasurementsJournal_t *j, void *ctx)
+				{	const auto flags = reinterpret_cast<std::uintptr_t> (ctx);
+					return vi_tmReport(j, static_cast<unsigned>(flags));
+				};
+			constexpr std::uintptr_t FLAGS = vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName;
+			global_instance_->set_finalizer({ fn, reinterpret_cast<void *>(FLAGS) });
+
+			return *global_instance_;
+		}();
+
+	return global;
+}
+
 inline vi_tmMeasurementsJournal_t& GlobalJournal_t::from_handle(VI_TM_HJOUR journal)
 {	assert(journal);
-
-	if (VI_TM_HGLOBAL == journal)
-	{
-		static auto &global = []()->vi_tmMeasurementsJournal_t&
-			{	assert(!global_instance_);
-
-				auto fn = [](vi_tmMeasurementsJournal_t *j, void *ctx)
-					{	const auto flags = reinterpret_cast<std::uintptr_t> (ctx);
-						return vi_tmReport(j, static_cast<unsigned>(flags));
-					};
-
-				global_instance_.reset(new GlobalJournal_t{});
-				constexpr std::uintptr_t FLAGS = vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName;
-				global_instance_->set_finalizer({ fn, reinterpret_cast<void*>(FLAGS) });
-				return *global_instance_;
-			}();
-
-		journal = &global;
-	}
-
-	return *journal;
+	return VI_TM_HGLOBAL == journal ? global_instance() : *journal;
 }
 
 int GlobalJournal_t::global_init(vi_tmGetTicks_t *fn)
@@ -348,15 +348,12 @@ jrn_finalizer_t vi_tmMeasurementsJournal_t::set_finalizer(jrn_finalizer_t finali
 }
 
 #ifdef _MSC_VER
-#	pragma warning(push)
-#	pragma warning(disable: 4073) // initializers put in library initialization area
+#	pragma warning(suppress: 4073) // "initializers put in library initialization area"
 #	pragma init_seg(lib) // Objects in this group are constructed after the ones marked as compiler, but before any others.
-std::unique_ptr<GlobalJournal_t> GlobalJournal_t::global_instance_;
-#	pragma warning(pop)
+	std::unique_ptr<GlobalJournal_t> GlobalJournal_t::global_instance_;
 #else
-std::unique_ptr<GlobalJournal_t>
-	__attribute__((init_priority(200))) // init_priority range is 101..65535
-	GlobalJournal_t::global_instance_;
+	[[gnu::init_priority(200)]] // init_priority range is 101..65535
+	std::unique_ptr<GlobalJournal_t> GlobalJournal_t::global_instance_;
 #endif
 
 //vvvv API Implementation vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
