@@ -85,7 +85,13 @@ foreach(CONFIG_TYPE IN ITEMS "" "_DEBUG" "_RELEASE")
     set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY${CONFIG_TYPE}  ${VI_TM_OUTPUT_PATH})
 endforeach()
 
+if(BUILD_SHARED_LIBS)
+	set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/_deps/shared" CACHE PATH "Dependency download directory")
+else()
+	set(FETCHCONTENT_BASE_DIR "${CMAKE_SOURCE_DIR}/_deps/static" CACHE PATH "Dependency download directory")
+endif()
 include(FetchContent)
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON) # Enable folder structure in IDEs
 
 # Set project name and version based on the generated version information.
