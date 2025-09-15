@@ -255,18 +255,27 @@ typedef enum vi_tmReportFlags_e
 	/// </summary>
 	/// <returns>A current tick count.</returns>
 	#define vi_tmGetTicks vi_tmGetTicksPtr_INTERNAL_
+
+    /// <summary>
+    /// Default report callback function. Writes the given string to the specified output stream.
+    /// </summary>
+    /// <param name="str">The string to output.</param>
+	/// <param name="ignored"> A pointer to user-defined data, which is ignored in this default implementation.</param>
+    /// <returns>On success, returns a non-negative value.</returns>
+    VI_TM_API int VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEF(NULL));
 	
+	VI_TM_API int VI_TM_CALL vi_tmGlobalReporter(int (*fn)(VI_TM_HJOUR, void*), void* ctx);
+
 	/// <summary>
 	/// Initializes the global journal.
 	/// </summary>
 	/// <returns>If successful, returns 0.</returns>
-	VI_TM_API int VI_TM_CALL vi_tmInit(vi_tmGetTicks_t *fn VI_DEF(NULL));
-
-	/// <summary>
-	/// Deinitializes the global journal.
-	/// </summary>
-	/// <returns>This function does not return a value.</returns>
-	VI_TM_API void VI_TM_CALL vi_tmFinit(void);
+	VI_TM_API int VI_TM_CALL vi_tmGlobalReporterPrn
+	(	const char *title VI_DEF("Timing report:\n"),
+		unsigned flags VI_DEF(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
+		vi_tmReportCb_t cb VI_DEF(vi_tmReportCb),
+		void* ctx VI_DEF(NULL)
+	);
 
 	/// <summary>
 	/// Creates a new journal object and returns a handle to it.
@@ -397,14 +406,6 @@ typedef enum vi_tmReportFlags_e
 	/// </summary>
 	VI_TM_API VI_NODISCARD int VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *m) VI_NOEXCEPT;
 
-    /// <summary>
-    /// Default report callback function. Writes the given string to the specified output stream.
-    /// </summary>
-    /// <param name="str">The string to output.</param>
-	/// <param name="ignored"> A pointer to user-defined data, which is ignored in this default implementation.</param>
-    /// <returns>On success, returns a non-negative value.</returns>
-    VI_TM_API int VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEF(NULL));
-
 	/// <summary>
 	/// Generates a report for the specified journal handle, using a callback function to output the report data.
 	/// </summary>
@@ -415,7 +416,7 @@ typedef enum vi_tmReportFlags_e
 	/// <returns>The total number of characters written by the report, or a negative value if an error occurs.</returns>
 	VI_TM_API int VI_TM_CALL vi_tmReport(
 		VI_TM_HJOUR j,
-		unsigned flags VI_DEF(0),
+		unsigned flags VI_DEF(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
 		vi_tmReportCb_t cb VI_DEF(vi_tmReportCb),
 		void* ctx VI_DEF(NULL)
 	);

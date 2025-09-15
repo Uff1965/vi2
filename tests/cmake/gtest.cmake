@@ -25,6 +25,7 @@ set_target_properties(gtest
 PROPERTIES
 	ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib/debug
 	ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib/release
+	 DEBUG_POSTFIX "_d"
 )
 
 include(GoogleTest)

@@ -134,9 +134,6 @@ int main(int argc, char** argv)
 		metrics(std::cout);
 		endl(std::cout);
 	}
-	else
-	{	vi_tmMeasurementEnumerate(VI_TM_HGLOBAL, nullptr, nullptr); // Switch-off the default timing report output.
-	}
 
 	if (const auto ret = RUN_ALL_TESTS(); gtest_arg || !!ret )
 	{	return ret;

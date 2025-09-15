@@ -83,7 +83,7 @@ namespace
 		duration_t<DURATION_PREC, DURATION_DEC> average_{}; // seconds
 		std::string average_txt_{ NotAvailable };
 #if VI_TM_STAT_USE_FILTER
-		double cv_{}; // Coefficient of Variation.
+		VI_TM_FP cv_{}; // Coefficient of Variation.
 		std::string cv_txt_{ NotAvailable }; // Coefficient of Variation (CV) in percent
 #endif
 #if VI_TM_STAT_USE_MINMAX
@@ -300,7 +300,7 @@ metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, un
 	if (meas.flt_calls_ >= 2) // To calculate the measurement spread, at least two measurements must be taken.
 	{	assert(meas.flt_cnt_ >= static_cast<VI_TM_FP>(2)); // The first two measurements cannot be filtered out.
 		cv_ = std::sqrt(meas.flt_ss_ / (meas.flt_cnt_ - static_cast<VI_TM_FP>(1))) / avg_ticks;
-		if (const auto cv_pct = std::round(cv_ * 100.0); cv_pct < 1.0)
+		if (const auto cv_pct = std::round(cv_ * static_cast<VI_TM_FP>(100)); cv_pct < static_cast<VI_TM_FP>(1))
 		{	cv_txt_ = "<1%"; // Coefficient of Variation (CV) is too low.
 		}
 		else if (cv_pct >= 100.0)

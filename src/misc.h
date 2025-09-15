@@ -14,6 +14,8 @@
 
 #define verify(v) [](bool b) constexpr noexcept { assert(b); return b; }(static_cast<bool>(v)) // Define for displaying the __FILE__ and __LINE__ during debugging.
 
+struct vi_tmMeasurementsJournal_t;
+
 namespace misc
 {
 #ifdef __cpp_lib_source_location
@@ -42,6 +44,8 @@ namespace misc
 	};
 
 	[[nodiscard]] std::string to_string(double d, unsigned char precision, unsigned char dec);
+
+	vi_tmMeasurementsJournal_t* from_handle(vi_tmMeasurementsJournal_t* handle);
 }
 
 #endif // #ifndef VI_TIMING_SOURCE_INTERNAL_H

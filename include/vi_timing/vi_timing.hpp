@@ -54,80 +54,6 @@
 
 namespace vi_tm
 {
-	class init_t
-	{
-		std::string title_ = "Timing report:\n";
-		vi_tmReportCb_t callback_function_ = vi_tmReportCb;
-		void* callback_data_ = nullptr;
-		unsigned flags_ = vi_tmShowDuration | vi_tmShowResolution | vi_tmSortBySpeed;
-		vi_tmGetTicks_t *vi_tmGetTicks_ = nullptr;
-
-		init_t(const init_t &) = delete;
-		init_t& operator=(const init_t &) = delete;
-
-		template<typename... Args>
-		int init(Args&&... args)
-		{	int result = 0;
-			((result |= init_aux(std::forward<Args>(args))), ...);
-			result |= vi_tmInit(vi_tmGetTicks_);
-			return result;
-		}
-
-		template<typename T>
-		int init_aux(T &&v)
-		{	int result = 0;
-			if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportFlags_e>)
-			{	flags_ |= v;
-			}
-			else if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportCb_t>)
-			{	if(vi_tmReportCb != callback_function_)
-				{	assert(false); // Callback function already set.
-					result = __LINE__;
-				}
-				callback_function_ = v;
-			}
-			else if constexpr (std::is_same_v<std::decay_t<T>, vi_tmGetTicks_t*>)
-			{	if(vi_tmGetTicks_)
-				{	assert(false); // Tick function already set.
-					result = __LINE__;
-				}
-				vi_tmGetTicks_ = v;
-			}
-			else if constexpr (std::is_same_v<T, decltype(title_)>)
-			{	title_ = std::forward<T>(v);
-			}
-			else if constexpr (std::is_convertible_v<T, decltype(title_)>)
-			{	title_ = v;
-			}
-			else if constexpr (std::is_pointer_v<T>)
-			{	if(static_cast<void*>(stdout) != callback_data_)
-				{	assert(false); // Callback data already set.
-					result = __LINE__;
-				}
-				callback_data_ = v;
-			}
-			else
-			{	assert(false); // Unknown parameter type.
-				result = __LINE__;
-			}
-
-			return result;
-		}
-	public:
-		init_t() { auto ret = init(); (void)ret; assert(0 == ret); } // Default flags and other settings.
-		template<typename... Args> explicit init_t(Args&&... args)
-			: flags_{0U}
-		{	init(std::forward<Args>(args)...);
-		}
-		~init_t()
-		{	if (!!callback_function_ && !title_.empty())
-			{	callback_function_(title_.c_str(), callback_data_);
-			}
-			vi_tmReport(VI_TM_HGLOBAL, flags_, callback_function_, callback_data_);
-			vi_tmFinit();
-		}
-	}; // class init_t
-
 	// probe_t class: A RAII-style class for measuring code execution time.
 	// Unlike the API, this class is not thread-safe!!!
 	class probe_t
@@ -190,9 +116,6 @@ namespace vi_tm
 		return result;
 	}
 } // namespace vi_tm
-
-	// Initializes the global journal and sets up the report callback.
-#	define VI_TM_INIT(...) vi_tm::init_t vi_tm__UNIC_ID {__VA_ARGS__}
 
 // VI_[N]DEBUG_ONLY macro: Expands to its argument only in debug builds, otherwise expands to nothing.
 #	if VI_TM_DEBUG

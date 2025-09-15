@@ -32,12 +32,13 @@ list(APPEND SOURCE_FILES
 )
 
 list(APPEND SOURCE_FILES
-    "version.cpp"
     "clock.cpp"
     "misc.cpp"
     "props.cpp"
     "report.cpp"
     "timing.cpp"
+    "timing_global.cpp"
+    "version.cpp"
 )
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES})

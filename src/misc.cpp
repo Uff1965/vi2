@@ -124,10 +124,7 @@ namespace
 		class affinity_fix_t
 		{	static thread_local std::size_t cnt_;
 			static thread_local thread_affinity_mask_t previous_affinity_;
-			struct watch_dog_t
-			{	~watch_dog_t() { assert(0U == cnt_); }
-			};
-			static thread_local const watch_dog_t watch_dog_;
+			static thread_local const struct wd_t { ~wd_t() { assert(0U == cnt_); } } watch_dog_;
 
 			affinity_fix_t(const affinity_fix_t &) = delete;
 			affinity_fix_t &operator=(const affinity_fix_t &) = delete;
@@ -155,7 +152,7 @@ namespace
 		};
 		thread_local std::size_t affinity_fix_t::cnt_ = 0U;
 		thread_local thread_affinity_mask_t affinity_fix_t::previous_affinity_ = AFFINITY_ZERO;
-		thread_local const affinity_fix_t::watch_dog_t affinity_fix_t::watch_dog_;
+		thread_local const affinity_fix_t::wd_t affinity_fix_t::watch_dog_;
 
 	} // namespace affinity
 
@@ -485,7 +482,7 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 	}
 } // vi_tmStaticInfo(vi_tmInfo_e info)
 
-VI_TM_SIZE VI_TM_CALL vi_tmF2A(char *buff, VI_TM_SIZE sz, VI_TM_FP val, unsigned char sig, unsigned char dec)
+VI_TM_SIZE VI_TM_CALL vi_tmF2A(char *buff, VI_TM_SIZE sz, double val, unsigned char sig, unsigned char dec)
 {	auto str = misc::to_string(val, sig, dec);
 	const auto result = str.size() + 1U;
 	
