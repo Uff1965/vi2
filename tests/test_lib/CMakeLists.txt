@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 project(test_lib LANGUAGES C CXX)
 
 add_library(${PROJECT_NAME} SHARED)
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Tests")
 
 target_link_libraries(${PROJECT_NAME}
 PRIVATE

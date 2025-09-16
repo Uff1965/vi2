@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.22)
 project(test_exe LANGUAGES C CXX)
 
 add_executable(${PROJECT_NAME})
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Tests")
 
 target_link_libraries(${PROJECT_NAME}
 PRIVATE
@@ -55,6 +56,9 @@ if (VI_TM_ENABLE_TESTS)
     gtest_discover_tests(${PROJECT_NAME}
         DISCOVERY_TIMEOUT 30
     )
+
+    add_test(NAME 1ex_simple COMMAND 1ex_simple)
+    add_test(NAME 1ex_simple_disabled COMMAND 2ex_simple_disabled)
 endif()
 
 if (VI_TM_ENABLE_BENCHMARK)
