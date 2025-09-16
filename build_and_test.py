@@ -257,7 +257,7 @@ def skip_suffix(suffix: str, filters: list[str]) -> bool:
     return not any(f and set(f) <= suffix_set for f in filters)
 
 def configuring(build_dir: str, options: list[str]):
-        print("Configuring CMake:")
+        print("Configuration the project:")
         params = ["cmake"]
         params += ["-S", str(path_to_source)]
         params += ["-B", str(build_dir)]
@@ -265,7 +265,7 @@ def configuring(build_dir: str, options: list[str]):
         params += [f"-DVI_TM_OUTPUT_PATH={str(path_to_result)}"]
         params += options
         run(params)
-        print("Configuring CMake - done\n")
+        print("Configuration the project - done\n")
 
 def build(build_dir: str):
         print("Build the project:")
@@ -277,7 +277,7 @@ def build(build_dir: str):
         print("Build the project - done\n")
 
 def testing(build_dir: str):
-        print("Run the tests:")
+        print("Test the project:")
         params = ["ctest", "--test-dir"]
         params += [str(build_dir), "--output-on-failure"]
         match get_cmake_property():
@@ -290,7 +290,7 @@ def testing(build_dir: str):
 
         # Run the tests; the script will terminate upon the first error.
         run(params)
-        print("Run the tests - done")
+        print("Test the project - done")
 
 def work(options: list[str]):
         start = datetime.datetime.now()
