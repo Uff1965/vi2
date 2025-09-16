@@ -15,8 +15,8 @@ int main()
 		std::cout << "Hello, World!" << std::endl;
 	}
 
-	{	constexpr unsigned CNT = 1'000;
-		volatile unsigned n = 32;
+	{	constexpr unsigned CNT = 100;
+		volatile unsigned n = 30;
 		volatile unsigned x = 0;
 
 		VI_TM("Fibonacci all", CNT);
@@ -26,7 +26,7 @@ int main()
 		}
 	}
 
-	{	constexpr unsigned CNT = 10'000'000;
+	{	constexpr unsigned CNT = 100'000'000;
 
 		VI_TM("Empty all", CNT);
 		for (auto i = 0U; i < CNT; i++)

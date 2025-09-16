@@ -264,18 +264,32 @@ typedef enum vi_tmReportFlags_e
     /// <returns>On success, returns a non-negative value.</returns>
     VI_TM_API int VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEF(NULL));
 	
+    /// <summary>
+    /// Invokes the provided callback function for the global journal.
+    /// </summary>
+    /// <param name="fn">A callback function that receives the global journal handle and a user-defined context pointer.</param>
+    /// <param name="ctx">A pointer to user-defined data passed to the callback function.</param>
+    /// <returns>Returns the result of the callback function.</returns>
+    /// <remarks>
+    /// IMPORTANT: The callback function 'fn' will be called before the journal is destroyed, after all user objects have been destroyed.
+    /// Make sure that the callback and the context passed to it are not destroyed before the journal!
+    /// </remarks>
 	VI_TM_API int VI_TM_CALL vi_tmGlobalReporter(int (*fn)(VI_TM_HJOUR, void*), void* ctx);
 
 	/// <summary>
-	/// Initializes the global journal.
-	/// </summary>
-	/// <returns>If successful, returns 0.</returns>
-	VI_TM_API int VI_TM_CALL vi_tmGlobalReporterPrn
-	(	const char *title VI_DEF("Timing report:\n"),
-		unsigned flags VI_DEF(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
-		vi_tmReportCb_t cb VI_DEF(vi_tmReportCb),
-		void* ctx VI_DEF(NULL)
-	);
+    /// Generates and prints a timing report for the global journal.
+    /// </summary>
+    /// <param name="title">The title to display at the top of the report. Defaults to "Timing report:\n".</param>
+    /// <param name="flags">Flags controlling report formatting and content. Defaults to showing resolution, duration, and sorting by name.</param>
+    /// <param name="cb">Callback function used to output each line of the report. Defaults to vi_tmReportCb.</param>
+    /// <param name="ctx">Pointer to user-defined data passed to the callback function. Defaults to NULL.</param>
+    /// <returns>Returns the total number of characters written, or a negative value if an error occurs.</returns>
+    VI_TM_API int VI_TM_CALL vi_tmGlobalReporterPrn
+    (   const char *title VI_DEF("Timing report:\n"),
+        unsigned flags VI_DEF(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
+        vi_tmReportCb_t cb VI_DEF(vi_tmReportCb),
+        void* ctx VI_DEF(NULL)
+    );
 
 	/// <summary>
 	/// Creates a new journal object and returns a handle to it.

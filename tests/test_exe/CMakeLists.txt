@@ -57,8 +57,18 @@ if (VI_TM_ENABLE_TESTS)
         DISCOVERY_TIMEOUT 30
     )
 
-    add_test(NAME 1ex_simple COMMAND 1ex_simple)
-    add_test(NAME 1ex_simple_disabled COMMAND 2ex_simple_disabled)
+    add_test(NAME ex_simple COMMAND 1ex_simple)
+    set_tests_properties(ex_simple
+    PROPERTIES
+        PASS_REGULAR_EXPRESSION "^Hello, World!"
+        PASS_REGULAR_EXPRESSION "#  Name \\(v\\)\\.+: *Avg\\. \\+\\/\\- +CV *~= +Total *\\/ +Cnt\\."
+    )
+    
+    add_test(NAME ex_disabled COMMAND 2ex_simple_disabled)
+    set_tests_properties(ex_disabled
+    PROPERTIES
+        PASS_REGULAR_EXPRESSION "^Hello, World!$"
+    )
 endif()
 
 if (VI_TM_ENABLE_BENCHMARK)
