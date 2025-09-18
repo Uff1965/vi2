@@ -1,6 +1,6 @@
 # File: "vi2/tests/lib/CMakeLists.txt"
 cmake_minimum_required(VERSION 3.22)
-project(test_lib LANGUAGES C CXX)
+project(test_shared_lib LANGUAGES C CXX)
 
 add_library(${PROJECT_NAME} SHARED)
 set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Tests")

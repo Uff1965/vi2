@@ -19,6 +19,6 @@
 #	define VI_TM_TEST_LIB_API
 #endif
 
-extern "C" VI_TM_TEST_LIB_API void test_lib_func(void);
+extern "C" VI_TM_TEST_LIB_API void test_shared_lib_func(void);
 
 #endif // #ifndef VI2_TESTS_LIB_HEADER_H

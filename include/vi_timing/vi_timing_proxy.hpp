@@ -22,6 +22,7 @@
 		// Fallback macros for global journal timing functions.
 #		define VI_TM_INIT(...) static const int VI_UNIC_ID(vi_tm__) = 0
 #		define VI_TM(...) const int VI_UNIC_ID(vi_tm__) = 0
+#		define VI_TM_S(...) const int VI_UNIC_ID(vi_tm__) = 0
 #		define VI_TM_FUNC ((void)0)
 #		define VI_TM_REPORT(...) ((void)0)
 #		define VI_TM_RESET(...) ((void)0)

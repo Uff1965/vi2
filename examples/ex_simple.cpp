@@ -1,5 +1,7 @@
 #include <vi_timing/vi_timing.hpp>
 
+#include <string>
+
 unsigned fib(unsigned n)
 {	return n < 2 ? n : (fib(n - 1) + fib(n - 2));
 };

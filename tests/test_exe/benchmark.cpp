@@ -16,18 +16,21 @@ VI_TM_TICK stdclock(void) noexcept
 }
 
 static void BM_timespec_get(benchmark::State& state) {
+	VI_TM_FUNC;
     for (auto _ : state) {
         benchmark::DoNotOptimize(stdclock());
     }
 }
 BENCHMARK(BM_timespec_get);
 
-VI_TM_TICK stdchrono(void) noexcept
-{	const auto tp = std::chrono::steady_clock::now().time_since_epoch();
+VI_TM_TICK stdchrono(void) noexcept {
+	VI_TM_FUNC;
+	const auto tp = std::chrono::steady_clock::now().time_since_epoch();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(tp).count();
 }
 
 static void BM_steady_clock(benchmark::State& state) {
+	VI_TM_FUNC;
     for (auto _ : state) {
         benchmark::DoNotOptimize(stdchrono());
     }
@@ -35,6 +38,7 @@ static void BM_steady_clock(benchmark::State& state) {
 BENCHMARK(BM_steady_clock);
 
 static void BM_vi_tmGetTicks(benchmark::State& state) {
+	VI_TM_FUNC;
     for (auto _ : state) {
         benchmark::DoNotOptimize(vi_tmGetTicks());
     }
@@ -42,23 +46,59 @@ static void BM_vi_tmGetTicks(benchmark::State& state) {
 BENCHMARK(BM_vi_tmGetTicks);
 
 static void BM_vi_tm(benchmark::State& state) {
-	auto j = vi_tmJournalCreate();
-	auto m = vi_tmMeasurement(j, "xxxx");
+	VI_TM_FUNC;
+	VI_TM_RESET("xxxx");
     for (auto _ : state) {
+		auto m = vi_tmMeasurement(VI_TM_HGLOBAL, "xxxx");
         const auto s = vi_tmGetTicks();
         const auto f = vi_tmGetTicks();
 		vi_tmMeasurementAdd(m, f - s, 1U);
     }
-	vi_tmJournalClose(j);
 }
 BENCHMARK(BM_vi_tm);
 
 static void BM_VI_TM(benchmark::State& state) {
+	VI_TM_FUNC;
+	VI_TM_RESET("xxxx");
     for (auto _ : state) {
         VI_TM("xxxx");
     }
 }
 BENCHMARK(BM_VI_TM);
+
+static void BM_vi_tm_S(benchmark::State& state) {
+	VI_TM_FUNC;
+	VI_TM_RESET("xxxx");
+    for (auto _ : state) {
+		static auto m = vi_tmMeasurement(VI_TM_HGLOBAL, "xxxx");
+        const auto s = vi_tmGetTicks();
+        const auto f = vi_tmGetTicks();
+		vi_tmMeasurementAdd(m, f - s, 1U);
+    }
+}
+BENCHMARK(BM_vi_tm_S);
+
+static void BM_VI_TM_S(benchmark::State& state) {
+	VI_TM_FUNC;
+	VI_TM_RESET("xxxx");
+    for (auto _ : state) {
+        VI_TM_S("xxxx");
+    }
+}
+BENCHMARK(BM_VI_TM_S);
+
+static void BM_vi_tm_experiment(benchmark::State &state)
+{	VI_TM_FUNC;
+	auto j = vi_tmJournalCreate();
+	for (auto _ : state)
+	{	auto m = vi_tmMeasurement(j, "xxxx");
+		const auto s = vi_tmGetTicks();
+		const auto f = vi_tmGetTicks();
+		vi_tmMeasurementAdd(m, f - s, 1U);
+	}
+	vi_tmJournalClose(j);
+}
+BENCHMARK(BM_vi_tm_experiment);
 
 #if __ARM_ARCH >= 8 // ARMv8 (RaspberryPi4)
 	VI_TM_TICK VI_TM_CALL RPi4(void) noexcept

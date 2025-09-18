@@ -219,7 +219,8 @@ inline vi_tmMeasurementStats_t meterage_t::get() const noexcept
 inline auto& vi_tmMeasurementsJournal_t::try_emplace(const char *name)
 {	assert(name);
 	VI_TM_THREADSAFE_ONLY(std::lock_guard lock{ storage_guard_ });
-	return *storage_.try_emplace(name).first;
+	auto [iterator, _] = storage_.try_emplace(name);
+	return *iterator;
 }
 
 int vi_tmMeasurementsJournal_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void *ctx)

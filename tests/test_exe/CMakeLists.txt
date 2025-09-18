@@ -7,7 +7,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "Tests")
 
 target_link_libraries(${PROJECT_NAME}
 PRIVATE
-    test_lib
+    test_shared_lib
     vi_timing
 )
 
