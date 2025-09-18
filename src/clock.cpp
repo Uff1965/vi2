@@ -30,7 +30,7 @@
 #if VI_TM_USE_STDCLOCK
 	// Use standard clock
 #	include <time.h> // for timespec_get
-	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
+	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
 	{	timespec ts;
 		(void)timespec_get(&ts, TIME_UTC);
 		return 1'000'000'000U * ts.tv_sec + ts.tv_nsec;
@@ -44,7 +44,7 @@
 #	else
 #		error "Undefined compiler"
 #	endif
- 	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
+ 	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
 	{	uint32_t _;
 		// The RDTSCP instruction is not a serializing instruction, but it does wait until all previous instructions have executed.
 		const uint64_t result = __rdtscp(&_);
@@ -55,7 +55,7 @@
 		return result;
 	}
 #elif __ARM_ARCH >= 8 // ARMv8 (RaspberryPi4)
-	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
+	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
 	{	uint64_t result;
 		asm volatile
 		(	// too slow: "dmb ish\n\t" // Ensure all previous memory accesses are complete before reading the timer
@@ -140,7 +140,7 @@
 		return result;
 	}
 
-	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
+	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
 	{	VI_TM_TICK result = 0;
 
 		static const volatile uint32_t *const timer_base = get_timer_base();
@@ -159,14 +159,14 @@
 	}
 #elif defined(_WIN32) // Windows
 #	include <Windows.h>
-	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
+	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
 	{	LARGE_INTEGER cnt;
 		QueryPerformanceCounter(&cnt);
 		return cnt.QuadPart;
 	}
 #elif defined(__linux__)
 #	include <time.h>
-	VI_TM_TICK VI_TM_CALL impl_vi_tmGetTicks(void) noexcept
+	VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) noexcept
 	{	struct timespec ts;
 		clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
 		return 1'000'000'000U * ts.tv_sec + ts.tv_nsec;
@@ -174,5 +174,3 @@
 #else
 #	error "You need to define function(s) for your OS and CPU"
 #endif
-
-vi_tmGetTicks_t *vi_tmGetTicksPtr_INTERNAL_ = impl_vi_tmGetTicks;

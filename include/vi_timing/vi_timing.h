@@ -259,14 +259,11 @@ typedef enum vi_tmStatus_e
 #define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global journal handle, used for global measurements.
 
 // Main functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-	// Is for internal use only. Do not use it directly in your code!
-	extern VI_TM_API vi_tmGetTicks_t *vi_tmGetTicksPtr_INTERNAL_;
-
 	/// <summary>
 	/// This function is used to measure time intervals with fine precision.
 	/// </summary>
 	/// <returns>A current tick count.</returns>
-	#define vi_tmGetTicks vi_tmGetTicksPtr_INTERNAL_
+	VI_TM_API VI_NODISCARD VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT;
 
 	VI_TM_API int VI_TM_CALL vi_tmInit
 	(	const char* title VI_DEF("Timing report:\n"),
@@ -431,19 +428,6 @@ typedef enum vi_tmStatus_e
 	/// <returns>A pointer to the requested static information. The type of the returned data depends on the info parameter and may point to an unsigned int, a double, or a null-terminated string. Returns nullptr if the info type is not recognized.</returns>
 	VI_TM_API VI_NODISCARD const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info);
 // Main functions ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-//TODO: Proposal
-/*
-#define VI_TM_SCOPED(name) \
-	const VI_TM_TICK var_start = vi_tmGetTicks(); \
-	for \
-	(	int _once_var = 1; \
-		_once_var; \
-		(	vi_tmMeasurementAdd(vi_tmMeasurement(VI_TM_HGLOBAL, (name)), vi_tmGetTicks() - var_start), \
-			_once_var = 0 \
-		) \
-	)
-*/
 
 // Auxiliary functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
