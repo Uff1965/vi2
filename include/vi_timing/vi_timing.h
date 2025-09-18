@@ -152,11 +152,11 @@
 extern "C" {
 #	define VI_NODISCARD [[nodiscard]]
 #	define VI_NOEXCEPT noexcept
-#	define VI_DEF(v) =(v)
+#	define VI_DEFAULT(v) =(v)
 #else
 #	define VI_NODISCARD
 #	define VI_NOEXCEPT
-#	define VI_DEF(v)
+#	define VI_DEFAULT(v)
 #endif
 
 typedef double VI_TM_FP; // Floating-point type used for timing calculations, typically double precision.
@@ -266,9 +266,9 @@ typedef enum vi_tmStatus_e
 	VI_TM_API VI_NODISCARD VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT;
 
 	VI_TM_API int VI_TM_CALL vi_tmInit
-	(	const char* title VI_DEF("Timing report:\n"),
-		unsigned report_flags VI_DEF(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
-		unsigned flags VI_DEF(0)
+	(	const char* title VI_DEFAULT("Timing report:\n"),
+		unsigned report_flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
+		unsigned flags VI_DEFAULT(0)
 	);
 
 	VI_TM_API void VI_TM_CALL vi_tmShutdown();
@@ -279,7 +279,7 @@ typedef enum vi_tmStatus_e
     /// <param name="str">The string to output.</param>
 	/// <param name="ignored"> A pointer to user-defined data, which is ignored in this default implementation.</param>
     /// <returns>On success, returns a non-negative value.</returns>
-    VI_TM_API int VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEF(NULL));
+    VI_TM_API int VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEFAULT(NULL));
 	
     /// <summary>
     /// Invokes the provided callback function for the global journal.
@@ -302,10 +302,10 @@ typedef enum vi_tmStatus_e
     /// <param name="ctx">Pointer to user-defined data passed to the callback function. Defaults to NULL.</param>
     /// <returns>Returns the total number of characters written, or a negative value if an error occurs.</returns>
     VI_TM_API int VI_TM_CALL vi_tmGlobalReporterPrn
-    (   const char *title VI_DEF("Timing report:\n"),
-        unsigned flags VI_DEF(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
-        vi_tmReportCb_t cb VI_DEF(vi_tmReportCb),
-        void* ctx VI_DEF(NULL)
+    (   const char *title VI_DEFAULT("Timing report:\n"),
+        unsigned flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
+        vi_tmReportCb_t cb VI_DEFAULT(vi_tmReportCb),
+        void* ctx VI_DEFAULT(NULL)
     );
 
 	/// <summary>
@@ -363,7 +363,7 @@ typedef enum vi_tmStatus_e
 	VI_TM_API void VI_TM_CALL vi_tmMeasurementAdd(
 		VI_TM_HMEAS m,
 		VI_TM_TDIFF dur,
-		VI_TM_SIZE cnt VI_DEF(1)
+		VI_TM_SIZE cnt VI_DEFAULT(1)
 	) VI_NOEXCEPT;
 
     /// <summary>
@@ -400,7 +400,7 @@ typedef enum vi_tmStatus_e
 	VI_TM_API void VI_TM_CALL vi_tmMeasurementStatsAdd(
 		vi_tmMeasurementStats_t *dst,
 		VI_TM_TDIFF dur,
-		VI_TM_SIZE cnt VI_DEF(1)
+		VI_TM_SIZE cnt VI_DEFAULT(1)
 	) VI_NOEXCEPT;
 
     /// <summary>
@@ -447,9 +447,9 @@ typedef enum vi_tmStatus_e
 	/// <returns>The total number of characters written by the report, or a negative value if an error occurs.</returns>
 	VI_TM_API int VI_TM_CALL vi_tmReport(
 		VI_TM_HJOUR j,
-		unsigned flags VI_DEF(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
-		vi_tmReportCb_t cb VI_DEF(vi_tmReportCb),
-		void* ctx VI_DEF(NULL)
+		unsigned flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
+		vi_tmReportCb_t cb VI_DEFAULT(vi_tmReportCb),
+		void* ctx VI_DEFAULT(NULL)
 	);
 // Auxiliary functions: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
