@@ -7,7 +7,7 @@ unsigned fib(unsigned n)
 };
 
 constexpr int CNT = 100;
-volatile unsigned N = 37;
+volatile unsigned N = 30;
 
 VI_TM("Global scope");
 
