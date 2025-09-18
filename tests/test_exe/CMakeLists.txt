@@ -61,7 +61,7 @@ if (VI_TM_ENABLE_TESTS)
     set_tests_properties(ex_simple
     PROPERTIES
         PASS_REGULAR_EXPRESSION "^Hello, World!"
-        PASS_REGULAR_EXPRESSION "#  Name \\(v\\)\\.+:"
+        PASS_REGULAR_EXPRESSION "#  Name\.+:"
     )
     
     add_test(NAME ex_disabled COMMAND 2ex_simple_disabled)

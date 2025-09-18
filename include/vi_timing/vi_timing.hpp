@@ -54,6 +54,56 @@
 
 namespace vi_tm
 {
+	class init_t
+	{
+		std::string title_ = "Timing report:\n";
+		unsigned report_flags_ = vi_tmShowDuration | vi_tmShowResolution | vi_tmSortByTime;
+		unsigned flags_ = 0;
+
+		init_t(const init_t &) = delete;
+		init_t& operator=(const init_t &) = delete;
+
+		template<typename... Args>
+		int init(Args&&... args)
+		{	int result = 0;
+			((result |= init_aux(std::forward<Args>(args))), ...);
+			result |= vi_tmInit(title_.c_str(), report_flags_, flags_);
+			return result;
+		}
+
+		template<typename T>
+		int init_aux(T &&v)
+		{	int result = 0;
+			if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportFlags_e>)
+			{	report_flags_ |= v;
+			}
+			else if constexpr (std::is_same_v<std::decay_t<T>, vi_tmInitFlags_e>)
+			{	flags_ |= v;
+			}
+			else if constexpr (std::is_same_v<T, decltype(title_)>)
+			{	title_ = std::forward<T>(v);
+			}
+			else if constexpr (std::is_convertible_v<T, decltype(title_)>)
+			{	title_ = v;
+			}
+			else
+			{	assert(false); // Unknown parameter type.
+				result = 0 - __LINE__;
+			}
+
+			return result;
+		}
+	public:
+		init_t() { auto ret = init(); (void)ret; assert(0 == ret); } // Default flags and other settings.
+		template<typename... Args> explicit init_t(Args&&... args)
+			: report_flags_{0U}
+		{	init(std::forward<Args>(args)...);
+		}
+		~init_t()
+		{	vi_tmShutdown();
+		}
+	}; // class init_t
+
 	// probe_t class: A RAII-style class for measuring code execution time.
 	// Unlike the API, this class is not thread-safe!!!
 	class probe_t
@@ -117,6 +167,9 @@ namespace vi_tm
 	}
 } // namespace vi_tm
 
+// Initializes the global journal and sets up the report callback.
+#	define VI_TM_INIT(...) vi_tm::init_t vi_tm__UNIC_ID {__VA_ARGS__}
+
 // VI_[N]DEBUG_ONLY macro: Expands to its argument only in debug builds, otherwise expands to nothing.
 #	if VI_TM_DEBUG
 #		define VI_TM_NDEBUG_ONLY(t)
@@ -126,12 +179,33 @@ namespace vi_tm
 #		define VI_TM_DEBUG_ONLY(t)
 #	endif
 
-	// The VI_TM macro creates a probe_t object with a unique identifier based on the line number.
-	// It stores the pointer to the named measurer entry in a static variable. Therefore, it cannot 
-	// be called with different measurement names.
 #	define VI_TM(...) \
-		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t { \
-			static const auto meas = vi_tmMeasurement(VI_TM_HGLOBAL, name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
+		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
+		{	const auto meas = vi_tmMeasurement(VI_TM_HGLOBAL, name); \
+			return vi_tm::probe_t{meas, cnt}; \
+		}(__VA_ARGS__)
+
+	/// <summary>
+	/// Starts a scoped timing probe for high-resolution profiling.
+	/// </summary>
+	/// <param name="name">
+	/// A literal, null-terminated string that names this profiling scope.
+	/// </param>
+	/// <param name="cnt">
+	/// Optional count multiplier for this probe (default is 1).
+	/// </param>
+	/// <remarks>
+	/// The macro defines a unique probe object whose underlying measurement handle
+	/// is initialized once and cached (static) to avoid repeated lookups by name.
+	/// 
+	/// Each invocation of VI_TM_S at the same source location
+	/// must use the exact same <paramref name="name"/> and <paramref name="cnt"/>.
+	/// Re-invoking the macro in the same place with different arguments
+	/// is forbidden and will produce inconsistent or invalid profiling data.
+	/// </remarks>
+#	define VI_TM_S(...) \
+		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
+		{	static const auto meas = vi_tmMeasurement(VI_TM_HGLOBAL, name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
 			VI_TM_DEBUG_ONLY \
 			(	const char* registered_name = nullptr; \
 				vi_tmMeasurementGet(meas, &registered_name, nullptr); \
@@ -151,7 +225,7 @@ namespace vi_tm
 #	define VI_TM_RESET(name) vi_tmMeasurementReset(vi_tmMeasurement(VI_TM_HGLOBAL, (name)))
 
 	// Full version string of the library (Example: "0.1.0.2506151515R static").
-#	define VI_TM_FULLVERSION static_cast<const char*>(vi_tmStaticInfo(VI_TM_INFO_VERSION))
+#	define VI_TM_FULLVERSION static_cast<const char*>(vi_tmStaticInfo(vi_tmInfoVersion))
 #endif // #ifdef __cplusplus
 #endif // #ifdef VI_TM_DISABLE #else
 #endif // #ifndef VI_TIMING_VI_TIMING_H

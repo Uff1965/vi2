@@ -72,7 +72,7 @@ TEST_F(ViTimingJournalFixture, Journal)
 
 TEST(misc, vi_tmStaticInfo)
 {
-    const auto flags = *static_cast<const unsigned*>(vi_tmStaticInfo(VI_TM_INFO_FLAGS));
+    const auto flags = *static_cast<const unsigned*>(vi_tmStaticInfo(vi_tmInfoFlags));
 
     {
 #if VI_TM_DEBUG

@@ -35,7 +35,7 @@ namespace
 	class timing_global_t
 	{	static int finalizer_default(VI_TM_HJOUR h)
 		{	verify(0 <= vi_tmReportCb("Timing:\n"));
-			return vi_tmReport(h, vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName, vi_tmReportCb);
+			return vi_tmReport(h, vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByTime, vi_tmReportCb);
 		};
 		using finalizer_t = std::function<int(vi_tmMeasurementsJournal_t *)>;
 
@@ -76,19 +76,10 @@ timing_global_t* timing_global_t::global_instance()
 	static auto const global = []
 		{	assert(!global_instance_);
 			global_instance_.reset(new(std::nothrow) timing_global_t);
-
-			//auto fn = +[](vi_tmMeasurementsJournal_t *j, void *ctx)
-			//	{	const auto flags = reinterpret_cast<std::uintptr_t> (ctx);
-			//		return vi_tmReport(j, static_cast<unsigned>(flags));
-			//	};
-			//constexpr std::uintptr_t FLAGS = vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName;
-			//global_instance_->set_finalizer({ fn, reinterpret_cast<void *>(FLAGS) });
-
 			assert(global_instance_);
 			return global_instance_? global_instance_.get(): nullptr;
 		}();
 
-		assert(global);
 		return global;
 }
 
@@ -137,6 +128,23 @@ vi_tmMeasurementsJournal_t* misc::from_handle(VI_TM_HJOUR handle)
 
 	assert(handle);
 	return handle;
+}
+
+int VI_TM_CALL vi_tmInit(const char *title, unsigned report_flags, unsigned flags)
+{	assert(0 == (~vi_tmReportFlagsMask & report_flags));
+	assert(0 == (~vi_tmInitFlagsMask & flags));
+	if (vi_tmInitWarmup & flags)
+	{	vi_WarmUp();
+	}
+	const auto result = vi_tmGlobalReporterPrn(title, report_flags & vi_tmReportFlagsMask);
+	if (vi_tmInitThreadYield & flags)
+	{	vi_ThreadYield();
+	}
+	return result;
+}
+
+void VI_TM_CALL vi_tmShutdown()
+{
 }
 
 #ifdef _MSC_VER

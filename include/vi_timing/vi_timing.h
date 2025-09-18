@@ -195,19 +195,19 @@ typedef struct vi_tmMeasurementStats_t
 // Each value corresponds to a specific static information query, such as version, build type, or timing characteristics.
 // The return type for each enum value is indicated in the comment.
 typedef enum vi_tmInfo_e
-{	VI_TM_INFO_VER,          // const unsigned*: Version number of the library.
-	VI_TM_INFO_BUILDNUMBER,  // const unsigned*: Build number of the library.
-	VI_TM_INFO_VERSION,      // const char*: Full version string of the library.
-	VI_TM_INFO_RESOLUTION,   // const double*: Clock resolution in ticks.
-	VI_TM_INFO_DURATION,     // const double*: Measure duration with cache in ticks.
-	VI_TM_INFO_DURATION_EX,  // const double*: Measure duration in ticks.
-	VI_TM_INFO_OVERHEAD,     // const double*: Clock overhead in ticks.
-	VI_TM_INFO_UNIT,         // const double*: Seconds per tick (time unit).
-	VI_TM_INFO_GIT_DESCRIBE, // const char*: Git describe string, e.g., "v0.10.0-3-g96b37d4-dirty".
-	VI_TM_INFO_GIT_COMMIT,   // const char*: Git commit hash, e.g., "96b37d49d235140e86f6f6c246bc7f166ab773aa".
-	VI_TM_INFO_GIT_DATETIME, // const char*: Git commit date and time, e.g., "2025-07-26 13:56:02 +0300".
-	VI_TM_INFO_FLAGS,        // const unsigned*: Flags for controlling the library behavior.
-	VI_TM_INFO_COUNT_,       // Number of information types.
+{	vi_tmInfoVer,          // const unsigned*: Version number of the library.
+	vi_tmInfoBuildNumber,  // const unsigned*: Build number of the library.
+	vi_tmInfoVersion,      // const char*: Full version string of the library.
+	vi_tmInfoResolution,   // const double*: Clock resolution in ticks.
+	vi_tmInfoDuration,     // const double*: Measure duration with cache in ticks.
+	vi_tmInfoDurationEx,  // const double*: Measure duration in ticks.
+	vi_tmInfoOverhead,     // const double*: Clock overhead in ticks.
+	vi_tmInfoUnit,         // const double*: Seconds per tick (time unit).
+	vi_tmInfoGitDescribe, // const char*: Git describe string, e.g., "v0.10.0-3-g96b37d4-dirty".
+	vi_tmInfoGitCommit,   // const char*: Git commit hash, e.g., "96b37d49d235140e86f6f6c246bc7f166ab773aa".
+	vi_tmInfoGitDateTime, // const char*: Git commit date and time, e.g., "2025-07-26 13:56:02 +0300".
+	vi_tmInfoFlags,        // const unsigned*: Flags for controlling the library behavior.
+	vi_tmInfoCount_,       // Number of information types.
 } vi_tmInfo_e;
 
 // vi_tmReportFlags_e: Flags for controlling the formatting and content of timing reports.
@@ -230,19 +230,31 @@ typedef enum vi_tmReportFlags_e
 	vi_tmShowDurationNonThreadsafe = 0x0100, // If this parameter is set, the report will indicate the duration of the threadunsafe measurement.
 	vi_tmShowResolution = 0x0200, // If set, the report will show the clock resolution in seconds.
 	vi_tmShowAux = 0x0400, // If set, the report will show auxiliary information such as overhead.
-	vi_tmShowMask = 0x7F0, // Mask for all show flags.
+	vi_tmShowMask = 0x07F0, // Mask for all show flags.
 
 	vi_tmHideHeader = 0x0800, // If set, the report will not show the header with column names.
 	vi_tmDoNotSubtractOverhead = 0x1000, // If set, the overhead is not subtracted from the measured time in report.
 
+	vi_tmReportFlagsMask = 0x1FFF,
+} vi_tmReportFlags_e;
+
+typedef enum vi_tmInitFlags_e
+{
+	vi_tmInitWarmup = 0x01,
+	vi_tmInitThreadYield = 0x02,
+	vi_tmInitFlagsMask = 0x03,
+} vi_tmInitFlags_e;
+
+typedef enum vi_tmStatus_e
+{
 	vi_tmDebug = 0x01,
 	vi_tmShared = 0x02,
 	vi_tmThreadsafe = 0x04,
 	vi_tmStatUseBase = 0x08,
 	vi_tmStatUseFilter = 0x10,
 	vi_tmStatUseMinMax = 0x20,
-
-} vi_tmReportFlags_e;
+	vi_tmStatusMask = 0x3F,
+} vi_tmStatus_e;
 
 #define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global journal handle, used for global measurements.
 
@@ -255,6 +267,14 @@ typedef enum vi_tmReportFlags_e
 	/// </summary>
 	/// <returns>A current tick count.</returns>
 	#define vi_tmGetTicks vi_tmGetTicksPtr_INTERNAL_
+
+	VI_TM_API int VI_TM_CALL vi_tmInit
+	(	const char* title VI_DEF("Timing report:\n"),
+		unsigned report_flags VI_DEF(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
+		unsigned flags VI_DEF(0)
+	);
+
+	VI_TM_API void VI_TM_CALL vi_tmShutdown();
 
     /// <summary>
     /// Default report callback function. Writes the given string to the specified output stream.
@@ -412,6 +432,19 @@ typedef enum vi_tmReportFlags_e
 	VI_TM_API VI_NODISCARD const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info);
 // Main functions ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+//TODO: Proposal
+/*
+#define VI_TM_SCOPED(name) \
+	const VI_TM_TICK var_start = vi_tmGetTicks(); \
+	for \
+	(	int _once_var = 1; \
+		_once_var; \
+		(	vi_tmMeasurementAdd(vi_tmMeasurement(VI_TM_HGLOBAL, (name)), vi_tmGetTicks() - var_start), \
+			_once_var = 0 \
+		) \
+	)
+*/
+
 // Auxiliary functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
 	/// <summary>
@@ -442,7 +475,7 @@ typedef enum vi_tmReportFlags_e
 #		include "vi_timing.hpp"
 #	endif
 
-#if defined(_MSC_VER) && !VI_TM_EXPORTS
+#if defined(_MSC_VER) && !defined(VI_TM_DISABLE) && !VI_TM_EXPORTS
 // Filename suffix
 #	if VI_TM_DEBUG || VI_TM_SHARED || VI_TM_THREADSAFE || VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
 #		define VI_S_UNDERSCORE "_"

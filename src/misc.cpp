@@ -122,37 +122,39 @@ namespace
 #endif
 
 		class affinity_fix_t
-		{	static thread_local std::size_t cnt_;
-			static thread_local thread_affinity_mask_t previous_affinity_;
-			static thread_local const struct wd_t { ~wd_t() { assert(0U == cnt_); } } watch_dog_;
+		{	std::size_t cnt_ = 0U;
+			thread_affinity_mask_t previous_affinity_ = AFFINITY_ZERO;
+			static thread_local affinity_fix_t instance_;
 
 			affinity_fix_t(const affinity_fix_t &) = delete;
 			affinity_fix_t &operator=(const affinity_fix_t &) = delete;
+			affinity_fix_t() = default;
+			~affinity_fix_t()
+			{	assert(0U == cnt_);
+			}
 		public:
 			static int fixate()
-			{	if (0 == cnt_++)
+			{	if (0 == instance_.cnt_++)
 				{	const auto prev = set_affinity();
 					if (!verify(!!prev))
 					{	return VI_EXIT_FAILURE;
 					}
-					previous_affinity_ = prev.value_or(AFFINITY_ZERO);
+					instance_.previous_affinity_ = prev.value_or(AFFINITY_ZERO);
 				}
 				return VI_EXIT_SUCCESS;
 			}
 			static int restore()
-			{	assert(cnt_ > 0);
-				if (0 == --cnt_)
-				{	if(!verify(!!restore_affinity(previous_affinity_)))
+			{	assert(instance_.cnt_ > 0);
+				if (0 == --instance_.cnt_)
+				{	if(!verify(restore_affinity(instance_.previous_affinity_)))
 					{	return VI_EXIT_FAILURE;
 					}
-					previous_affinity_ = AFFINITY_ZERO;
+					instance_.previous_affinity_ = AFFINITY_ZERO;
 				}
 				return VI_EXIT_SUCCESS;
 			}
 		};
-		thread_local std::size_t affinity_fix_t::cnt_ = 0U;
-		thread_local thread_affinity_mask_t affinity_fix_t::previous_affinity_ = AFFINITY_ZERO;
-		thread_local const affinity_fix_t::wd_t affinity_fix_t::watch_dog_;
+		thread_local affinity_fix_t affinity_fix_t::instance_;
 
 	} // namespace affinity
 
@@ -373,17 +375,17 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 {	using namespace misc;
 	switch (info)
 	{
-		case VI_TM_INFO_VER: // Returns a pointer to the version number (unsigned).
+		case vi_tmInfoVer: // Returns a pointer to the version number (unsigned).
 		{	static constexpr unsigned ver = (VI_TM_VERSION_MAJOR * 1000U + VI_TM_VERSION_MINOR) * 10000U + VI_TM_VERSION_PATCH;
 			return &ver;
 		}
 
-		case VI_TM_INFO_BUILDNUMBER: // Returns a pointer to the build number (unsigned).
+		case vi_tmInfoBuildNumber: // Returns a pointer to the build number (unsigned).
 		{	static const unsigned build = build_number_get();
 			return &build;
 		}
 
-		case VI_TM_INFO_VERSION: // Returns a pointer to a static string containing the full version (major.minor.patch.buildType libraryType).
+		case vi_tmInfoVersion: // Returns a pointer to a static string containing the full version (major.minor.patch.buildType libraryType).
 		{
 #if VI_TM_DEBUG
 			static constexpr auto CONFIG = 'D';
@@ -416,41 +418,41 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 			return version.data();
 		}
 
-		case VI_TM_INFO_GIT_DESCRIBE: // Returns a pointer to the Git describe string (e.g., "v0.10.0-3-g96b37d4-dirty").
+		case vi_tmInfoGitDescribe: // Returns a pointer to the Git describe string (e.g., "v0.10.0-3-g96b37d4-dirty").
 			return misc::VI_TM_GIT_DESCRIBE.data();
 
-		case VI_TM_INFO_GIT_COMMIT: // Returns a pointer to the Git commit hash (e.g., "96b37d49d235140e86f6f6c246bc7f166ab773aa").
+		case vi_tmInfoGitCommit: // Returns a pointer to the Git commit hash (e.g., "96b37d49d235140e86f6f6c246bc7f166ab773aa").
 			return misc::VI_TM_GIT_COMMIT.data();
 
-		case VI_TM_INFO_GIT_DATETIME: // Returns a pointer to the Git commit date and time string (e.g., "2025-07-26 18:17:04 +0300").
+		case vi_tmInfoGitDateTime: // Returns a pointer to the Git commit date and time string (e.g., "2025-07-26 18:17:04 +0300").
 			return misc::VI_TM_GIT_DATETIME.data();
 
-		case VI_TM_INFO_RESOLUTION: // Returns a pointer to the clock resolution in ticks (double).
+		case vi_tmInfoResolution: // Returns a pointer to the clock resolution in ticks (double).
 		{	static const double resolution = properties_t::props().clock_resolution_ticks_;
 			return &resolution;
 		}
 
-		case VI_TM_INFO_DURATION: // Returns a pointer to the measure duration with cache in ticks (double).
+		case vi_tmInfoDuration: // Returns a pointer to the measure duration with cache in ticks (double).
 		{	static const double duration = properties_t::props().duration_threadsafe_;
 			return &duration;
 		}
 
-		case VI_TM_INFO_DURATION_EX: // Returns a pointer to the extended measure duration in ticks (double).
+		case vi_tmInfoDurationEx: // Returns a pointer to the extended measure duration in ticks (double).
 		{	static const double duration_ex = properties_t::props().duration_ex_threadsafe_;
 			return &duration_ex;
 		}
 
-		case VI_TM_INFO_OVERHEAD: // Returns a pointer to the clock overhead in ticks (double).
+		case vi_tmInfoOverhead: // Returns a pointer to the clock overhead in ticks (double).
 		{	static const double overhead = properties_t::props().clock_overhead_ticks_;
 			return &overhead;
 		}
 
-		case VI_TM_INFO_UNIT: // Returns a pointer to the seconds per tick (double).
+		case vi_tmInfoUnit: // Returns a pointer to the seconds per tick (double).
 		{	static const double unit = properties_t::props().seconds_per_tick_.count();
 			return &unit;
 		}
 
-		case VI_TM_INFO_FLAGS:
+		case vi_tmInfoFlags:
 		{
 			static const unsigned flags = 0U
 #if VI_TM_DEBUG
@@ -476,7 +478,7 @@ const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
 		}
 
 		default: // If the info type is not recognized, assert and return nullptr.
-			static_assert(VI_TM_INFO_COUNT_ == 12, "Not all vi_tmInfo_e enum values are processed in the function vi_tmStaticInfo.");
+			static_assert(vi_tmInfoCount_ == 12, "Not all vi_tmInfo_e enum values are processed in the function vi_tmStaticInfo.");
 			assert(false); // If we reach this point, the info type is not recognized.
 			return nullptr;
 	}

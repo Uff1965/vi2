@@ -147,7 +147,8 @@ namespace
 	};
 
 	struct formatter_t
-	{	static constexpr auto UNDERSCORE = '.';
+	{	static constexpr auto INTERVAL = 3U;
+		static constexpr auto UNDERSCORE = '.';
 		const std::size_t max_len_number_ = 0U;
 		const unsigned flags_ = 0U;
 		const unsigned guideline_interval_ = 0U;
@@ -355,9 +356,9 @@ metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, un
 }
 
 formatter_t::formatter_t(const std::vector<metering_t> &itms, unsigned flags)
-:	max_len_number_{ std::max(itms.empty() ? 1U : 1U + size_t(floor(log10(itms.size()))), std::size(TitleNumber) - 1U) },
+	: max_len_number_{ std::max(itms.empty() ? 1U : 1U + size_t(floor(log10(itms.size()))), std::size(TitleNumber) - 1U) },
 	flags_{ flags },
-	guideline_interval_{ itms.size() > 4U ? 3U : 0U }
+	guideline_interval_{ itms.size() >= 2 * INTERVAL ? INTERVAL : 0U }
 {	
 	for (auto &itm : itms)
 	{	max_len_name_ = std::max(max_len_name_, itm.name_.length());

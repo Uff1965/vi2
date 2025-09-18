@@ -48,7 +48,7 @@ namespace
 
 	void header(std::ostream& stream)
 	{	const auto tm = ch::system_clock::to_time_t(ch::system_clock::now());
-		const std::string flags = flags2string(*static_cast<const unsigned *>(vi_tmStaticInfo(VI_TM_INFO_FLAGS)));
+		const std::string flags = flags2string(*static_cast<const unsigned *>(vi_tmStaticInfo(vi_tmInfoFlags)));
 
 		std::tm tm_buf;
 #ifdef _MSC_VER
@@ -62,14 +62,14 @@ namespace
 		stream << "Information about the \'vi_timing\' library:\n"
 			"\tVersion: " << VI_TM_FULLVERSION << ";\n"
 			"\tBuild flags: " << (flags.empty() ? "<none>" : flags) << ";\n"
-			"\tGit describe: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DESCRIBE)) << ";\n"
-			"\tGit commit date and time: " << static_cast<const char *>(vi_tmStaticInfo(VI_TM_INFO_GIT_DATETIME)) << ".\n";
+			"\tGit describe: " << static_cast<const char *>(vi_tmStaticInfo(vi_tmInfoGitDescribe)) << ";\n"
+			"\tGit commit date and time: " << static_cast<const char *>(vi_tmStaticInfo(vi_tmInfoGitDateTime)) << ".\n";
 		endl(stream);
 
-		const auto unit = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_UNIT));
-		const auto duration = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_DURATION));
-		const auto overhead = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_OVERHEAD));
-		const auto resolution = *static_cast<const double *>(vi_tmStaticInfo(VI_TM_INFO_RESOLUTION));
+		const auto unit = *static_cast<const double *>(vi_tmStaticInfo(vi_tmInfoUnit));
+		const auto duration = *static_cast<const double *>(vi_tmStaticInfo(vi_tmInfoDuration));
+		const auto overhead = *static_cast<const double *>(vi_tmStaticInfo(vi_tmInfoOverhead));
+		const auto resolution = *static_cast<const double *>(vi_tmStaticInfo(vi_tmInfoResolution));
 		stream <<
 			"Static info:\n"
 			"\tDivision price: " << vi_tm::to_string(unit, 3) << "s.\n"
