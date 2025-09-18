@@ -371,7 +371,7 @@ int  VI_TM_CALL vi_WarmUp(unsigned int threads_qty, unsigned int ms)
 // vi_tmStaticInfo: Returns static information about the vi_timing library based on the requested info type.
 // - info: The type of information to retrieve (see vi_tmInfo_e).
 // Returns: A pointer to the requested static data (type depends on info), or nullptr if the info type is not recognized.
-const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info)
+const void* VI_TM_CALL vi_tmStaticInfo(VI_TM_FLAGS info)
 {	using namespace misc;
 	switch (info)
 	{

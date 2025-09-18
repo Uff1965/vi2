@@ -502,7 +502,7 @@ int formatter_t::print_metering(const metering_t &i, const F &fn) const
 	return fn(str.str().c_str());
 }
 
-int VI_TM_CALL vi_tmReport(VI_TM_HJOUR journal_handle, unsigned flags, vi_tmReportCb_t fn, void *ctx)
+VI_TM_RESULT VI_TM_CALL vi_tmReport(VI_TM_HJOUR journal_handle, VI_TM_FLAGS flags, vi_tmReportCb_t fn, void *ctx)
 {	assert(!ctx || !!fn);
 	if (nullptr == fn)
 	{	// Simulate the use of the journal to inhibit automatic report generation.
@@ -524,7 +524,7 @@ int VI_TM_CALL vi_tmReport(VI_TM_HJOUR journal_handle, unsigned flags, vi_tmRepo
 	return result;
 }
 
-int VI_SYS_CALL vi_tmReportCb(const char *str, void* stream)
+VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void* stream)
 {	assert(nullptr == stream); // The output stream must be from the same RTL library as the output function!
 	(void)stream;
 #ifdef _WIN32

@@ -238,7 +238,7 @@ int vi_tmMeasurementsJournal_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void 
 
 //vvvv API Implementation vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
-int VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *meas) noexcept
+VI_TM_RESULT VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *meas) noexcept
 {	if(!verify(!!meas))
 	{	return VI_EXIT_FAILURE;
 	}
@@ -432,7 +432,7 @@ void VI_TM_CALL vi_tmJournalReset(VI_TM_HJOUR journal) noexcept
 {	vi_tmMeasurementEnumerate(journal, [](VI_TM_HMEAS m, void *) { vi_tmMeasurementReset(m); return 0; }, nullptr);
 }
 
-int VI_TM_CALL vi_tmMeasurementEnumerate(VI_TM_HJOUR journal, vi_tmMeasEnumCb_t fn, void *ctx)
+VI_TM_RESULT VI_TM_CALL vi_tmMeasurementEnumerate(VI_TM_HJOUR journal, vi_tmMeasEnumCb_t fn, void *ctx)
 {	return misc::from_handle(journal)->for_each_measurement(fn, ctx);
 }
 

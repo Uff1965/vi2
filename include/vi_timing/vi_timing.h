@@ -63,9 +63,14 @@
 #endif
 
 // Uncomment the next line to store minimum and maximum measurement values. Library rebuild required
-//#	define VI_TM_STAT_USE_MINMAX 1
+#ifndef VI_TM_STAT_USE_MINMAX
+#	define VI_TM_STAT_USE_MINMAX 0
+#endif
 
 // If VI_TM_EXPORTS defined, the library is built as a shared and exports its functions.
+#ifndef VI_TM_EXPORTS
+#	define VI_TM_EXPORTS 0
+#endif
 
 //*******************************************************************************************************************
 
@@ -74,7 +79,7 @@
 
 #	ifdef _M_IX86 // x86 architecture
 #		define VI_SYS_CALL __cdecl
-#		define VI_TM_CALL __fastcall
+#		define VI_TM_CALL __cdecl
 #	else
 #		define VI_SYS_CALL
 #		define VI_TM_CALL
@@ -82,7 +87,7 @@
 
 #	if ! VI_TM_SHARED
 #		define VI_TM_API
-#	elif ! defined(VI_TM_EXPORTS)
+#	elif ! VI_TM_EXPORTS
 #		define VI_TM_API __declspec(dllimport)
 #	else
 #		define VI_TM_API __declspec(dllexport)
@@ -91,13 +96,13 @@
 #elif defined (__GNUC__) || defined(__clang__)
 #	ifdef __i386__
 #		define VI_SYS_CALL __attribute__((cdecl))
-#		define VI_TM_CALL __attribute__((fastcall))
+#		define VI_TM_CALL __attribute__((cdecl))
 #	else
 #		define VI_SYS_CALL
 #		define VI_TM_CALL
 #	endif
 
-#	ifdef VI_TM_EXPORTS
+#	if VI_TM_EXPORTS
 #		define VI_TM_API __attribute__((visibility("default")))
 #	else
 #		define VI_TM_API
@@ -159,15 +164,16 @@ extern "C" {
 #	define VI_DEFAULT(v)
 #endif
 
+typedef int32_t VI_TM_RESULT;
+typedef uint32_t VI_TM_FLAGS;
 typedef double VI_TM_FP; // Floating-point type used for timing calculations, typically double precision.
 typedef size_t VI_TM_SIZE; // Size type used for counting events, typically size_t.
 typedef uint64_t VI_TM_TICK; // !!! UNSIGNED !!! Represents a tick count (typically from a high-resolution timer).
 typedef VI_TM_TICK VI_TM_TDIFF; // !!! UNSIGNED !!! Represents a difference between two tick counts (duration).
 typedef struct vi_tmMeasurement_t *VI_TM_HMEAS; // Opaque handle to a measurement entry.
 typedef struct vi_tmMeasurementsJournal_t *VI_TM_HJOUR; // Opaque handle to a measurements journal.
-typedef int (VI_TM_CALL *vi_tmMeasEnumCb_t)(VI_TM_HMEAS meas, void* ctx); // Callback type for enumerating measurements; returning non-zero aborts enumeration.
-typedef int (VI_SYS_CALL *vi_tmReportCb_t)(const char* str, void* ctx); // Callback type for report function. ABI must be compatible with std::fputs!
-typedef /*VI_NODISCARD*/ VI_TM_TICK (VI_TM_CALL vi_tmGetTicks_t)(void) VI_NOEXCEPT;
+typedef VI_TM_RESULT (VI_TM_CALL *vi_tmMeasEnumCb_t)(VI_TM_HMEAS meas, void* ctx); // Callback type for enumerating measurements; returning non-zero aborts enumeration.
+typedef VI_TM_RESULT (VI_SYS_CALL *vi_tmReportCb_t)(const char* str, void* ctx); // Callback type for report function. ABI must be compatible with std::fputs!
 
 // vi_tmMeasurementStats_t: Structure holding statistics for a timing measurement.
 // This structure is used to store the number of calls, total time spent, and other statistical data for a measurement.
@@ -265,10 +271,10 @@ typedef enum vi_tmStatus_e
 	/// <returns>A current tick count.</returns>
 	VI_TM_API VI_NODISCARD VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT;
 
-	VI_TM_API int VI_TM_CALL vi_tmInit
+	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmInit
 	(	const char* title VI_DEFAULT("Timing report:\n"),
-		unsigned report_flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
-		unsigned flags VI_DEFAULT(0)
+		VI_TM_FLAGS report_flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
+		VI_TM_FLAGS flags VI_DEFAULT(0)
 	);
 
 	VI_TM_API void VI_TM_CALL vi_tmShutdown();
@@ -279,7 +285,7 @@ typedef enum vi_tmStatus_e
     /// <param name="str">The string to output.</param>
 	/// <param name="ignored"> A pointer to user-defined data, which is ignored in this default implementation.</param>
     /// <returns>On success, returns a non-negative value.</returns>
-    VI_TM_API int VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEFAULT(NULL));
+    VI_TM_API VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEFAULT(NULL));
 	
     /// <summary>
     /// Invokes the provided callback function for the global journal.
@@ -291,7 +297,7 @@ typedef enum vi_tmStatus_e
     /// IMPORTANT: The callback function 'fn' will be called before the journal is destroyed, after all user objects have been destroyed.
     /// Make sure that the callback and the context passed to it are not destroyed before the journal!
     /// </remarks>
-	VI_TM_API int VI_TM_CALL vi_tmGlobalReporter(int (*fn)(VI_TM_HJOUR, void*), void* ctx);
+	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalReporter(VI_TM_RESULT (*fn)(VI_TM_HJOUR, void*), void* ctx);
 
 	/// <summary>
     /// Generates and prints a timing report for the global journal.
@@ -301,9 +307,9 @@ typedef enum vi_tmStatus_e
     /// <param name="cb">Callback function used to output each line of the report. Defaults to vi_tmReportCb.</param>
     /// <param name="ctx">Pointer to user-defined data passed to the callback function. Defaults to NULL.</param>
     /// <returns>Returns the total number of characters written, or a negative value if an error occurs.</returns>
-    VI_TM_API int VI_TM_CALL vi_tmGlobalReporterPrn
+    VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalReporterPrn
     (   const char *title VI_DEFAULT("Timing report:\n"),
-        unsigned flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
+        VI_TM_FLAGS flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
         vi_tmReportCb_t cb VI_DEFAULT(vi_tmReportCb),
         void* ctx VI_DEFAULT(NULL)
     );
@@ -347,7 +353,7 @@ typedef enum vi_tmStatus_e
 	/// <param name="fn">A callback function to be called for each measurement. It receives a handle to the measurement and the user-provided data pointer.</param>
 	/// <param name="ctx">A pointer to user-defined data that is passed to the callback function.</param>
 	/// <returns>Returns 0 if all measurements were processed. If the callback returns a non-zero value, iteration stops and that value is returned.</returns>
-	VI_TM_API int VI_TM_CALL vi_tmMeasurementEnumerate(
+	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmMeasurementEnumerate(
 		VI_TM_HJOUR j,
 		vi_tmMeasEnumCb_t fn,
 		void* ctx
@@ -426,7 +432,7 @@ typedef enum vi_tmStatus_e
 	/// </summary>
 	/// <param name="info">The type of information to retrieve, specified as a value of the vi_tmInfo_e enumeration.</param>
 	/// <returns>A pointer to the requested static information. The type of the returned data depends on the info parameter and may point to an unsigned int, a double, or a null-terminated string. Returns nullptr if the info type is not recognized.</returns>
-	VI_TM_API VI_NODISCARD const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info);
+	VI_TM_API VI_NODISCARD const void* VI_TM_CALL vi_tmStaticInfo(VI_TM_FLAGS info);
 // Main functions ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 // Auxiliary functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -435,7 +441,7 @@ typedef enum vi_tmStatus_e
 	/// Checks if the given measurement statistics structure contains valid data.
 	/// Returns zero if valid.
 	/// </summary>
-	VI_TM_API VI_NODISCARD int VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *m) VI_NOEXCEPT;
+	VI_TM_API VI_NODISCARD VI_TM_RESULT VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *m) VI_NOEXCEPT;
 
 	/// <summary>
 	/// Generates a report for the specified journal handle, using a callback function to output the report data.
@@ -445,9 +451,9 @@ typedef enum vi_tmStatus_e
 	/// <param name="cb">A callback function used to output each line of the report. If nullptr, defaults to writing to a FILE* stream.</param>
 	/// <param name="ctx">A pointer to user data passed to the callback function. If fn is nullptr and ctx is nullptr, defaults to stdout.</param>
 	/// <returns>The total number of characters written by the report, or a negative value if an error occurs.</returns>
-	VI_TM_API int VI_TM_CALL vi_tmReport(
+	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmReport(
 		VI_TM_HJOUR j,
-		unsigned flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
+		VI_TM_FLAGS flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
 		vi_tmReportCb_t cb VI_DEFAULT(vi_tmReportCb),
 		void* ctx VI_DEFAULT(NULL)
 	);

@@ -58,23 +58,23 @@ namespace vi_tm
 	class init_t
 	{
 		std::string title_ = "Timing report:\n";
-		unsigned report_flags_ = vi_tmShowDuration | vi_tmShowResolution | vi_tmSortByTime;
-		unsigned flags_ = 0;
+		VI_TM_FLAGS report_flags_ = vi_tmShowDuration | vi_tmShowResolution | vi_tmSortByTime;
+		VI_TM_FLAGS flags_ = 0;
 
 		init_t(const init_t &) = delete;
 		init_t& operator=(const init_t &) = delete;
 
 		template<typename... Args>
-		int init(Args&&... args)
-		{	int result = 0;
+		VI_TM_RESULT init(Args&&... args)
+		{	VI_TM_RESULT result = 0;
 			((result |= init_aux(std::forward<Args>(args))), ...);
 			result |= vi_tmInit(title_.c_str(), report_flags_, flags_);
 			return result;
 		}
 
 		template<typename T>
-		int init_aux(T &&v)
-		{	int result = 0;
+		VI_TM_RESULT init_aux(T &&v)
+		{	VI_TM_RESULT result = 0;
 			if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportFlags_e>)
 			{	report_flags_ |= v;
 			}

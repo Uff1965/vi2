@@ -50,7 +50,7 @@ namespace
 		~timing_global_t();
 		static timing_global_t* global_instance();
 
-		timing_global_t(const VI_TM_HJOUR &handle_, const std::function<int(vi_tmMeasurementsJournal_t *)> &finalizer_)
+		timing_global_t(const VI_TM_HJOUR handle_, const std::function<int(vi_tmMeasurementsJournal_t *)> &finalizer_)
 			: handle_(handle_), finalizer_(finalizer_)
 		{}
 
@@ -76,14 +76,13 @@ timing_global_t* timing_global_t::global_instance()
 	static auto const global = []
 		{	assert(!global_instance_);
 			global_instance_.reset(new(std::nothrow) timing_global_t);
-			assert(global_instance_);
-			return global_instance_? global_instance_.get(): nullptr;
+			return verify(!!global_instance_)? global_instance_.get(): nullptr;
 		}();
 
-		return global;
+	return global;
 }
 
-int VI_TM_CALL vi_tmGlobalReporter(int (*cb)(VI_TM_HJOUR, void *), void *ctx)
+VI_TM_RESULT VI_TM_CALL vi_tmGlobalReporter(VI_TM_RESULT (*cb)(VI_TM_HJOUR, void *), void *ctx)
 {	assert(cb);
 	if (auto const global = timing_global_t::global_instance())
 	{	global->finalizer([cb, ctx](VI_TM_HJOUR jnl) { return !!cb ? cb(jnl, ctx) : 0; });
@@ -91,9 +90,9 @@ int VI_TM_CALL vi_tmGlobalReporter(int (*cb)(VI_TM_HJOUR, void *), void *ctx)
 	return VI_EXIT_SUCCESS;
 }
 
-int VI_TM_CALL vi_tmGlobalReporterPrn
+VI_TM_RESULT VI_TM_CALL vi_tmGlobalReporterPrn
 (	const char *title,
-	unsigned flags,
+	VI_TM_FLAGS flags,
 	vi_tmReportCb_t cb,
 	void *ctx
 )
@@ -103,7 +102,7 @@ int VI_TM_CALL vi_tmGlobalReporterPrn
 	{	std::string&& t = title ? title : "";
 		auto fn = [t, flags, cb, ctx](VI_TM_HJOUR jnl)
 			{	if (!!cb)
-				{	int result = 0;
+				{	VI_TM_RESULT result = 0;
 					if (!t.empty())
 					{	result += cb(t.c_str(), ctx);
 					}
@@ -130,7 +129,7 @@ vi_tmMeasurementsJournal_t* misc::from_handle(VI_TM_HJOUR handle)
 	return handle;
 }
 
-int VI_TM_CALL vi_tmInit(const char *title, unsigned report_flags, unsigned flags)
+VI_TM_RESULT VI_TM_CALL vi_tmInit(const char *title, VI_TM_FLAGS report_flags, VI_TM_FLAGS flags)
 {	assert(0 == (~vi_tmReportFlagsMask & report_flags));
 	assert(0 == (~vi_tmInitFlagsMask & flags));
 	if (vi_tmInitWarmup & flags)
