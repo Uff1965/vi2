@@ -54,8 +54,9 @@ namespace platform
 		}
 #elif defined(__linux__)
 		Dl_info info{};
-		if (dladdr(addr, &info)) {
-			result = info.dli_fname;
+		if (dladdr(addr, &info))
+		{	result = info.dli_fname;
+		}
 #else
 #	error "Error: Unknown platform!"
 #endif
