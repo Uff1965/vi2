@@ -69,13 +69,13 @@ namespace platform
 }
 
 TEST(filename, exe)
-{	auto name = platform::get_module_path(static_cast<const void*>(&dummy)).stem().string();
+{	auto name = platform::get_module_path(reinterpret_cast<const void*>(&dummy)).stem().string();
 	EXPECT_TRUE(ends_with(name, suffix));
 }
 
 #if VI_TM_SHARED
 TEST(filename, lib)
-{	auto name = platform::get_module_path(static_cast<const void*>(&vi_tmStaticInfo)).stem().string();
+{	auto name = platform::get_module_path(reinterpret_cast<const void*>(&vi_tmStaticInfo)).stem().string();
 	EXPECT_TRUE(ends_with(name, suffix));
 }
 #endif
