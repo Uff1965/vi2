@@ -49,12 +49,11 @@ add_compile_options(
     $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-fsanitize=address>
     $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-fsanitize=address>
     # For GCC/Clang additionally:
-    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-fno-omit-frame-pointer>
-    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-fno-omit-frame-pointer>
+    #$<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-fno-omit-frame-pointer>
+    #$<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-fno-omit-frame-pointer>
 )
 
 add_link_options(
-    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/fsanitize=address>
     $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-fsanitize=address>
     $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-fsanitize=address>
 )

@@ -74,7 +74,7 @@ TEST(filename, exe)
 
 #if VI_TM_SHARED
 TEST(filename, lib)
-{	auto name = platform::get_module_path(reinterpret_cast<const void*>(&vi_tmStaticInfo)).stem().string();
+{	auto name = file_name(platform::get_module_path(reinterpret_cast<const void*>(&vi_tmStaticInfo)));
 	EXPECT_TRUE(ends_with(name, suffix)) << "name: \'" << name << "\' and \'" << suffix << "\'";
 }
 #endif
