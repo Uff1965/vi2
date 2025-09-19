@@ -65,12 +65,12 @@ namespace platform
 
 TEST(filename, exe)
 {	auto name = platform::get_module_path(reinterpret_cast<const void*>(&function_located_in_an_executable_module)).stem().string();
-	EXPECT_TRUE(ends_with(name, suffix));
+	EXPECT_TRUE(ends_with(name, suffix)) << "name: \'" << name << "\' and \'" << suffix << "\'";
 }
 
 #if VI_TM_SHARED
 TEST(filename, lib)
 {	auto name = platform::get_module_path(reinterpret_cast<const void*>(&vi_tmStaticInfo)).stem().string();
-	EXPECT_TRUE(ends_with(name, suffix));
+	EXPECT_TRUE(ends_with(name, suffix)) << "name: \'" << name << "\' and \'" << suffix << "\'";
 }
 #endif

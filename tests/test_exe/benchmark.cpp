@@ -10,13 +10,13 @@
 #include <chrono> // for std::chrono
 
 VI_TM_TICK stdclock(void) noexcept
-{	timespec ts;
+{	VI_TM_S("std::timespec_get");
+	timespec ts;
 	(void)std::timespec_get(&ts, TIME_UTC);
 	return 1'000'000'000U * ts.tv_sec + ts.tv_nsec; //-V104
 }
 
 static void BM_timespec_get(benchmark::State& state) {
-	VI_TM_FUNC;
     for (auto _ : state) {
         benchmark::DoNotOptimize(stdclock());
     }
@@ -24,13 +24,12 @@ static void BM_timespec_get(benchmark::State& state) {
 BENCHMARK(BM_timespec_get);
 
 VI_TM_TICK stdchrono(void) noexcept {
-	VI_TM_FUNC;
+	VI_TM_S("steady_clock");
 	const auto tp = std::chrono::steady_clock::now().time_since_epoch();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(tp).count();
 }
 
 static void BM_steady_clock(benchmark::State& state) {
-	VI_TM_FUNC;
     for (auto _ : state) {
         benchmark::DoNotOptimize(stdchrono());
     }
@@ -38,7 +37,6 @@ static void BM_steady_clock(benchmark::State& state) {
 BENCHMARK(BM_steady_clock);
 
 static void BM_vi_tmGetTicks(benchmark::State& state) {
-	VI_TM_FUNC;
     for (auto _ : state) {
         benchmark::DoNotOptimize(vi_tmGetTicks());
     }
@@ -46,7 +44,6 @@ static void BM_vi_tmGetTicks(benchmark::State& state) {
 BENCHMARK(BM_vi_tmGetTicks);
 
 static void BM_vi_tm(benchmark::State& state) {
-	VI_TM_FUNC;
 	VI_TM_RESET("xxxx");
     for (auto _ : state) {
 		auto m = vi_tmMeasurement(VI_TM_HGLOBAL, "xxxx");
@@ -58,7 +55,6 @@ static void BM_vi_tm(benchmark::State& state) {
 BENCHMARK(BM_vi_tm);
 
 static void BM_VI_TM(benchmark::State& state) {
-	VI_TM_FUNC;
 	VI_TM_RESET("xxxx");
     for (auto _ : state) {
         VI_TM("xxxx");
@@ -67,7 +63,6 @@ static void BM_VI_TM(benchmark::State& state) {
 BENCHMARK(BM_VI_TM);
 
 static void BM_vi_tm_S(benchmark::State& state) {
-	VI_TM_FUNC;
 	VI_TM_RESET("xxxx");
     for (auto _ : state) {
 		static auto m = vi_tmMeasurement(VI_TM_HGLOBAL, "xxxx");
@@ -79,7 +74,6 @@ static void BM_vi_tm_S(benchmark::State& state) {
 BENCHMARK(BM_vi_tm_S);
 
 static void BM_VI_TM_S(benchmark::State& state) {
-	VI_TM_FUNC;
 	VI_TM_RESET("xxxx");
     for (auto _ : state) {
         VI_TM_S("xxxx");
@@ -88,8 +82,7 @@ static void BM_VI_TM_S(benchmark::State& state) {
 BENCHMARK(BM_VI_TM_S);
 
 static void BM_vi_tm_experiment(benchmark::State &state)
-{	VI_TM_FUNC;
-	auto j = vi_tmJournalCreate();
+{	auto j = vi_tmJournalCreate();
 	for (auto _ : state)
 	{	auto m = vi_tmMeasurement(j, "xxxx");
 		const auto s = vi_tmGetTicks();

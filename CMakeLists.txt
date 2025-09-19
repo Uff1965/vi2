@@ -44,6 +44,21 @@ if(BUILD_SHARED_LIBS)
     set(VI_TM_SHARED 1)
 endif()
 
+add_compile_options(
+    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/fsanitize=address>
+    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-fsanitize=address>
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-fsanitize=address>
+    # For GCC/Clang additionally:
+    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-fno-omit-frame-pointer>
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-fno-omit-frame-pointer>
+)
+
+add_link_options(
+    $<$<AND:$<CXX_COMPILER_ID:MSVC>,$<CONFIG:Debug>>:/fsanitize=address>
+    $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CONFIG:Debug>>:-fsanitize=address>
+    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-fsanitize=address>
+)
+
 include("cmake/GenerateVersion.cmake") # Include the script to generate version information.
 vi_get_version_from_git(VI_GIT)
 
