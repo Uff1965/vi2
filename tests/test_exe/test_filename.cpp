@@ -54,7 +54,7 @@ namespace platform
 		}
 #elif defined(__linux__)
 		Dl_info info{};
-		if (dladdr(addr, reinterpret_cast<const void*>(&info)))
+		if (dladdr(reinterpret_cast<const void*>(addr), &info))
 		{	result = info.dli_fname;
 		}
 #else
