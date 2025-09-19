@@ -9,8 +9,6 @@
 #include <string_view>
 #include <string>
 
-namespace fs = std::filesystem;
-
 #if defined(_WIN32)
 #	include <windows.h>
 #elif defined(__APPLE__)
@@ -21,10 +19,12 @@ namespace fs = std::filesystem;
 #	include <unistd.h>
 #endif
 
+namespace fs = std::filesystem;
+
 namespace
 {
 	const std::string suffix = VI_TM_SUFFIX;
-	void dummy() {}
+	void function_located_in_an_executable_module() {}
 
 	bool ends_with(std::string_view l, std::string_view r)
 	{	return(l.size() >= r.size() && 0 == l.compare(l.size() - r.size(), r.size(), r));
@@ -34,27 +34,22 @@ namespace
 namespace platform
 {
 	fs::path get_module_path(const void* addr)
-	{
-		std::string result;
-
+	{	std::string result;
 #if defined(_WIN32)
-		if (HMODULE hModule = nullptr; GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCTSTR>(addr), &hModule))
-		{	assert(hModule);
-			result.resize(MAX_PATH);
+		if (HMODULE hModule = NULL; GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCSTR>(addr), &hModule))
+		{	result.resize(MAX_PATH);
 			DWORD len = 0;
 			while((len = GetModuleFileNameA(hModule, result.data(), static_cast<DWORD>(result.size()))))
 			{	if (len < result.size())
 				{	break;
 				}
-
 				result.resize(len * 2);
 			}
 			result.resize(len);
 			FreeLibrary(hModule);
 		}
 #elif defined(__linux__)
-		Dl_info info{};
-		if (dladdr(addr, &info))
+		if (Dl_info info{}; dladdr(addr, &info))
 		{	result = info.dli_fname;
 		}
 #else
@@ -69,7 +64,7 @@ namespace platform
 }
 
 TEST(filename, exe)
-{	auto name = platform::get_module_path(reinterpret_cast<const void*>(&dummy)).stem().string();
+{	auto name = platform::get_module_path(reinterpret_cast<const void*>(&function_located_in_an_executable_module)).stem().string();
 	EXPECT_TRUE(ends_with(name, suffix));
 }
 
