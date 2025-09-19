@@ -29,6 +29,14 @@ namespace
 	bool ends_with(std::string_view l, std::string_view r)
 	{	return(l.size() >= r.size() && 0 == l.compare(l.size() - r.size(), r.size(), r));
 	}
+
+	std::string file_name(const fs::path& p)
+	{	const std::string fn = p.filename().string();
+		if (auto pos = fn.find('.'); pos != std::string::npos)
+		{	return fn.substr(0, pos);
+		}
+		return fn;
+	}
 }
 
 namespace platform
@@ -57,14 +65,10 @@ namespace platform
 #endif
 		return { result };
 	}
-
-	std::string filename(fs::path path)
-	{	return path.filename().string();
-	}
 }
 
 TEST(filename, exe)
-{	auto name = platform::get_module_path(reinterpret_cast<const void*>(&function_located_in_an_executable_module)).stem().string();
+{	auto name = file_name(platform::get_module_path(reinterpret_cast<const void*>(&function_located_in_an_executable_module)));
 	EXPECT_TRUE(ends_with(name, suffix)) << "name: \'" << name << "\' and \'" << suffix << "\'";
 }
 
