@@ -32,6 +32,7 @@ if (VI_TM_ENABLE_TESTS)
 
     set(FILE_GROUP
         "test.h"
+        "test_filename.cpp"
         "test_format.cpp"
         "test_misc.cpp"
         "test_timing.cpp"

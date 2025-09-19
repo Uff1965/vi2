@@ -465,47 +465,48 @@ typedef enum vi_tmStatus_e
 #		include "vi_timing.hpp"
 #	endif
 
-#if defined(_MSC_VER) && !defined(VI_TM_DISABLE) && !VI_TM_EXPORTS
 // Filename suffix
 #	if VI_TM_DEBUG || VI_TM_SHARED || VI_TM_THREADSAFE || VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
-#		define VI_S_UNDERSCORE "_"
+#		define VI_TM_S_UNDERSCORE "_"
 #	else
-#		define VI_S_UNDERSCORE
-#	endif
-#	if VI_TM_DEBUG
-#		define VI_S_DEBUG "d"
-#	else
-#		define VI_S_DEBUG
-#	endif
-#	if VI_TM_SHARED
-#		define VI_S_SHARED "s"
-#	else
-#		define VI_S_SHARED
-#	endif
-#	if VI_TM_THREADSAFE
-#		define VI_S_THREADSAFE "t"
-#	else
-#		define VI_S_THREADSAFE
+#		define VI_TM_S_UNDERSCORE ""
 #	endif
 #	if VI_TM_STAT_USE_RAW
-#		define VI_S_STAT_USE_RAW "r"
+#		define VI_TM_S_STAT_USE_RAW "r"
 #	else
-#		define VI_S_STAT_USE_RAW
+#		define VI_TM_S_STAT_USE_RAW
 #	endif
 #	if VI_TM_STAT_USE_FILTER
-#		define VI_S_STAT_USE_FILTER "f"
+#		define VI_TM_S_STAT_USE_FILTER "f"
 #	else
-#		define VI_S_STAT_USE_FILTER
+#		define VI_TM_S_STAT_USE_FILTER
 #	endif
 #	if VI_TM_STAT_USE_MINMAX
-#		define VI_S_STAT_USE_MINMAX "m"
+#		define VI_TM_S_STAT_USE_MINMAX "m"
 #	else
-#		define VI_S_STAT_USE_MINMAX
+#		define VI_TM_S_STAT_USE_MINMAX
+#	endif
+#	if VI_TM_THREADSAFE
+#		define VI_TM_S_THREADSAFE "t"
+#	else
+#		define VI_TM_S_THREADSAFE
+#	endif
+#	if VI_TM_SHARED
+#		define VI_TM_S_SHARED "s"
+#	else
+#		define VI_TM_S_SHARED
+#	endif
+#	if VI_TM_DEBUG
+#		define VI_TM_S_DEBUG "d"
+#	else
+#		define VI_TM_S_DEBUG
 #	endif
 
-#	define VI_SUFFIX VI_S_UNDERSCORE VI_S_STAT_USE_RAW VI_S_STAT_USE_FILTER VI_S_STAT_USE_MINMAX VI_S_THREADSAFE VI_S_SHARED VI_S_DEBUG
+#	define VI_TM_SUFFIX VI_TM_S_UNDERSCORE VI_TM_S_STAT_USE_RAW VI_TM_S_STAT_USE_FILTER VI_TM_S_STAT_USE_MINMAX VI_TM_S_THREADSAFE VI_TM_S_SHARED VI_TM_S_DEBUG
+#	define VI_TM_LIB_NAME "vi_timing" VI_TM_SUFFIX
 
-#	pragma comment(lib, "vi_timing" VI_SUFFIX ".lib")
-#endif // #if defined(_MSC_VER) && !VI_TM_EXPORTS
+#if defined(_MSC_VER) && !defined(VI_TM_DISABLE) && !VI_TM_EXPORTS
+#	pragma comment(lib, VI_TM_LIB_NAME ".lib")
+#endif
 
 #endif // #ifndef VI_TIMING_VI_TIMING_C_H
