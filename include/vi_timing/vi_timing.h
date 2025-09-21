@@ -280,7 +280,7 @@ typedef enum vi_tmStatus_e
 	VI_TM_API void VI_TM_CALL vi_tmShutdown();
 
     /// <summary>
-    /// Default report callback function. Writes the given string to the specified output stream.
+    /// Default report callback function. Writes the given string to the standard output stream (or the debugger in Windows).
     /// </summary>
     /// <param name="str">The string to output.</param>
 	/// <param name="ignored"> A pointer to user-defined data, which is ignored in this default implementation.</param>
@@ -297,17 +297,17 @@ typedef enum vi_tmStatus_e
     /// IMPORTANT: The callback function 'fn' will be called before the journal is destroyed, after all user objects have been destroyed.
     /// Make sure that the callback and the context passed to it are not destroyed before the journal!
     /// </remarks>
-	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalReporter(VI_TM_RESULT (*fn)(VI_TM_HJOUR, void*), void* ctx);
+	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter(VI_TM_RESULT (*fn)(VI_TM_HJOUR, void*), void* ctx);
 
 	/// <summary>
-    /// Generates and prints a timing report for the global journal.
+    /// Report callback function. Generates and prints a timing report for the global journal.
     /// </summary>
     /// <param name="title">The title to display at the top of the report. Defaults to "Timing report:\n".</param>
     /// <param name="flags">Flags controlling report formatting and content. Defaults to showing resolution, duration, and sorting by name.</param>
     /// <param name="cb">Callback function used to output each line of the report. Defaults to vi_tmReportCb.</param>
     /// <param name="ctx">Pointer to user-defined data passed to the callback function. Defaults to NULL.</param>
     /// <returns>Returns the total number of characters written, or a negative value if an error occurs.</returns>
-    VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalReporterPrn
+    VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporterPrn
     (   const char *title VI_DEFAULT("Timing report:\n"),
         VI_TM_FLAGS flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
         vi_tmReportCb_t cb VI_DEFAULT(vi_tmReportCb),

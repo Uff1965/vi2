@@ -526,9 +526,9 @@ VI_TM_RESULT VI_TM_CALL vi_tmReport(VI_TM_HJOUR journal_handle, VI_TM_FLAGS flag
 	return result;
 }
 
-VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void* stream)
-{	assert(nullptr == stream); // The output stream must be from the same RTL library as the output function!
-	(void)stream;
+VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void* ignored)
+{	assert(nullptr == ignored);
+	(void)ignored;
 #ifdef _WIN32
 	if (auto h = ::GetStdHandle(STD_OUTPUT_HANDLE); nullptr == h || INVALID_HANDLE_VALUE == h) // In /SUBSYSTEM:WINDOWS, stdout does not work by default.
 	{	::OutputDebugStringA(str); // Output to the debug console.

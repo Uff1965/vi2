@@ -1,14 +1,13 @@
 #if defined(_WIN32)
-#include <windows.h>
+#	include <windows.h>
 #else
-#include <dlfcn.h>
+#	include <dlfcn.h>
 #endif
 
 #include <cassert>
 #include <cstddef>
 
 #include <vi_timing/vi_timing.hpp>
-//VI_TM_INIT();
 
 #if defined(_WIN32)
 void init();
@@ -39,13 +38,10 @@ __attribute__((constructor)) void init();
 __attribute__((destructor)) void cleanup();
 #endif
 
-extern std::size_t lib_init_counter;
-std::size_t lib_init_counter = 0;
-
 void init()
-{	++lib_init_counter;
+{
 }
 
 void cleanup()
-{	--lib_init_counter;
+{
 }
