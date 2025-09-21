@@ -269,7 +269,7 @@ typedef enum vi_tmStatus_e
 	/// This function is used to measure time intervals with fine precision.
 	/// </summary>
 	/// <returns>A current tick count.</returns>
-	VI_TM_API VI_NODISCARD VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT;
+	VI_NODISCARD VI_TM_API VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT;
 
 	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmInit
 	(	const char* title VI_DEFAULT("Timing report:\n"),
@@ -318,7 +318,7 @@ typedef enum vi_tmStatus_e
 	/// Creates a new journal object and returns a handle to it.
 	/// </summary>
 	/// <returns>A handle to the newly created journal object, or nullptr if memory allocation fails.</returns>
-	VI_TM_API VI_NODISCARD VI_TM_HJOUR VI_TM_CALL vi_tmJournalCreate();
+	VI_NODISCARD VI_TM_API VI_TM_HJOUR VI_TM_CALL vi_tmJournalCreate();
 
 	/// <summary>
 	/// Resets but does not delete all entries in the journal. All entry handles remain valid.
@@ -341,7 +341,7 @@ typedef enum vi_tmStatus_e
 	/// <param name="j">The handle to the journal containing the measurement.</param>
 	/// <param name="name">The name of the measurement entry to retrieve.</param>
 	/// <returns>A handle to the specified measurement entry within the journal.</returns>
-	VI_TM_API VI_NODISCARD VI_TM_HMEAS VI_TM_CALL vi_tmMeasurement(
+	VI_NODISCARD VI_TM_API VI_TM_HMEAS VI_TM_CALL vi_tmMeasurement(
 		VI_TM_HJOUR j,
 		const char *name
 	);
@@ -432,7 +432,7 @@ typedef enum vi_tmStatus_e
 	/// </summary>
 	/// <param name="info">The type of information to retrieve, specified as a value of the vi_tmInfo_e enumeration.</param>
 	/// <returns>A pointer to the requested static information. The type of the returned data depends on the info parameter and may point to an unsigned int, a double, or a null-terminated string. Returns nullptr if the info type is not recognized.</returns>
-	VI_TM_API VI_NODISCARD const void* VI_TM_CALL vi_tmStaticInfo(VI_TM_FLAGS info);
+	VI_NODISCARD VI_TM_API const void* VI_TM_CALL vi_tmStaticInfo(VI_TM_FLAGS info);
 // Main functions ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 // Auxiliary functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -441,7 +441,7 @@ typedef enum vi_tmStatus_e
 	/// Checks if the given measurement statistics structure contains valid data.
 	/// Returns zero if valid.
 	/// </summary>
-	VI_TM_API VI_NODISCARD VI_TM_RESULT VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *m) VI_NOEXCEPT;
+	VI_NODISCARD VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *m) VI_NOEXCEPT;
 
 	/// <summary>
 	/// Generates a report for the specified journal handle, using a callback function to output the report data.

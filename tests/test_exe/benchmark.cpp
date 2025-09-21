@@ -81,18 +81,6 @@ static void BM_VI_TM_S(benchmark::State& state) {
 }
 BENCHMARK(BM_VI_TM_S);
 
-static void BM_vi_tm_experiment(benchmark::State &state)
-{	auto j = vi_tmJournalCreate();
-	for (auto _ : state)
-	{	auto m = vi_tmMeasurement(j, "xxxx");
-		const auto s = vi_tmGetTicks();
-		const auto f = vi_tmGetTicks();
-		vi_tmMeasurementAdd(m, f - s, 1U);
-	}
-	vi_tmJournalClose(j);
-}
-BENCHMARK(BM_vi_tm_experiment);
-
 #if __ARM_ARCH >= 8 // ARMv8 (RaspberryPi4)
 	VI_TM_TICK VI_TM_CALL RPi4(void) noexcept
 	{	uint64_t result;

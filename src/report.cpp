@@ -49,8 +49,10 @@ namespace
 	constexpr auto TitleTotal = "Total"sv;
 	constexpr auto TitleCV = "CV"sv;
 	constexpr auto TitleAmount = "Cnt."sv;
+#if VI_TM_STAT_USE_MINMAX
 	constexpr auto TitleMin = "Min."sv;
 	constexpr auto TitleMax = "Max."sv;
+#endif
 	constexpr auto Ascending = " (^)"sv;
 	constexpr auto Descending = " (v)"sv;
 	constexpr auto Insignificant = "<ins>"sv; // insignificant

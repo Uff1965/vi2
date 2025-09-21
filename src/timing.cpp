@@ -113,7 +113,6 @@ namespace
 	using fp_limits_t = std::numeric_limits<VI_TM_FP>;
 	constexpr auto fp_ZERO = static_cast<VI_TM_FP>(0);
 	constexpr auto fp_ONE = static_cast<VI_TM_FP>(1);
-	constexpr auto fp_EPSILON = fp_limits_t::epsilon();
 
 #ifdef __cpp_lib_hardware_interference_size
 	using std::hardware_constructive_interference_size;
@@ -292,7 +291,8 @@ VI_TM_RESULT VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats
 
 #if VI_TM_STAT_USE_MINMAX && VI_TM_STAT_USE_FILTER
 	if (meas->flt_calls_ > 0U)
-	{	if (!verify((meas->min_ - meas->flt_avg_) / meas->flt_avg_ < fp_EPSILON)) return VI_EXIT_FAILURE;
+	{	constexpr auto fp_EPSILON = fp_limits_t::epsilon();
+		if (!verify((meas->min_ - meas->flt_avg_) / meas->flt_avg_ < fp_EPSILON)) return VI_EXIT_FAILURE;
 		if (!verify((meas->flt_avg_ - meas->max_) / meas->flt_avg_ < fp_EPSILON)) return VI_EXIT_FAILURE;
 	}
 #endif

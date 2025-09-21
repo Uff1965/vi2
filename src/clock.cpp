@@ -36,11 +36,11 @@
 		return 1'000'000'000U * ts.tv_sec + ts.tv_nsec;
 	}
 #elif defined(_M_X64) || defined(_M_IX86) || defined(__x86_64__) || defined(__i386__) // MSC or GCC on Intel
-#	if _MSC_VER >= 1800
-#		include <intrin.h>
-#		pragma intrinsic(__rdtscp, __rdtsc, _mm_lfence)
-#	elif defined(__GNUC__)
+#	if defined(__GNUC__) || defined(__clang__)
 #		include <x86intrin.h>
+#	elif _MSC_VER >= 1800 // && !defined(__clang__)
+#		include <intrin.h>
+#		pragma intrinsic(__rdtscp, _mm_lfence)
 #	else
 #		error "Undefined compiler"
 #	endif
