@@ -39,6 +39,10 @@
 #include <unordered_map> // unordered_map: "does not invalidate pointers or references to elements".
 #include <utility>
 
+#if !VI_TM_STAT_USE_RMSE && VI_TM_STAT_USE_FILTER
+#	error "The filter is only available when RMSE is enabled."
+#endif
+
 #if VI_TM_THREADSAFE
 #	ifdef __STDC_NO_ATOMICS__
 		//	At the moment Atomics are available in Visual Studio 2022 with the /experimental:c11atomics flag.

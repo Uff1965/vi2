@@ -29,7 +29,7 @@ namespace
 	{
 		static constexpr char NAME[] = "dummy";
 		const unique_journal_t journal{ vi_tmJournalCreate(), vi_tmJournalClose };
-		const auto m = vi_tmJournalGetMeas(journal.get(), NAME);
+		const auto hmeas = vi_tmJournalGetMeas(journal.get(), NAME);
 
 		{
 			static constexpr auto samples_simple =
@@ -37,16 +37,15 @@ namespace
 			};
 
 			for (auto x : samples_simple)
-			{
-				vi_tmMeasurementAdd(m, x);
+			{	vi_tmMeasurementAdd(hmeas, x);
 			}
 
 			const char *name = nullptr;
 			vi_tmMeasurementStats_t md;
 			vi_tmStatsReset(&md);
-			vi_tmMeasurementGet(m, &name, &md);
-			{
-				EXPECT_TRUE(name);
+
+			vi_tmMeasurementGet(hmeas, &name, &md);
+			{	EXPECT_TRUE(name);
 				EXPECT_EQ(std::strcmp(name, NAME), 0);
 				EXPECT_EQ(md.calls_, std::size(samples_simple));
 #if VI_TM_STAT_USE_RAW
@@ -64,31 +63,29 @@ namespace
 			}
 
 #if VI_TM_STAT_USE_RMSE
-			vi_tmMeasurementAdd(m, 10111); // It should be filtered out.
-			{
-				vi_tmMeasurementStats_t tmp;
+#	if VI_TM_STAT_USE_FILTER
+			vi_tmMeasurementAdd(hmeas, 10111); // It should be filtered out.
+			{	vi_tmMeasurementStats_t tmp;
 				vi_tmStatsReset(&tmp);
 
-				vi_tmMeasurementGet(m, &name, &tmp);
+				vi_tmMeasurementGet(hmeas, &name, &tmp);
 
 				EXPECT_EQ(tmp.calls_, md.calls_ + 1U);
 				EXPECT_EQ(tmp.calls_, md.flt_calls_ + 1U);
 			}
-			vi_tmMeasurementGet(m, &name, &md);
-
-			vi_tmMeasurementAdd(m, 10110); // It should not be filtered out.
-			{
-				vi_tmMeasurementStats_t tmp;
+#	endif
+			vi_tmMeasurementAdd(hmeas, 10110); // It should not be filtered out.
+			{	vi_tmMeasurementStats_t tmp;
 				vi_tmStatsReset(&tmp);
 
-				vi_tmMeasurementGet(m, &name, &tmp);
+				vi_tmMeasurementGet(hmeas, &name, &tmp);
 
 				EXPECT_EQ(tmp.calls_, md.calls_ + 1U);
 				EXPECT_EQ(tmp.flt_calls_, md.flt_calls_ + 1U);
 				EXPECT_EQ(tmp.flt_cnt_, md.flt_cnt_ + fp_ONE);
 			}
-			vi_tmMeasurementGet(m, &name, &md);
 #endif
+			vi_tmMeasurementGet(hmeas, &name, &md);
 		}
 	};
 
@@ -104,9 +101,17 @@ namespace
 		static constexpr auto samples_multiple = { 990U, }; // Samples that will be added M times at once.
 		static constexpr auto samples_exclude = { 200000U }; // Samples that will be excluded from the statistics.
 
-		static constexpr auto exp_flt_cnt = std::size(samples_simple) + M * std::size(samples_multiple); // The total number of samples that will be counted.
+		static constexpr auto exp_flt_cnt = // The total number of samples that will be counted.
+			std::size(samples_simple) +
+#if !VI_TM_STAT_USE_FILTER
+			std::size(samples_exclude) +
+#endif
+			M * std::size(samples_multiple);
 		static const auto exp_flt_mean =
-			(std::accumulate(std::cbegin(samples_simple), std::cend(samples_simple), 0.0) +
+			(	std::accumulate(std::cbegin(samples_simple), std::cend(samples_simple), 0.0) +
+#if !VI_TM_STAT_USE_FILTER
+				std::accumulate(std::cbegin(samples_exclude), std::cend(samples_exclude), 0.0) +
+#endif
 				static_cast<double>(M) * std::accumulate(std::cbegin(samples_multiple), std::cend(samples_multiple), 0.0)
 			) / static_cast<VI_TM_FP>(exp_flt_cnt); // The mean value of the samples that will be counted.
 		static constexpr char NAME[] = "dummy"; // The name of the measurement.
@@ -140,7 +145,7 @@ namespace
 
 #if VI_TM_STAT_USE_RMSE
 		EXPECT_EQ(md.calls_, std::size(samples_simple) + std::size(samples_multiple) + std::size(samples_exclude));
-#	if VI_TM_STAT_USE_RAW
+#	if VI_TM_STAT_USE_FILTER
 		EXPECT_EQ(md.cnt_, std::size(samples_simple) + M * std::size(samples_multiple) + std::size(samples_exclude));
 #	endif
 		EXPECT_EQ(md.flt_cnt_, static_cast<VI_TM_FP>(exp_flt_cnt));
@@ -155,6 +160,14 @@ namespace
 						0.0,
 						[](auto i, auto v) { const auto d = static_cast<VI_TM_FP>(v) - exp_flt_mean; return FMA(d, d, i); }
 					) +
+#if !VI_TM_STAT_USE_FILTER
+					std::accumulate
+					(	std::cbegin(samples_exclude),
+						std::cend(samples_exclude),
+						0.0,
+						[](auto i, auto v) { const auto d = static_cast<VI_TM_FP>(v) - exp_flt_mean; return FMA(d, d, i); }
+					) +
+#endif
 					static_cast<double>(M) * std::accumulate
 					(	std::cbegin(samples_multiple),
 						std::cend(samples_multiple),

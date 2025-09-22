@@ -111,12 +111,21 @@ TEST(misc, vi_tmStaticInfo)
     }
 
     {
-#if VI_TM_STAT_USE_RMSE
+#if VI_TM_STAT_USE_FILTER
         constexpr auto flag = vi_tmStatUseFilter;
 #else
 		constexpr auto flag = 0U;
 #endif
         EXPECT_EQ(flag, flags & vi_tmStatUseFilter) << "The use filter flag does not match.";
+    }
+
+    {
+#if VI_TM_STAT_USE_RMSE
+        constexpr auto flag = vi_tmStatUseRMSE;
+#else
+		constexpr auto flag = 0U;
+#endif
+        EXPECT_EQ(flag, flags & vi_tmStatUseRMSE) << "The use RMSE flag does not match.";
     }
 
     {
