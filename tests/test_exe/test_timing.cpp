@@ -100,14 +100,18 @@ namespace
 		static constexpr auto M = 2;
 		static constexpr auto SAMPLES_MULTIPLE = { 990U, }; // Samples that will be added M times at once.
 		static constexpr auto SAMPLES_EXCLUDE = { 200000U }; // Samples that will be excluded from the statistics.
+
 		static constexpr auto EXP_CALLS =
 			std::size(SAMPLES_SIMPLE) +
 			std::size(SAMPLES_EXCLUDE) +
 			std::size(SAMPLES_MULTIPLE);
+#if VI_TM_STAT_USE_RAW
 		static constexpr auto EXP_CNT = // The total number of samples that will be counted.
 			std::size(SAMPLES_SIMPLE) +
 			std::size(SAMPLES_EXCLUDE) +
 			M * std::size(SAMPLES_MULTIPLE);
+#endif
+#if VI_TM_STAT_USE_RMSE
 		static constexpr auto EXP_FLT_CALLS =
 			std::size(SAMPLES_SIMPLE) +
 #if !VI_TM_STAT_USE_FILTER
@@ -127,6 +131,32 @@ namespace
 #endif
 				static_cast<double>(M) * std::accumulate(std::cbegin(SAMPLES_MULTIPLE), std::cend(SAMPLES_MULTIPLE), 0.0)
 			) / static_cast<VI_TM_FP>(EXP_FLT_CNT); // The mean value of the samples that will be counted.
+		static const auto EXP_FLT_STDDEV = [] // The standard deviation of the samples that will be counted.
+			{
+				const auto sum_squared_deviations =
+					std::accumulate
+					(	std::cbegin(SAMPLES_SIMPLE),
+						std::cend(SAMPLES_SIMPLE),
+						0.0,
+						[](auto i, auto v) { const auto d = static_cast<VI_TM_FP>(v) - EXP_FLT_MEAN; return FMA(d, d, i); }
+					) +
+#if !VI_TM_STAT_USE_FILTER
+					std::accumulate
+					(	std::cbegin(SAMPLES_EXCLUDE),
+						std::cend(SAMPLES_EXCLUDE),
+						0.0,
+						[](auto i, auto v) { const auto d = static_cast<VI_TM_FP>(v) - EXP_FLT_MEAN; return FMA(d, d, i); }
+					) +
+#endif
+					static_cast<double>(M) * std::accumulate
+					(	std::cbegin(SAMPLES_MULTIPLE),
+						std::cend(SAMPLES_MULTIPLE),
+						0.0,
+						[](auto i, auto v) { const auto d = static_cast<VI_TM_FP>(v) - EXP_FLT_MEAN; return FMA(d, d, i); }
+					);
+				return std::sqrt(sum_squared_deviations / static_cast<VI_TM_FP>(EXP_FLT_CNT));
+			}();
+#endif
 		static constexpr char NAME[] = "dummy"; // The name of the measurement.
 
 		vi_tmMeasurementStats_t md; // Measurement data to be filled in.
@@ -153,6 +183,7 @@ namespace
 		}
 
 		EXPECT_EQ(md.calls_, EXP_CALLS);
+
 #if VI_TM_STAT_USE_RAW
 		EXPECT_EQ(md.cnt_, EXP_CNT);
 #endif
@@ -162,32 +193,7 @@ namespace
 		EXPECT_EQ(md.flt_cnt_, static_cast<VI_TM_FP>(EXP_FLT_CNT));
 		EXPECT_LT(std::abs(md.flt_avg_ - EXP_FLT_MEAN) / EXP_FLT_MEAN, fp_EPSILON);
 		const auto s = std::sqrt(md.flt_ss_ / (md.flt_cnt_));
-		const auto exp_flt_stddev = [] // The standard deviation of the samples that will be counted.
-			{
-				const auto sum_squared_deviations =
-					std::accumulate
-					(	std::cbegin(samples_simple),
-						std::cend(samples_simple),
-						0.0,
-						[](auto i, auto v) { const auto d = static_cast<VI_TM_FP>(v) - EXP_FLT_MEAN; return FMA(d, d, i); }
-					) +
-#if !VI_TM_STAT_USE_FILTER
-					std::accumulate
-					(	std::cbegin(samples_exclude),
-						std::cend(samples_exclude),
-						0.0,
-						[](auto i, auto v) { const auto d = static_cast<VI_TM_FP>(v) - EXP_FLT_MEAN; return FMA(d, d, i); }
-					) +
-#endif
-					static_cast<double>(M) * std::accumulate
-					(	std::cbegin(samples_multiple),
-						std::cend(samples_multiple),
-						0.0,
-						[](auto i, auto v) { const auto d = static_cast<VI_TM_FP>(v) - EXP_FLT_MEAN; return FMA(d, d, i); }
-					);
-				return std::sqrt(sum_squared_deviations / static_cast<VI_TM_FP>(EXP_FLT_CNT));
-			}();
-		EXPECT_LT(std::abs(s - exp_flt_stddev) / exp_flt_stddev, fp_EPSILON);
+		EXPECT_LT(std::abs(s - EXP_FLT_STDDEV) / EXP_FLT_STDDEV, fp_EPSILON);
 #endif
 	};
 } // namespace
