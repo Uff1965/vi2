@@ -73,6 +73,7 @@ namespace
 				EXPECT_EQ(tmp.calls_, md.calls_ + 1U);
 				EXPECT_EQ(tmp.calls_, md.flt_calls_ + 1U);
 			}
+			vi_tmMeasurementGet(hmeas, &name, &md);
 #	endif
 			vi_tmMeasurementAdd(hmeas, 10110); // It should not be filtered out.
 			{	vi_tmMeasurementStats_t tmp;
