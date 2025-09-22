@@ -116,6 +116,7 @@
 // Define: VI_FUNCNAME, VI_SYS_CALL, VI_TM_CALL and VI_TM_API ^^^^^^^^^^^^^^^^^^^^^^^
 
 // Auxiliary macros: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+
 // VI_NOINLINE macro: This macro is used to prevent the compiler from inlining a function.
 // The VI_OPTIMIZE_ON/OFF macros allow or disable compiler optimizations
 // for specific code sections. They must appear outside of a function and takes 
@@ -177,7 +178,7 @@ typedef VI_TM_RESULT (VI_SYS_CALL *vi_tmReportCb_t)(const char* str, void* ctx);
 
 // vi_tmMeasurementStats_t: Structure holding statistics for a timing measurement.
 // This structure is used to store the number of calls, total time spent, and other statistical data for a measurement.
-// !!!Use the vi_tmMeasurementStatsReset function to reset the structure to its initial state!!!
+// !!!Use the vi_tmStatsReset function to reset the structure to its initial state!!!
 typedef struct vi_tmMeasurementStats_t
 {	VI_TM_SIZE calls_;		// The number of times the measurement was invoked.
 #if VI_TM_STAT_USE_RAW
@@ -220,46 +221,44 @@ typedef enum vi_tmInfo_e
 // These flags allow customization of sorting, display options, and report details.
 typedef enum vi_tmReportFlags_e
 {
-	vi_tmSortByTime = 0x00, // If set, the report will be sorted by time spent in the measurement.
-	vi_tmSortByName = 0x01, // If set, the report will be sorted by measurement name.
-	vi_tmSortBySpeed = 0x02, // If set, the report will be sorted by average time per event (speed).
-	vi_tmSortByAmount = 0x03, // If set, the report will be sorted by the number of events measured.
-	vi_tmSortMask = 0x07, // Mask for all sorting flags.
+	vi_tmSortByTime		= 0x00, // If set, the report will be sorted by time spent in the measurement.
+	vi_tmSortByName		= 0x01, // If set, the report will be sorted by measurement name.
+	vi_tmSortBySpeed	= 0x02, // If set, the report will be sorted by average time per event (speed).
+	vi_tmSortByAmount	= 0x03, // If set, the report will be sorted by the number of events measured.
+	vi_tmSortMask		= vi_tmSortByTime | vi_tmSortByName | vi_tmSortBySpeed | vi_tmSortByAmount,
 
-	vi_tmSortDescending = 0x00, // If set, the report will be sorted in descending order.
-	vi_tmSortAscending = 0x08, // If set, the report will be sorted in ascending order.
+	vi_tmSortAscending			= 1 << 3, // If set, the report will be sorted in ascending order.
 
-	vi_tmShowOverhead = 0x0010, // If set, the report will show the overhead of the clock.
-	vi_tmShowUnit = 0x0020, // If set, the report will show the time unit (seconds per tick).
-	vi_tmShowDuration = 0x0040, // If set, the report will show the duration of the measurement in seconds.
-	vi_tmShowDurationEx = 0x0080, // If set, the report will show the duration, including overhead costs, in seconds.
-	vi_tmShowDurationNonThreadsafe = 0x0100, // If this parameter is set, the report will indicate the duration of the threadunsafe measurement.
-	vi_tmShowResolution = 0x0200, // If set, the report will show the clock resolution in seconds.
-	vi_tmShowAux = 0x0400, // If set, the report will show auxiliary information such as overhead.
-	vi_tmShowMask = 0x07F0, // Mask for all show flags.
+	vi_tmShowOverhead			= 1 << 4, // If set, the report will show the overhead of the clock.
+	vi_tmShowUnit				= 1 << 5, // If set, the report will show the time unit (seconds per tick).
+	vi_tmShowDuration			= 1 << 6, // If set, the report will show the duration of the measurement in seconds.
+	vi_tmShowDurationEx			= 1 << 7, // If set, the report will show the duration, including overhead costs, in seconds.
+	vi_tmShowResolution			= 1 << 8, // If set, the report will show the clock resolution in seconds.
+	vi_tmShowAux				= 1 << 9, // If set, the report will show auxiliary information such as overhead.
+	vi_tmShowMask				= 0x03F0, // Mask for all show flags.
 
-	vi_tmHideHeader = 0x0800, // If set, the report will not show the header with column names.
-	vi_tmDoNotSubtractOverhead = 0x1000, // If set, the overhead is not subtracted from the measured time in report.
+	vi_tmHideHeader				= 1 << 10, // If set, the report will not show the header with column names.
+	vi_tmDoNotSubtractOverhead	= 1 << 11, // If set, the overhead is not subtracted from the measured time in report.
 
-	vi_tmReportFlagsMask = 0x1FFF,
+	vi_tmReportDefault			= vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByTime,
+	vi_tmReportFlagsMask		= 0x0FFF,
 } vi_tmReportFlags_e;
 
 typedef enum vi_tmInitFlags_e
-{
-	vi_tmInitWarmup = 0x01,
-	vi_tmInitThreadYield = 0x02,
-	vi_tmInitFlagsMask = 0x03,
+{	vi_tmInitWarmup			= 1 << 0,
+	vi_tmInitThreadYield	= 1 << 1,
+	vi_tmInitFlagsMask		= vi_tmInitWarmup | vi_tmInitThreadYield,
 } vi_tmInitFlags_e;
 
 typedef enum vi_tmStatus_e
 {
-	vi_tmDebug = 0x01,
-	vi_tmShared = 0x02,
-	vi_tmThreadsafe = 0x04,
-	vi_tmStatUseBase = 0x08,
-	vi_tmStatUseFilter = 0x10,
-	vi_tmStatUseMinMax = 0x20,
-	vi_tmStatusMask = 0x3F,
+	vi_tmDebug			= 1 << 0,
+	vi_tmShared			= 1 << 1,
+	vi_tmThreadsafe		= 1 << 2,
+	vi_tmStatUseBase	= 1 << 3,
+	vi_tmStatUseFilter	= 1 << 4,
+	vi_tmStatUseMinMax	= 1 << 5,
+	vi_tmStatusMask		= 0x003F,
 } vi_tmStatus_e;
 
 #define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global journal handle, used for global measurements.
@@ -271,48 +270,35 @@ typedef enum vi_tmStatus_e
 	/// <returns>A current tick count.</returns>
 	VI_NODISCARD VI_TM_API VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT;
 
+	/// <summary>
+	/// Initializes the timing system and prepares it for use.
+	/// </summary>
+	/// <param name="title">
+	/// The report title that will be displayed when generating statistics.
+	/// Default: "Timing report:\n".
+	/// </param>
+	/// <param name="report_flags">
+	/// A set of flags that define the contents and format of the report 
+	/// (for example, showing timer resolution, duration, or sorting by name).
+	/// Default: vi_tmReportDefault.
+	/// </param>
+	/// <param name="flags">
+	/// Additional flags to configure the library behavior.
+	/// Default: 0.
+	/// </param>
+	/// <returns>
+	/// Result code of the initialization (VI_TM_RESULT).
+	/// </returns>
 	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmInit
 	(	const char* title VI_DEFAULT("Timing report:\n"),
-		VI_TM_FLAGS report_flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
+		VI_TM_FLAGS report_flags VI_DEFAULT(vi_tmReportDefault),
 		VI_TM_FLAGS flags VI_DEFAULT(0)
 	);
 
-	VI_TM_API void VI_TM_CALL vi_tmShutdown();
-
-    /// <summary>
-    /// Default report callback function. Writes the given string to the standard output stream (or the debugger in Windows).
-    /// </summary>
-    /// <param name="str">The string to output.</param>
-	/// <param name="ignored"> A pointer to user-defined data, which is ignored in this default implementation.</param>
-    /// <returns>On success, returns a non-negative value.</returns>
-    VI_TM_API VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEFAULT(NULL));
-	
-    /// <summary>
-    /// Invokes the provided callback function for the global journal.
-    /// </summary>
-    /// <param name="fn">A callback function that receives the global journal handle and a user-defined context pointer.</param>
-    /// <param name="ctx">A pointer to user-defined data passed to the callback function.</param>
-    /// <returns>Returns the result of the callback function.</returns>
-    /// <remarks>
-    /// IMPORTANT: The callback function 'fn' will be called before the journal is destroyed, after all user objects have been destroyed.
-    /// Make sure that the callback and the context passed to it are not destroyed before the journal!
-    /// </remarks>
-	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter(VI_TM_RESULT (*fn)(VI_TM_HJOUR, void*), void* ctx);
-
 	/// <summary>
-    /// Report callback function. Generates and prints a timing report for the global journal.
-    /// </summary>
-    /// <param name="title">The title to display at the top of the report. Defaults to "Timing report:\n".</param>
-    /// <param name="flags">Flags controlling report formatting and content. Defaults to showing resolution, duration, and sorting by name.</param>
-    /// <param name="cb">Callback function used to output each line of the report. Defaults to vi_tmReportCb.</param>
-    /// <param name="ctx">Pointer to user-defined data passed to the callback function. Defaults to NULL.</param>
-    /// <returns>Returns the total number of characters written, or a negative value if an error occurs.</returns>
-    VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporterPrn
-    (   const char *title VI_DEFAULT("Timing report:\n"),
-        VI_TM_FLAGS flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
-        vi_tmReportCb_t cb VI_DEFAULT(vi_tmReportCb),
-        void* ctx VI_DEFAULT(NULL)
-    );
+	/// Shuts down the timing system and releases all associated resources.
+	/// </summary>
+	VI_TM_API void VI_TM_CALL vi_tmShutdown();
 
 	/// <summary>
 	/// Creates a new journal object and returns a handle to it.
@@ -341,7 +327,7 @@ typedef enum vi_tmStatus_e
 	/// <param name="j">The handle to the journal containing the measurement.</param>
 	/// <param name="name">The name of the measurement entry to retrieve.</param>
 	/// <returns>A handle to the specified measurement entry within the journal.</returns>
-	VI_NODISCARD VI_TM_API VI_TM_HMEAS VI_TM_CALL vi_tmMeasurement(
+	VI_NODISCARD VI_TM_API VI_TM_HMEAS VI_TM_CALL vi_tmJournalGetMeas(
 		VI_TM_HJOUR j,
 		const char *name
 	);
@@ -353,7 +339,7 @@ typedef enum vi_tmStatus_e
 	/// <param name="fn">A callback function to be called for each measurement. It receives a handle to the measurement and the user-provided data pointer.</param>
 	/// <param name="ctx">A pointer to user-defined data that is passed to the callback function.</param>
 	/// <returns>Returns 0 if all measurements were processed. If the callback returns a non-zero value, iteration stops and that value is returned.</returns>
-	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmMeasurementEnumerate(
+	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmJournalEnumerateMeas(
 		VI_TM_HJOUR j,
 		vi_tmMeasEnumCb_t fn,
 		void* ctx
@@ -403,7 +389,7 @@ typedef enum vi_tmStatus_e
     /// <param name="dur">The duration value to add to the statistics.</param>
     /// <param name="cnt">The number of measured events.</param>
     /// <returns>This function does not return a value.</returns>
-	VI_TM_API void VI_TM_CALL vi_tmMeasurementStatsAdd(
+	VI_TM_API void VI_TM_CALL vi_tmStatsAdd(
 		vi_tmMeasurementStats_t *dst,
 		VI_TM_TDIFF dur,
 		VI_TM_SIZE cnt VI_DEFAULT(1)
@@ -415,7 +401,7 @@ typedef enum vi_tmStatus_e
     /// <param name="dst">Pointer to the destination measurement statistics structure to update.</param>
     /// <param name="src">Pointer to the source measurement statistics structure to merge.</param>
     /// <returns>This function does not return a value.</returns>
-	VI_TM_API void VI_TM_CALL vi_tmMeasurementStatsMerge(
+	VI_TM_API void VI_TM_CALL vi_tmStatsMerge(
 		vi_tmMeasurementStats_t* VI_RESTRICT dst,
 		const vi_tmMeasurementStats_t* VI_RESTRICT src
 	) VI_NOEXCEPT;
@@ -425,7 +411,13 @@ typedef enum vi_tmStatus_e
 	/// </summary>
 	/// <param name="m">Pointer to the measurement statistics structure to reset.</param>
 	/// <returns>This function does not return a value.</returns>
-	VI_TM_API void VI_TM_CALL vi_tmMeasurementStatsReset(vi_tmMeasurementStats_t *m) VI_NOEXCEPT;
+	VI_TM_API void VI_TM_CALL vi_tmStatsReset(vi_tmMeasurementStats_t *m) VI_NOEXCEPT;
+
+	/// <summary>
+	/// Checks if the given measurement statistics structure contains valid data.
+	/// Returns zero if valid.
+	/// </summary>
+	VI_NODISCARD VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmMeasurementStats_t *m) VI_NOEXCEPT;
 
 	/// <summary>
 	/// Retrieves static information about the timing module based on the specified info type.
@@ -438,10 +430,23 @@ typedef enum vi_tmStatus_e
 // Auxiliary functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
 	/// <summary>
-	/// Checks if the given measurement statistics structure contains valid data.
-	/// Returns zero if valid.
-	/// </summary>
-	VI_NODISCARD VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *m) VI_NOEXCEPT;
+    /// Report callback function. Generates and prints a timing report for the global journal.
+    /// </summary>
+    /// <param name="title">The title to display at the top of the report. Defaults to "Timing report:\n".</param>
+    /// <param name="flags">Flags controlling report formatting and content. Defaults to showing resolution, duration, and sorting by name.</param>
+    /// <returns>Returns the total number of characters written, or a negative value if an error occurs.</returns>
+    VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter
+    (   const char *title VI_DEFAULT("Timing report:\n"),
+        VI_TM_FLAGS flags VI_DEFAULT(vi_tmReportDefault)
+    );
+
+    /// <summary>
+    /// Default report callback function. Writes the given string to the standard output stream (or the debugger in Windows).
+    /// </summary>
+    /// <param name="str">The string to output.</param>
+	/// <param name="ignored"> A pointer to user-defined data, which is ignored in this default implementation.</param>
+    /// <returns>On success, returns a non-negative value.</returns>
+    VI_TM_API VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEFAULT(NULL));
 
 	/// <summary>
 	/// Generates a report for the specified journal handle, using a callback function to output the report data.
@@ -453,7 +458,7 @@ typedef enum vi_tmStatus_e
 	/// <returns>The total number of characters written by the report, or a negative value if an error occurs.</returns>
 	VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmReport(
 		VI_TM_HJOUR j,
-		VI_TM_FLAGS flags VI_DEFAULT(vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByName),
+		VI_TM_FLAGS flags VI_DEFAULT(vi_tmReportDefault),
 		vi_tmReportCb_t cb VI_DEFAULT(vi_tmReportCb),
 		void* ctx VI_DEFAULT(NULL)
 	);

@@ -46,7 +46,7 @@ BENCHMARK(BM_vi_tmGetTicks);
 static void BM_vi_tm(benchmark::State& state) {
 	VI_TM_RESET("xxxx");
     for (auto _ : state) {
-		auto m = vi_tmMeasurement(VI_TM_HGLOBAL, "xxxx");
+		auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
         const auto s = vi_tmGetTicks();
         const auto f = vi_tmGetTicks();
 		vi_tmMeasurementAdd(m, f - s, 1U);
@@ -65,7 +65,7 @@ BENCHMARK(BM_VI_TM);
 static void BM_vi_tm_S(benchmark::State& state) {
 	VI_TM_RESET("xxxx");
     for (auto _ : state) {
-		static auto m = vi_tmMeasurement(VI_TM_HGLOBAL, "xxxx");
+		static auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
         const auto s = vi_tmGetTicks();
         const auto f = vi_tmGetTicks();
 		vi_tmMeasurementAdd(m, f - s, 1U);

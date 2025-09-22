@@ -29,7 +29,7 @@ namespace
 	{
 		static constexpr char NAME[] = "dummy";
 		const unique_journal_t journal{ vi_tmJournalCreate(), vi_tmJournalClose };
-		const auto m = vi_tmMeasurement(journal.get(), NAME);
+		const auto m = vi_tmJournalGetMeas(journal.get(), NAME);
 
 		{
 			static constexpr auto samples_simple =
@@ -43,7 +43,7 @@ namespace
 
 			const char *name = nullptr;
 			vi_tmMeasurementStats_t md;
-			vi_tmMeasurementStatsReset(&md);
+			vi_tmStatsReset(&md);
 			vi_tmMeasurementGet(m, &name, &md);
 			{
 				EXPECT_TRUE(name);
@@ -67,7 +67,7 @@ namespace
 			vi_tmMeasurementAdd(m, 10111); // It should be filtered out.
 			{
 				vi_tmMeasurementStats_t tmp;
-				vi_tmMeasurementStatsReset(&tmp);
+				vi_tmStatsReset(&tmp);
 
 				vi_tmMeasurementGet(m, &name, &tmp);
 
@@ -79,7 +79,7 @@ namespace
 			vi_tmMeasurementAdd(m, 10110); // It should not be filtered out.
 			{
 				vi_tmMeasurementStats_t tmp;
-				vi_tmMeasurementStatsReset(&tmp);
+				vi_tmStatsReset(&tmp);
 
 				vi_tmMeasurementGet(m, &name, &tmp);
 
@@ -112,21 +112,21 @@ namespace
 		static constexpr char NAME[] = "dummy"; // The name of the measurement.
 
 		vi_tmMeasurementStats_t md; // Measurement data to be filled in.
-		vi_tmMeasurementStatsReset(&md);
+		vi_tmStatsReset(&md);
 
 		unique_journal_t journal{ vi_tmJournalCreate(), vi_tmJournalClose }; // Journal for measurements, automatically closed on destruction.
 		{
-			const auto m = vi_tmMeasurement(journal.get(), NAME); // Create a measurement 'NAME'.
+			const auto m = vi_tmJournalGetMeas(journal.get(), NAME); // Create a measurement 'NAME'.
 			for (auto x : samples_simple) // Add simple samples one at a time.
 			{	vi_tmMeasurementAdd(m, x);
 			}
 
 			for (auto x : samples_multiple) // Add multiple samples M times at once.
-			{	vi_tmMeasurementStatsAdd(&md, M * x, M);
+			{	vi_tmStatsAdd(&md, M * x, M);
 			}
 
 			vi_tmMeasurementMerge(m, &md); // Merge the statistics into the measurement.
-			vi_tmMeasurementStatsReset(&md);
+			vi_tmStatsReset(&md);
 
 #if VI_TM_STAT_USE_FILTER
 			for (auto x : samples_exclude) // Add samples that will be excluded from the statistics.

@@ -75,9 +75,9 @@ namespace
 		};
 
 		if (auto j = result.get(); verify(!!j))
-		{	(void)vi_tmMeasurement(j, SERVICE_NAME);
+		{	(void)vi_tmJournalGetMeas(j, SERVICE_NAME);
 			for (auto n : SANDBOX_NAMES)
-			{	(void)vi_tmMeasurement(j, n);
+			{	(void)vi_tmJournalGetMeas(j, n);
 			}
 		}
 		return result;
@@ -146,7 +146,7 @@ namespace
 	void body_duration(VI_TM_HJOUR journal, const char* name)
 	{	const auto start = vi_tmGetTicks();
 		const auto finish = vi_tmGetTicks();
-		const auto h = vi_tmMeasurement(journal, name);
+		const auto h = vi_tmJournalGetMeas(journal, name);
 		vi_tmMeasurementAdd(h, finish - start, 1U);
 	};
 
@@ -198,7 +198,7 @@ namespace
 	auto meas_duration_with_caching()
 	{	double result{};
 		if (const auto journal = create_journal(); verify(!!journal))
-		{	if (const auto m = vi_tmMeasurement(journal.get(), SERVICE_NAME); verify(!!m))
+		{	if (const auto m = vi_tmJournalGetMeas(journal.get(), SERVICE_NAME); verify(!!m))
 			{	result = calc_diff_ticks(body_measuring_with_caching, m);
 			}
 		}

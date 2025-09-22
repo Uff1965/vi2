@@ -151,7 +151,7 @@ namespace
 		vi_tmMeasurementStats_t stats_;
 		VI_TM_THREADSAFE_ONLY(mutable adaptive_mutex_t mtx_);
 	public:
-		meterage_t() noexcept { vi_tmMeasurementStatsReset(&stats_); }
+		meterage_t() noexcept { vi_tmStatsReset(&stats_); }
 		void add(VI_TM_TDIFF val, VI_TM_SIZE cnt) noexcept;
 		void merge(const vi_tmMeasurementStats_t &src) noexcept;
 		vi_tmMeasurementStats_t get() const noexcept;
@@ -197,17 +197,17 @@ vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t()
 
 inline void meterage_t::reset() noexcept
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lg(mtx_));
-	vi_tmMeasurementStatsReset(&stats_);
+	vi_tmStatsReset(&stats_);
 }
 
 inline void meterage_t::add(VI_TM_TDIFF v, VI_TM_SIZE n) noexcept
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lg(mtx_));
-	vi_tmMeasurementStatsAdd(&stats_, v, n);
+	vi_tmStatsAdd(&stats_, v, n);
 }
 
 inline void meterage_t::merge(const vi_tmMeasurementStats_t &src) noexcept
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lg(mtx_));
-	vi_tmMeasurementStatsMerge(&stats_, &src);
+	vi_tmStatsMerge(&stats_, &src);
 }
 
 inline vi_tmMeasurementStats_t meterage_t::get() const noexcept
@@ -237,7 +237,7 @@ int vi_tmMeasurementsJournal_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void 
 
 //vvvv API Implementation vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
-VI_TM_RESULT VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats_t *meas) noexcept
+VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmMeasurementStats_t *meas) noexcept
 {	if(!verify(!!meas))
 	{	return VI_EXIT_FAILURE;
 	}
@@ -300,7 +300,7 @@ VI_TM_RESULT VI_TM_CALL vi_tmMeasurementStatsIsValid(const vi_tmMeasurementStats
 	return VI_EXIT_SUCCESS;
 }
 
-void VI_TM_CALL vi_tmMeasurementStatsReset(vi_tmMeasurementStats_t *meas) noexcept
+void VI_TM_CALL vi_tmStatsReset(vi_tmMeasurementStats_t *meas) noexcept
 {	if (!verify(!!meas))
 	{	return;
 	}
@@ -320,15 +320,15 @@ void VI_TM_CALL vi_tmMeasurementStatsReset(vi_tmMeasurementStats_t *meas) noexce
 	meas->flt_avg_ = fp_ZERO;
 	meas->flt_ss_ = fp_ZERO;
 #endif
-	assert(VI_EXIT_SUCCESS == vi_tmMeasurementStatsIsValid(meas));
+	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(meas));
 }
 
-void VI_TM_CALL vi_tmMeasurementStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cnt) noexcept
+void VI_TM_CALL vi_tmStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cnt) noexcept
 {	(void)dur;
 	if (!verify(!!meas) || 0U == cnt)
 	{	return;
 	}
-	assert(VI_EXIT_SUCCESS == vi_tmMeasurementStatsIsValid(meas));
+	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(meas));
 
 #if VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
 	const auto f_cnt = static_cast<VI_TM_FP>(cnt);
@@ -377,16 +377,16 @@ void VI_TM_CALL vi_tmMeasurementStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TD
 		}
 #endif
 	}
-	assert(VI_EXIT_SUCCESS == vi_tmMeasurementStatsIsValid(meas));
+	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(meas));
 }
 
-void VI_TM_CALL vi_tmMeasurementStatsMerge(vi_tmMeasurementStats_t* VI_RESTRICT dst, const vi_tmMeasurementStats_t* VI_RESTRICT src) noexcept
+void VI_TM_CALL vi_tmStatsMerge(vi_tmMeasurementStats_t* VI_RESTRICT dst, const vi_tmMeasurementStats_t* VI_RESTRICT src) noexcept
 {	if(!verify(!!dst) || !verify(!!src) || dst == src || 0U == src->calls_)
 	{	return;
 	}
 
-	assert(VI_EXIT_SUCCESS == vi_tmMeasurementStatsIsValid(dst));
-	assert(VI_EXIT_SUCCESS == vi_tmMeasurementStatsIsValid(src));
+	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(dst));
+	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(src));
 
 	dst->calls_ += src->calls_;
 #if VI_TM_STAT_USE_RAW
@@ -411,7 +411,7 @@ void VI_TM_CALL vi_tmMeasurementStatsMerge(vi_tmMeasurementStats_t* VI_RESTRICT 
 		dst->flt_calls_ += src->flt_calls_;
 	}
 #endif
-	assert(VI_EXIT_SUCCESS == vi_tmMeasurementStatsIsValid(dst));
+	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(dst));
 }
 
 VI_TM_HJOUR VI_TM_CALL vi_tmJournalCreate()
@@ -429,14 +429,14 @@ void VI_TM_CALL vi_tmJournalClose(VI_TM_HJOUR journal)
 }
 
 void VI_TM_CALL vi_tmJournalReset(VI_TM_HJOUR journal) noexcept
-{	vi_tmMeasurementEnumerate(journal, [](VI_TM_HMEAS m, void *) { vi_tmMeasurementReset(m); return 0; }, nullptr);
+{	vi_tmJournalEnumerateMeas(journal, [](VI_TM_HMEAS m, void *) { vi_tmMeasurementReset(m); return 0; }, nullptr);
 }
 
-VI_TM_RESULT VI_TM_CALL vi_tmMeasurementEnumerate(VI_TM_HJOUR journal, vi_tmMeasEnumCb_t fn, void *ctx)
+VI_TM_RESULT VI_TM_CALL vi_tmJournalEnumerateMeas(VI_TM_HJOUR journal, vi_tmMeasEnumCb_t fn, void *ctx)
 {	return misc::from_handle(journal)->for_each_measurement(fn, ctx);
 }
 
-VI_TM_HMEAS VI_TM_CALL vi_tmMeasurement(VI_TM_HJOUR journal, const char *name)
+VI_TM_HMEAS VI_TM_CALL vi_tmJournalGetMeas(VI_TM_HJOUR journal, const char *name)
 {	return static_cast<VI_TM_HMEAS>(&misc::from_handle(journal)->try_emplace(name));
 }
 

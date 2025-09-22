@@ -15,8 +15,8 @@ TEST_F(ViTimingJournalFixture, measurement)
 	vi_tmMeasurementStats_t stats{};
 	const char *pname = nullptr;
 
-	const auto meas = vi_tmMeasurement(journal(), name);
-    ASSERT_NE(meas, nullptr) << "vi_tmMeasurement should return a valid descriptor";
+	const auto meas = vi_tmJournalGetMeas(journal(), name);
+    ASSERT_NE(meas, nullptr) << "vi_tmJournalGetMeas should return a valid descriptor";
 
 	vi_tmMeasurementGet(meas, &pname, &stats);
 	EXPECT_STREQ(pname, name);
@@ -26,7 +26,7 @@ TEST_F(ViTimingJournalFixture, measurement)
     EXPECT_EQ(stats.sum_, 0) << "Total time should be 0";
 #endif
 
-	const auto tmp = vi_tmMeasurement(journal(), name);
+	const auto tmp = vi_tmJournalGetMeas(journal(), name);
 	EXPECT_EQ(meas, tmp) << "The probe address must not change while the journal exists.";
 }
 
@@ -37,8 +37,8 @@ TEST_F(ViTimingJournalFixture, Journal)
     constexpr VI_TM_TDIFF DUR = 1000;
 
     // Add a measurement to check reset
-    VI_TM_HMEAS meas = vi_tmMeasurement(journal(), name);
-    ASSERT_NE(meas, nullptr) << "vi_tmMeasurement should return a valid descriptor";
+    VI_TM_HMEAS meas = vi_tmJournalGetMeas(journal(), name);
+    ASSERT_NE(meas, nullptr) << "vi_tmJournalGetMeas should return a valid descriptor";
 
     // Add a CNT measurement
     for (unsigned n = 0; n < CNT; ++n)
@@ -66,7 +66,7 @@ TEST_F(ViTimingJournalFixture, Journal)
     EXPECT_EQ(stats.sum_, 0) << "Total time should be 0";
 #endif
 
-	const auto tmp = vi_tmMeasurement(journal(), name);
+	const auto tmp = vi_tmJournalGetMeas(journal(), name);
 	EXPECT_EQ(meas, tmp);
 }
 

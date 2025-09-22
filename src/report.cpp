@@ -182,7 +182,7 @@ namespace
 	{	std::vector<metering_t> result;
 		auto data = std::tie(result, flags);
 		using data_t = decltype(data);
-		vi_tmMeasurementEnumerate
+		vi_tmJournalEnumerateMeas
 		(	journal_handle,
 			[](VI_TM_HMEAS h, void *callback_data)
 			{	const char *name;
@@ -259,7 +259,7 @@ namespace
 metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, unsigned flags) noexcept
 :	name_{ name }
 {	
-	if (!verify(VI_EXIT_SUCCESS == vi_tmMeasurementStatsIsValid(&meas)) || 0 == meas.calls_)
+	if (!verify(VI_EXIT_SUCCESS == vi_tmStatsIsValid(&meas)) || 0 == meas.calls_)
 	{	return; // If the measurement is invalid or has no calls, we do not create a metering_t.
 	}
 
@@ -508,7 +508,7 @@ VI_TM_RESULT VI_TM_CALL vi_tmReport(VI_TM_HJOUR journal_handle, VI_TM_FLAGS flag
 {	assert(!ctx || !!fn);
 	if (nullptr == fn)
 	{	// Simulate the use of the journal to inhibit automatic report generation.
-		vi_tmMeasurementEnumerate(journal_handle, +[](VI_TM_HMEAS, void *) { return 1; }, nullptr);
+		vi_tmJournalEnumerateMeas(journal_handle, +[](VI_TM_HMEAS, void *) { return 1; }, nullptr);
 		return 0;
 	}
 

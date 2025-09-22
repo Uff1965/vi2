@@ -58,7 +58,7 @@ namespace vi_tm
 	class init_t
 	{
 		std::string title_ = "Timing report:\n";
-		VI_TM_FLAGS report_flags_ = vi_tmShowDuration | vi_tmShowResolution | vi_tmSortByTime;
+		VI_TM_FLAGS report_flags_ = vi_tmReportDefault;
 		VI_TM_FLAGS flags_ = 0;
 
 		init_t(const init_t &) = delete;
@@ -182,7 +182,7 @@ namespace vi_tm
 
 #	define VI_TM(...) \
 		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
-		{	const auto meas = vi_tmMeasurement(VI_TM_HGLOBAL, name); \
+		{	const auto meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, name); \
 			return vi_tm::probe_t{meas, cnt}; \
 		}(__VA_ARGS__)
 
@@ -206,7 +206,7 @@ namespace vi_tm
 	/// </remarks>
 #	define VI_TM_S(...) \
 		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
-		{	static const auto meas = vi_tmMeasurement(VI_TM_HGLOBAL, name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
+		{	static const auto meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
 			VI_TM_DEBUG_ONLY \
 			(	const char* registered_name = nullptr; \
 				vi_tmMeasurementGet(meas, &registered_name, nullptr); \
@@ -223,7 +223,7 @@ namespace vi_tm
 #	define VI_TM_REPORT(...) vi_tmReport(VI_TM_HGLOBAL, __VA_ARGS__)
 
 	// Resets the data of the specified measure entry in global journal. The handle remains valid.
-#	define VI_TM_RESET(name) vi_tmMeasurementReset(vi_tmMeasurement(VI_TM_HGLOBAL, (name)))
+#	define VI_TM_RESET(name) vi_tmMeasurementReset(vi_tmJournalGetMeas(VI_TM_HGLOBAL, (name)))
 
 	// Full version string of the library (Example: "0.1.0.2506151515R static").
 #	define VI_TM_FULLVERSION static_cast<const char*>(vi_tmStaticInfo(vi_tmInfoVersion))

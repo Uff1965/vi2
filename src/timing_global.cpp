@@ -35,7 +35,7 @@ namespace
 	using finalizer_t = std::function<int(VI_TM_HJOUR h)>;
 	int finalizer_default (vi_tmMeasurementsJournal_t *h)
 	{	verify(0 <= vi_tmReportCb("Timing report:\n"));
-		return vi_tmReport(h, vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByTime, vi_tmReportCb);
+		return vi_tmReport(h, vi_tmReportDefault, vi_tmReportCb);
 	};
 
 	class timing_global_t
@@ -77,12 +77,13 @@ VI_TM_RESULT timing_global_t::init(const char *title, VI_TM_FLAGS flags)
 {	std::lock_guard lg{mtx_};
 
 	++initialization_cnt_;
-	finalizer_ = [title, flags](VI_TM_HJOUR h)
+	std::string&& t = title ? title : "";
+	finalizer_ = [t = std::move(t), flags](VI_TM_HJOUR h)
 		{	int result = VI_EXIT_SUCCESS;
-			if (title && vi_tmReportCb(title) < 0)
+			if (!t.empty() && vi_tmReportCb(t.c_str()) < 0)
 			{	result = VI_EXIT_FAILURE;
 			}
-			else if (vi_tmReport(h, flags, vi_tmReportCb, nullptr) < 0)
+			else if (vi_tmReport(h, flags) < 0)
 			{	result = VI_EXIT_FAILURE;
 			}
 			return result;
@@ -124,36 +125,16 @@ finalizer_t timing_global_t::finalizer(finalizer_t fn) noexcept
 	return std::exchange(finalizer_, std::move(fn));
 }
 
-VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter(VI_TM_RESULT (*cb)(VI_TM_HJOUR, void *), void *ctx)
-{
-	if(auto const global = timing_global_t::global_instance())
-	{	global->finalizer
-		(	cb ?
-			[cb, ctx](VI_TM_HJOUR jnl) { return !!cb ? cb(jnl, ctx) : 0; } :
-			finalizer_t{}
-		);
-	}
-	return VI_EXIT_SUCCESS;
-}
-
-VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporterPrn
-(	const char *title,
-	VI_TM_FLAGS flags,
-	vi_tmReportCb_t cb, // Pointer to a function that outputs lines of text.
-	void *ctx
-)
+VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter(const char *title, VI_TM_FLAGS flags)
 {	if (auto const global = timing_global_t::global_instance())
 	{	std::string&& t = title ? title : "";
-		auto fn = [t = std::move(t), flags, cb, ctx](VI_TM_HJOUR jnl)
+		auto fn = [t = std::move(t), flags](VI_TM_HJOUR jnl)
 			{	VI_TM_RESULT result = VI_EXIT_SUCCESS;
-				if (!!cb)
-				{	if (!t.empty() && cb(t.c_str(), ctx) < 0)
-					{	result = VI_EXIT_FAILURE;
-					}
-					else if (vi_tmReport(jnl, flags, cb, ctx) < 0)
-					{	result = VI_EXIT_FAILURE;
-					}
-					return result;
+				if (!t.empty() && vi_tmReportCb(t.c_str()) < 0)
+				{	result = VI_EXIT_FAILURE;
+				}
+				else if (vi_tmReport(jnl, flags) < 0)
+				{	result = VI_EXIT_FAILURE;
 				}
 				return result;
 			};
