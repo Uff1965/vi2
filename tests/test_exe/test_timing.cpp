@@ -5,6 +5,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cassert>
 #include <cmath> // std::sqrt, std::abs, std::fma
 #include <numeric> // std::accumulate
@@ -33,7 +34,8 @@ namespace
 		const VI_TM_TICK (&m)[NM],
 		std::size_t M
 	)
-	{	vi_tmMeasurementStats_t result;
+	{	(void)M;
+		vi_tmMeasurementStats_t result;
 		vi_tmStatsReset(&result);
 		result.calls_ = NS + NX + NM;
 		assert(result.calls_);
@@ -80,16 +82,16 @@ namespace
 #endif
 
 #if VI_TM_STAT_USE_MINMAX
-		result.min_ = std::min
-		(	*std::min_element(std::begin(s), std::end(s)),
-			*std::min_element(std::begin(s), std::end(s)),
-			*std::min_element(std::begin(s), std::end(s))
-		);
-		result.max_ = std::max
-		(	*std::max_element(std::begin(s), std::end(s))
-			*std::max_element(std::begin(s), std::end(s))
-			*std::max_element(std::begin(s), std::end(s))
-		);
+		result.min_ = static_cast<VI_TM_FP>(std::min
+		({ *std::min_element(std::begin(s), std::end(s)),
+			*std::min_element(std::begin(x), std::end(x)),
+			*std::min_element(std::begin(m), std::end(m))
+		}));
+		result.max_ = static_cast<VI_TM_FP>(std::max
+		({ *std::max_element(std::begin(s), std::end(s)),
+			*std::max_element(std::begin(x), std::end(x)),
+			*std::max_element(std::begin(m), std::end(m))
+		}));
 #endif
 		return result;
 	}
