@@ -467,6 +467,9 @@ const void* VI_TM_CALL vi_tmStaticInfo(VI_TM_FLAGS info)
 #if VI_TM_STAT_USE_RAW
 				| vi_tmStatUseBase
 #endif
+#if VI_TM_STAT_USE_RMSE
+				| vi_tmStatUseRMSE
+#endif
 #if VI_TM_STAT_USE_FILTER
 				| vi_tmStatUseFilter
 #endif

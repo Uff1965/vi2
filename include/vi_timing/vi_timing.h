@@ -55,11 +55,20 @@
 #	define VI_TM_STAT_USE_RAW 1
 #endif
 
-// Set the VI_TM_STAT_USE_FILTER macro to FALSE to skip correlation coefficient calculation
-// and bounce filtering in measurements.
+// Set the VI_TM_STAT_USE_RMSE macro to FALSE to skip correlation coefficient calculation.
 // Library rebuild required
-#ifndef VI_TM_STAT_USE_FILTER
-#	define VI_TM_STAT_USE_FILTER 1
+#ifndef VI_TM_STAT_USE_RMSE
+#	define VI_TM_STAT_USE_RMSE 1
+#endif
+
+// Set the VI_TM_STAT_USE_RMSE macro to FALSE to switch off filtering in measurements.
+// Library rebuild required
+#if VI_TM_STAT_USE_FILTER && !VI_TM_STAT_USE_RMSE
+#	error "The filter is only available when RMSE is enabled."
+#elif !defined(VI_TM_STAT_USE_FILTER)
+#	if VI_TM_STAT_USE_RMSE
+#		define VI_TM_STAT_USE_FILTER 1
+#	endif
 #endif
 
 // Uncomment the next line to store minimum and maximum measurement values. Library rebuild required
@@ -185,7 +194,7 @@ typedef struct vi_tmMeasurementStats_t
 	VI_TM_SIZE cnt_;		// The number of all measured events, including discarded ones.
 	VI_TM_TDIFF sum_;		// Total time spent measuring all events, in ticks.
 #endif
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 	VI_TM_SIZE flt_calls_;	// Filtered! Number of invokes processed.
 	VI_TM_FP flt_cnt_;		// Filtered! Number of events counted.
 	VI_TM_FP flt_avg_;		// Filtered! Current average time taken per processed events. In ticks.
@@ -256,9 +265,10 @@ typedef enum vi_tmStatus_e
 	vi_tmShared			= 1 << 1,
 	vi_tmThreadsafe		= 1 << 2,
 	vi_tmStatUseBase	= 1 << 3,
-	vi_tmStatUseFilter	= 1 << 4,
-	vi_tmStatUseMinMax	= 1 << 5,
-	vi_tmStatusMask		= 0x003F,
+	vi_tmStatUseRMSE	= 1 << 4,
+	vi_tmStatUseFilter	= 1 << 5,
+	vi_tmStatUseMinMax	= 1 << 6,
+	vi_tmStatusMask		= 0x007F,
 } vi_tmStatus_e;
 
 #define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global journal handle, used for global measurements.
@@ -471,7 +481,7 @@ typedef enum vi_tmStatus_e
 #	endif
 
 // Filename suffix
-#	if VI_TM_DEBUG || VI_TM_SHARED || VI_TM_THREADSAFE || VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
+#	if VI_TM_DEBUG || VI_TM_SHARED || VI_TM_THREADSAFE || VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE || VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
 #		define VI_TM_S_UNDERSCORE "_"
 #	else
 #		define VI_TM_S_UNDERSCORE ""
@@ -480,6 +490,11 @@ typedef enum vi_tmStatus_e
 #		define VI_TM_S_STAT_USE_RAW "r"
 #	else
 #		define VI_TM_S_STAT_USE_RAW
+#	endif
+#	if VI_TM_STAT_USE_RMSE
+#		define VI_TM_S_STAT_USE_RMSE "a"
+#	else
+#		define VI_TM_S_STAT_USE_RMSE
 #	endif
 #	if VI_TM_STAT_USE_FILTER
 #		define VI_TM_S_STAT_USE_FILTER "f"
@@ -507,7 +522,16 @@ typedef enum vi_tmStatus_e
 #		define VI_TM_S_DEBUG
 #	endif
 
-#	define VI_TM_SUFFIX VI_TM_S_UNDERSCORE VI_TM_S_STAT_USE_RAW VI_TM_S_STAT_USE_FILTER VI_TM_S_STAT_USE_MINMAX VI_TM_S_THREADSAFE VI_TM_S_SHARED VI_TM_S_DEBUG
+#	define VI_TM_SUFFIX \
+		VI_TM_S_UNDERSCORE \
+		VI_TM_S_STAT_USE_RAW \
+		VI_TM_S_STAT_USE_RMSE \
+		VI_TM_S_STAT_USE_FILTER \
+		VI_TM_S_STAT_USE_MINMAX \
+		VI_TM_S_THREADSAFE \
+		VI_TM_S_SHARED \
+		VI_TM_S_DEBUG
+
 #	define VI_TM_LIB_NAME "vi_timing" VI_TM_SUFFIX
 
 #if defined(_MSC_VER) && !defined(VI_TM_DISABLE) && !VI_TM_EXPORTS

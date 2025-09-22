@@ -111,7 +111,7 @@ TEST(misc, vi_tmStaticInfo)
     }
 
     {
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
         constexpr auto flag = vi_tmStatUseFilter;
 #else
 		constexpr auto flag = 0U;

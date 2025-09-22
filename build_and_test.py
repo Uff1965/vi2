@@ -19,6 +19,7 @@ EMPTY = "__EMPTY__"
 OPTIONS = [
     ("BUILD_SHARED_LIBS", 's', True),
     ("VI_TM_DEBUG", 'd', False),
+    ("VI_TM_STAT_USE_RMSE", 'a', True),
     ("VI_TM_STAT_USE_FILTER", 'f', True),
     ("VI_TM_STAT_USE_MINMAX", 'm', True),
     ("VI_TM_STAT_USE_RAW", 'r', True),
@@ -247,6 +248,13 @@ def folder_remake(path: str):
     os.makedirs(path)
 
 def skip_suffix(suffix: str, filters: list[str]) -> bool:
+    option_info = {name: (symbol, enabled) for name, symbol, enabled in OPTIONS}
+    rmse, _ = option_info["VI_TM_STAT_USE_RMSE"]
+    fltr, _ = option_info["VI_TM_STAT_USE_FILTER"]
+    # Option VI_TM_STAT_USE_FILTER requires option VI_TM_STAT_USE_RMSE to be enabled.
+    if fltr in suffix and rmse not in suffix:
+        return True
+
     if not filters:
         return False
 

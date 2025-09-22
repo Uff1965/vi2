@@ -84,7 +84,7 @@ namespace
 		std::string sum_txt_{ NotAvailable };
 		duration_t<DURATION_PREC, DURATION_DEC> average_{}; // seconds
 		std::string average_txt_{ NotAvailable };
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 		VI_TM_FP cv_{}; // Coefficient of Variation.
 		std::string cv_txt_{ NotAvailable }; // Coefficient of Variation (CV) in percent
 #endif
@@ -157,7 +157,7 @@ namespace
 
 		std::size_t max_len_name_{TitleName.length()};
 		std::size_t max_len_average_{TitleAverage.length()};
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 		std::size_t max_len_cv_{TitleCV.length()};
 #endif
 #if VI_TM_STAT_USE_MINMAX
@@ -268,7 +268,7 @@ metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, un
 
 	(void)flags;
 
-#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
+#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE || VI_TM_STAT_USE_MINMAX
 	const auto &props = misc::properties_t::props();
 	const auto correction_ticks = (0U == (flags & vi_tmDoNotSubtractOverhead)) ? props.clock_overhead_ticks_ : 0.0;
 
@@ -296,7 +296,7 @@ metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, un
 #	endif
 
 // average, limit, cv_ and cv_txt_
-#	if VI_TM_STAT_USE_FILTER
+#	if VI_TM_STAT_USE_RMSE
 	const auto limit_ticks = props.clock_resolution_ticks_ / std::sqrt(meas.flt_cnt_);
 	const auto avg_ticks = meas.flt_avg_ - correction_ticks;
 
@@ -323,7 +323,7 @@ metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, un
 #	endif
 
 // average_, average_txt_ and cnt_txt_
-#	if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER
+#	if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE
 	if (avg_ticks <= std::max(limit_ticks, props.clock_resolution_ticks_ * 1e-2))
 	{	average_txt_ = Insignificant;
 	}
@@ -354,7 +354,7 @@ metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, un
 		}
 	}
 #	endif
-#endif // #if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
+#endif // #if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE || VI_TM_STAT_USE_MINMAX
 }
 
 formatter_t::formatter_t(const std::vector<metering_t> &itms, unsigned flags)
@@ -367,14 +367,14 @@ formatter_t::formatter_t(const std::vector<metering_t> &itms, unsigned flags)
 #if VI_TM_STAT_USE_RAW
 		max_len_total_ = std::max(max_len_total_, itm.sum_txt_.length());
 #endif
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 		max_len_cv_ = std::max(max_len_cv_, itm.cv_txt_.length());
 #endif
 #if VI_TM_STAT_USE_MINMAX
 		max_len_min_ = std::max(max_len_min_, itm.min_txt_.length());
 		max_len_max_ = std::max(max_len_max_, itm.max_txt_.length());
 #endif
-#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE
 		max_len_average_ = std::max(max_len_average_, itm.average_txt_.length());
 		max_len_amount_ = std::max(max_len_amount_, itm.cnt_txt_.length());
 #endif
@@ -454,10 +454,10 @@ int formatter_t::print_header(const F &fn) const
 		std::left << std::setfill(UNDERSCORE) <<
 		std::setw(width_column(vi_tmSortByName)) << item_column(vi_tmSortByName) << ": " <<
 		std::right << std::setfill(' ') <<
-#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE
 		"" << std::setw(width_column(vi_tmSortBySpeed)) << item_column(vi_tmSortBySpeed) << " " <<
 #endif
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 		"+/- " << std::setw(max_len_cv_) << TitleCV << " " <<
 #endif
 #if VI_TM_STAT_USE_RAW
@@ -487,10 +487,10 @@ int formatter_t::print_metering(const metering_t &i, const F &fn) const
 		std::left << std::setfill(fill_symbol) <<
 		std::setw(width_column(vi_tmSortByName)) << i.name_ << ": " <<
 		std::right << std::setfill(' ') <<
-#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE
 		"" << std::setw(width_column(vi_tmSortBySpeed)) << i.average_txt_ << " " <<
 #endif
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 		(i.cv_txt_.empty()? "    ": "+/- ") << std::setw(max_len_cv_) << i.cv_txt_ << " " <<
 #endif
 #if VI_TM_STAT_USE_RAW

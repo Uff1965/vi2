@@ -53,7 +53,7 @@ namespace
 				EXPECT_EQ(md.cnt_, md.calls_);
 				EXPECT_EQ(md.sum_, std::accumulate(std::begin(samples_simple), std::end(samples_simple), 0U));
 #endif
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 				EXPECT_EQ(md.flt_cnt_, static_cast<VI_TM_FP>(md.calls_));
 				EXPECT_EQ(md.flt_calls_, md.calls_);
 #endif
@@ -63,7 +63,7 @@ namespace
 #endif
 			}
 
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 			vi_tmMeasurementAdd(m, 10111); // It should be filtered out.
 			{
 				vi_tmMeasurementStats_t tmp;
@@ -128,7 +128,7 @@ namespace
 			vi_tmMeasurementMerge(m, &md); // Merge the statistics into the measurement.
 			vi_tmStatsReset(&md);
 
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 			for (auto x : samples_exclude) // Add samples that will be excluded from the statistics.
 			{	vi_tmMeasurementAdd(m, x, 1);
 			}
@@ -138,7 +138,7 @@ namespace
 			EXPECT_STREQ(name, NAME);
 		}
 
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 		EXPECT_EQ(md.calls_, std::size(samples_simple) + std::size(samples_multiple) + std::size(samples_exclude));
 #	if VI_TM_STAT_USE_RAW
 		EXPECT_EQ(md.cnt_, std::size(samples_simple) + M * std::size(samples_multiple) + std::size(samples_exclude));

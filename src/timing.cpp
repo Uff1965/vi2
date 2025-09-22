@@ -131,7 +131,7 @@ namespace
 	/// the number of calls, total and filtered event counts, sum of durations, minimum/maximum/average
 	/// values, and variance.
 	/// <para>
-	/// Note: If the corresponding preprocessor macros (VI_TM_STAT_USE_RAW, VI_TM_STAT_USE_FILTER, VI_TM_STAT_USE_MINMAX) are defined and set to a TRUE value only.
+	/// Note: If the corresponding preprocessor macros (VI_TM_STAT_USE_RAW, VI_TM_STAT_USE_RMSE, VI_TM_STAT_USE_MINMAX) are defined and set to a TRUE value only.
 	/// </para>
 	/// </remarks>
 	/// <para>Main features:</para>
@@ -268,7 +268,7 @@ VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmMeasurementStats_t *meas) n
 	if (meas->calls_ >= 1U && !verify(static_cast<VI_TM_FP>(meas->sum_) >= meas->max_)) return VI_EXIT_FAILURE; // sum_ must be greater than or equal to max_.
 #endif
 
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 	if (!verify(meas->flt_calls_ <= meas->calls_)) return VI_EXIT_FAILURE; // flt_calls_ must be less than or equal to calls_.
 	if (!verify((fp_ZERO != meas->flt_cnt_) == (0U != meas->flt_calls_))) return VI_EXIT_FAILURE; // flt_cnt_ and flt_calls_ must be both zero or both non-zero.
 	if (!verify(meas->flt_cnt_ >= static_cast<VI_TM_FP>(meas->flt_calls_))) return VI_EXIT_FAILURE; // flt_cnt_ must be greater than or equal to flt_calls_.
@@ -285,11 +285,11 @@ VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmMeasurementStats_t *meas) n
 	}
 #endif
 
-#if VI_TM_STAT_USE_RAW && VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RAW && VI_TM_STAT_USE_RMSE
 	if (!verify(meas->flt_cnt_ <= static_cast<VI_TM_FP>(meas->cnt_))) return VI_EXIT_FAILURE; // flt_cnt_ must be less than or equal to cnt_.
 #endif
 
-#if VI_TM_STAT_USE_MINMAX && VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_MINMAX && VI_TM_STAT_USE_RMSE
 	if (meas->flt_calls_ > 0U)
 	{	constexpr auto fp_EPSILON = fp_limits_t::epsilon();
 		if (!verify((meas->min_ - meas->flt_avg_) / meas->flt_avg_ < fp_EPSILON)) return VI_EXIT_FAILURE;
@@ -314,7 +314,7 @@ void VI_TM_CALL vi_tmStatsReset(vi_tmMeasurementStats_t *meas) noexcept
 	meas->min_ = fp_limits_t::infinity();
 	meas->max_ = -fp_limits_t::infinity();
 #endif
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 	meas->flt_calls_ = 0U;
 	meas->flt_cnt_ = fp_ZERO;
 	meas->flt_avg_ = fp_ZERO;
@@ -330,7 +330,7 @@ void VI_TM_CALL vi_tmStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TDIFF dur, VI
 	}
 	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(meas));
 
-#if VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
+#if VI_TM_STAT_USE_RMSE || VI_TM_STAT_USE_MINMAX
 	const auto f_cnt = static_cast<VI_TM_FP>(cnt);
 	const auto f_val = static_cast<VI_TM_FP>(dur) / f_cnt;
 #endif
@@ -345,7 +345,7 @@ void VI_TM_CALL vi_tmStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TDIFF dur, VI
 		meas->min_ = f_val;
 		meas->max_ = f_val;
 #endif
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 		meas->flt_calls_ = 1U; // The first call cannot be filtered.
 		meas->flt_cnt_ = f_cnt;
 		meas->flt_avg_ = f_val; // The first value is the mean.
@@ -361,15 +361,17 @@ void VI_TM_CALL vi_tmStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TDIFF dur, VI
 		if (f_val < meas->min_) { meas->min_ = f_val; }
 		if (f_val > meas->max_) { meas->max_ = f_val; }
 #endif
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
+		const auto deviation = f_val - meas->flt_avg_; // Difference from the mean value.
+#	if VI_TM_STAT_USE_FILTER
 		constexpr VI_TM_FP K = 2.5; // Threshold for outliers.
-		if(	const auto deviation = f_val - meas->flt_avg_; // Difference from the mean value.
-			dur <= 1U || // The measurable interval is probably smaller than the resolution of the clock.
+		if(	dur <= 1U || // The measurable interval is probably smaller than the resolution of the clock.
 			FMA(deviation * deviation, meas->flt_cnt_, - K * K * meas->flt_ss_) < fp_ZERO || // Sigma clipping to avoids outliers.
 			deviation < fp_ZERO || // The minimum value is usually closest to the true value. "deviation < .0" - for some reason slowly!!!
 			meas->flt_calls_ <= 2U || // If we have less than 2 measurements, we cannot calculate the standard deviation.
 			meas->flt_ss_ <= 1.0 // A pair of zero initial measurements will block the addition of other.
 		)
+#	endif
 		{	meas->flt_cnt_ += f_cnt;
 			meas->flt_avg_ = FMA(deviation, f_cnt / meas->flt_cnt_, meas->flt_avg_);
 			meas->flt_ss_ = FMA(deviation * (f_val - meas->flt_avg_), f_cnt, meas->flt_ss_);
@@ -401,7 +403,7 @@ void VI_TM_CALL vi_tmStatsMerge(vi_tmMeasurementStats_t* VI_RESTRICT dst, const 
 	{	dst->max_ = src->max_;
 	}
 #endif
-#if VI_TM_STAT_USE_FILTER
+#if VI_TM_STAT_USE_RMSE
 	if (src->flt_cnt_ > fp_ZERO)
 	{	const auto new_cnt_reverse = fp_ONE / (dst->flt_cnt_ + src->flt_cnt_);
 		const auto diff_mean = src->flt_avg_ - dst->flt_avg_;

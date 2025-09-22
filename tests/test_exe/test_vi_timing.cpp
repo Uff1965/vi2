@@ -28,6 +28,7 @@ namespace
 	std::string flags2string(unsigned flg)
 	{	std::string result;
 		result += (flg & vi_tmStatUseBase)? "VI_TM_STAT_USE_RAW, ": "";
+		result += (flg & vi_tmStatUseRMSE)? "VI_TM_STAT_USE_RMSE, ": "";
 		result += (flg & vi_tmStatUseFilter)? "VI_TM_STAT_USE_FILTER, ": "";
 		result += (flg & vi_tmStatUseMinMax)? "VI_TM_STAT_USE_MINMAX, ": "";
 		result += (flg & vi_tmThreadsafe)? "VI_TM_THREADSAFE, ": "";
