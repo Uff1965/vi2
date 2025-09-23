@@ -109,7 +109,7 @@ namespace
 #endif
 #if VI_TM_STAT_USE_RMSE
 		EXPECT_DOUBLE_EQ(l.flt_avg_, r.flt_avg_);
-		EXPECT_DOUBLE_EQ(l.flt_calls_, r.flt_calls_);
+		EXPECT_EQ(l.flt_calls_, r.flt_calls_);
 		EXPECT_DOUBLE_EQ(l.flt_cnt_, r.flt_cnt_);
 		EXPECT_DOUBLE_EQ(l.flt_ss_, r.flt_ss_);
 #endif
