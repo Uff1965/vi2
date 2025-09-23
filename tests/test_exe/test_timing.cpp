@@ -72,6 +72,10 @@ namespace
 				std::accumulate(std::cbegin(x), std::cend(x), fp_ZERO) +
 				M * std::accumulate(std::cbegin(m), std::cend(m), fp_ZERO)
 			) / result.flt_cnt_;
+		auto func = [mean = result.flt_avg_](auto i, VI_TM_TICK v)
+			{	const VI_TM_FP d = static_cast<VI_TM_FP>(v) - mean;
+				return FMA(d, d, i);
+			};
 		result.flt_ss_ = [func, s, x, m, M]
 			{	return
 					std::accumulate(std::cbegin(s), std::cbegin(s) + NS, fp_ZERO, func) +
