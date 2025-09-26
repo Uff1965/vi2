@@ -403,3 +403,4 @@ FodyWeavers.xsd
 /CMakeSettings.json
 /out/build
 /src/version.out
+/include/vi_timing/vi_timing_version.h
