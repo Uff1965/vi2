@@ -30,10 +30,12 @@ namespace
 	{	return(l.size() >= r.size() && 0 == l.compare(l.size() - r.size(), r.size(), r));
 	}
 
-	std::string file_name(const fs::path& p)
+	std::string file_name(const fs::path& p, bool trim_extension = true)
 	{	const std::string fn = p.filename().string();
-		if (auto pos = fn.rfind('.'); pos != std::string::npos)
-		{	return fn.substr(0, pos);
+		if (trim_extension)
+		{	if (auto pos = fn.rfind('.'); pos != std::string::npos)
+			{	return fn.substr(0, pos);
+			}
 		}
 		return fn;
 	}
@@ -68,7 +70,13 @@ namespace platform
 }
 
 TEST(filename, exe)
-{	auto module_name = file_name(platform::get_module_path(reinterpret_cast<const void*>(&function_located_in_an_executable_module)));
+{
+#ifdef _WIN32
+	static constexpr auto trim_extension = true;
+#else
+	static constexpr auto trim_extension = false;
+#endif
+	auto module_name = file_name(platform::get_module_path(reinterpret_cast<const void*>(&function_located_in_an_executable_module)), trim_extension);
 	EXPECT_TRUE(ends_with(module_name, suffix)) << "name: \'" << module_name << "\' and \'" << suffix << "\'";
 }
 
