@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.22)
 project(vi_timing VERSION ${VI_GIT_VERSION_NUMBER} LANGUAGES CXX)
 
-configure_file("version.in" "${CMAKE_CURRENT_SOURCE_DIR}/version.out" @ONLY)
+configure_file("version.in" "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing_version.h" @ONLY)
 
 set(SOURCE_FILES) # Initialize the list of source files.
 
@@ -22,13 +22,14 @@ set(FILE_GROUP
     "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing.hpp"
     "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing_aux.h"
     "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing_proxy.hpp"
+    "${CMAKE_SOURCE_DIR}/include/vi_timing/vi_timing_version.h"
 )
 source_group("Interface files" FILES ${FILE_GROUP})
 list(APPEND SOURCE_FILES ${FILE_GROUP})
 
 list(APPEND SOURCE_FILES
+    "build_number_generator.h"
     "misc.h"
-    "version.h"
 )
 
 list(APPEND SOURCE_FILES
@@ -45,9 +46,9 @@ add_library(${PROJECT_NAME} ${SOURCE_FILES})
 
 set_target_properties(${PROJECT_NAME}
 PROPERTIES
-    OUTPUT_NAME ${PROJECT_NAME}$<IF:$<OR:$<BOOL:${VI_TM_NAME_SUFFIX}>,$<CONFIG:Debug>>,_,>${VI_TM_NAME_SUFFIX}$<IF:$<CONFIG:Debug>,d,>
-    OUTPUT_NAME_DEBUG "${PROJECT_NAME}_${VI_TM_NAME_SUFFIX}d"
-    OUTPUT_NAME_RELEASE "${PROJECT_NAME}$<IF:$<BOOL:${VI_TM_NAME_SUFFIX}>,_${VI_TM_NAME_SUFFIX},>"
+    OUTPUT_NAME "${PROJECT_NAME}$<IF:$<OR:$<BOOL:${VI_TM_NAME_SUFFIX}>,$<CONFIG:Debug>>,_,>${VI_TM_NAME_SUFFIX}$<IF:$<CONFIG:Debug>,d,>${VI_TM_VER_SUFFIX}"
+    OUTPUT_NAME_DEBUG "${PROJECT_NAME}_${VI_TM_NAME_SUFFIX}d${VI_TM_VER_SUFFIX}"
+    OUTPUT_NAME_RELEASE "${PROJECT_NAME}$<IF:$<BOOL:${VI_TM_NAME_SUFFIX}>,_${VI_TM_NAME_SUFFIX},>${VI_TM_VER_SUFFIX}"
 
     VERSION    ${PROJECT_VERSION}
     SOVERSION  ${PROJECT_VERSION_MAJOR}

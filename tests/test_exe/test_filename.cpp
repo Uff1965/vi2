@@ -23,7 +23,7 @@ namespace fs = std::filesystem;
 
 namespace
 {
-	const std::string suffix = VI_TM_SUFFIX;
+	const std::string suffix = VI_TM_LIB_SUFFIX;
 	void function_located_in_an_executable_module() {}
 
 	bool ends_with(std::string_view l, std::string_view r)
@@ -32,7 +32,7 @@ namespace
 
 	std::string file_name(const fs::path& p)
 	{	const std::string fn = p.filename().string();
-		if (auto pos = fn.find('.'); pos != std::string::npos)
+		if (auto pos = fn.rfind('.'); pos != std::string::npos)
 		{	return fn.substr(0, pos);
 		}
 		return fn;
@@ -68,13 +68,13 @@ namespace platform
 }
 
 TEST(filename, exe)
-{	auto name = file_name(platform::get_module_path(reinterpret_cast<const void*>(&function_located_in_an_executable_module)));
-	EXPECT_TRUE(ends_with(name, suffix)) << "name: \'" << name << "\' and \'" << suffix << "\'";
+{	auto module_name = file_name(platform::get_module_path(reinterpret_cast<const void*>(&function_located_in_an_executable_module)));
+	EXPECT_TRUE(ends_with(module_name, suffix)) << "name: \'" << module_name << "\' and \'" << suffix << "\'";
 }
 
 #if VI_TM_SHARED
 TEST(filename, lib)
-{	auto name = file_name(platform::get_module_path(reinterpret_cast<const void*>(&vi_tmStaticInfo)));
-	EXPECT_TRUE(ends_with(name, suffix)) << "name: \'" << name << "\' and \'" << suffix << "\'";
+{	auto module_name = file_name(platform::get_module_path(reinterpret_cast<const void*>(&vi_tmStaticInfo)));
+	EXPECT_TRUE(ends_with(module_name, suffix)) << "name: \'" << module_name << "\' and \'" << suffix << "\'";
 }
 #endif

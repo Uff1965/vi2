@@ -29,7 +29,6 @@
 #define VI_STR_CONCAT_AUX( a, b ) a##b
 #define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
 #define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, VI_ID )
-#define VI_STRINGIZE(x) #x
 
 #ifdef VI_TM_DISABLE
 	// Fallback macros for timing functions

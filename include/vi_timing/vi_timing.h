@@ -22,6 +22,18 @@
 #	define VI_TIMING_VI_TIMING_C_H
 #	pragma once
 
+#if __has_include("vi_timing_version.h")
+#	include "vi_timing_version.h" // Include the generated version data.
+//#else
+//#	define VI_TM_VERSION_MAJOR 0;
+//#	define VI_TM_VERSION_MINOR 0;
+//#	define VI_TM_VERSION_PATCH 0;
+//
+//#	define VI_TM_GIT_DESCRIBE "";
+//#	define VI_TM_GIT_COMMIT "unknown";
+//#	define VI_TM_GIT_DATETIME "unknown";
+#endif
+
 #	include <stdint.h> // uint64_t
 #	include <stddef.h> // size_t
 
@@ -474,68 +486,81 @@ typedef enum vi_tmStatus_e
 	);
 // Auxiliary functions: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+#	define VI_STRINGIZE_AUX(x) #x
+#	define VI_STRINGIZE(x) VI_STRINGIZE_AUX(x)
+
 #	ifdef __cplusplus
 } // extern "C"
 
-#		include "vi_timing.hpp"
+#		if __has_include("vi_timing.hpp")
+#			include "vi_timing.hpp"
+#		endif
 #	endif
 
-// Filename suffix
-#	if VI_TM_DEBUG || VI_TM_SHARED || VI_TM_THREADSAFE || VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE || VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX
-#		define VI_TM_S_UNDERSCORE "_"
+#	if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE || VI_TM_STAT_USE_FILTER || VI_TM_STAT_USE_MINMAX || VI_TM_THREADSAFE || VI_TM_SHARED || VI_TM_DEBUG
+#		if VI_TM_STAT_USE_RAW
+#			define VI_TM_S_STAT_USE_RAW "r"
+#		else
+#			define VI_TM_S_STAT_USE_RAW
+#		endif
+#		if VI_TM_STAT_USE_RMSE
+#			define VI_TM_S_STAT_USE_RMSE "e"
+#		else
+#			define VI_TM_S_STAT_USE_RMSE
+#		endif
+#		if VI_TM_STAT_USE_FILTER
+#			define VI_TM_S_STAT_USE_FILTER "f"
+#		else
+#			define VI_TM_S_STAT_USE_FILTER
+#		endif
+#		if VI_TM_STAT_USE_MINMAX
+#			define VI_TM_S_STAT_USE_MINMAX "m"
+#		else
+#			define VI_TM_S_STAT_USE_MINMAX
+#		endif
+#		if VI_TM_THREADSAFE
+#			define VI_TM_S_THREADSAFE "t"
+#		else
+#			define VI_TM_S_THREADSAFE
+#		endif
+#		if VI_TM_SHARED
+#			define VI_TM_S_SHARED "s"
+#		else
+#			define VI_TM_S_SHARED
+#		endif
+#		if VI_TM_DEBUG
+#			define VI_TM_S_DEBUG "d"
+#		else
+#			define VI_TM_S_DEBUG
+#		endif
+
+#		define VI_TM_FLAGS_SUFFIX \
+			"_" \
+			VI_TM_S_STAT_USE_RAW \
+			VI_TM_S_STAT_USE_RMSE \
+			VI_TM_S_STAT_USE_FILTER \
+			VI_TM_S_STAT_USE_MINMAX \
+			VI_TM_S_THREADSAFE \
+			VI_TM_S_SHARED \
+			VI_TM_S_DEBUG
 #	else
-#		define VI_TM_S_UNDERSCORE ""
-#	endif
-#	if VI_TM_STAT_USE_RAW
-#		define VI_TM_S_STAT_USE_RAW "r"
-#	else
-#		define VI_TM_S_STAT_USE_RAW
-#	endif
-#	if VI_TM_STAT_USE_RMSE
-#		define VI_TM_S_STAT_USE_RMSE "a"
-#	else
-#		define VI_TM_S_STAT_USE_RMSE
-#	endif
-#	if VI_TM_STAT_USE_FILTER
-#		define VI_TM_S_STAT_USE_FILTER "f"
-#	else
-#		define VI_TM_S_STAT_USE_FILTER
-#	endif
-#	if VI_TM_STAT_USE_MINMAX
-#		define VI_TM_S_STAT_USE_MINMAX "m"
-#	else
-#		define VI_TM_S_STAT_USE_MINMAX
-#	endif
-#	if VI_TM_THREADSAFE
-#		define VI_TM_S_THREADSAFE "t"
-#	else
-#		define VI_TM_S_THREADSAFE
-#	endif
-#	if VI_TM_SHARED
-#		define VI_TM_S_SHARED "s"
-#	else
-#		define VI_TM_S_SHARED
-#	endif
-#	if VI_TM_DEBUG
-#		define VI_TM_S_DEBUG "d"
-#	else
-#		define VI_TM_S_DEBUG
+#		define VI_TM_FLAGS_SUFFIX ""
 #	endif
 
-#	define VI_TM_SUFFIX \
-		VI_TM_S_UNDERSCORE \
-		VI_TM_S_STAT_USE_RAW \
-		VI_TM_S_STAT_USE_RMSE \
-		VI_TM_S_STAT_USE_FILTER \
-		VI_TM_S_STAT_USE_MINMAX \
-		VI_TM_S_THREADSAFE \
-		VI_TM_S_SHARED \
-		VI_TM_S_DEBUG
+#	if VI_TM_VERSION_MAJOR || VI_TM_VERSION_MINOR
+#		define VI_TM_VERSION_SUFFIX \
+			"-" \
+			VI_STRINGIZE(VI_TM_VERSION_MAJOR) \
+			"." \
+			VI_STRINGIZE(VI_TM_VERSION_MINOR)
+#	else
+#		define VI_TM_VERSION_SUFFIX ""
+#	endif
 
-#	define VI_TM_LIB_NAME "vi_timing" VI_TM_SUFFIX
+#	define VI_TM_LIB_SUFFIX VI_TM_FLAGS_SUFFIX VI_TM_VERSION_SUFFIX
 
 #if defined(_MSC_VER) && !defined(VI_TM_DISABLE) && !VI_TM_EXPORTS
-#	pragma comment(lib, VI_TM_LIB_NAME ".lib")
+#	pragma comment(lib, "vi_timing" VI_TM_LIB_SUFFIX ".lib")
 #endif
 
 #endif // #ifndef VI_TIMING_VI_TIMING_C_H

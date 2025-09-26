@@ -21,9 +21,8 @@
 *   - See LICENSE in the project root for full terms.
 \*****************************************************************************/
 
+#include "build_number_generator.h"
 #include "misc.h"
-
-#include "version.h"
 #include <vi_timing/vi_timing.h>
 #include <vi_timing/vi_timing_aux.h>
 
@@ -35,6 +34,7 @@
 #	include <sched.h> // For sched_getcpu.
 #endif
 
+#include <algorithm>
 #include <array>
 #include <atomic> // for atomic_bool
 #include <cassert>
@@ -58,6 +58,25 @@ using namespace std::literals;
 
 namespace
 {
+#if !defined(VI_TM_VERSION_MAJOR)
+	constexpr auto VI_TM_VERSION_MAJOR = 0;
+#endif
+#if !defined(VI_TM_VERSION_MINOR)
+	constexpr auto VI_TM_VERSION_MINOR = 0;
+#endif
+#if !defined(VI_TM_VERSION_PATCH)
+	constexpr auto VI_TM_VERSION_PATCH = 0;
+#endif
+#if !defined(VI_TM_GIT_DESCRIBE)
+	constexpr const char VI_TM_GIT_DESCRIBE[] = "";
+#endif
+#if !defined(VI_TM_GIT_COMMIT)
+	constexpr const char VI_TM_GIT_COMMIT[] = "";
+#endif
+#if !defined(VI_TM_GIT_DATETIME)
+	constexpr const char VI_TM_GIT_DATETIME[] = "";
+#endif
+
 	// Keeps the CPU payload for a short period to simulate workload.
 	void payload()
 	{	volatile auto f = 0.0;
@@ -376,7 +395,7 @@ const void* VI_TM_CALL vi_tmStaticInfo(VI_TM_FLAGS info)
 	switch (info)
 	{
 		case vi_tmInfoVer: // Returns a pointer to the version number (unsigned).
-		{	static constexpr unsigned ver = (VI_TM_VERSION_MAJOR * 1000U + VI_TM_VERSION_MINOR) * 10000U + VI_TM_VERSION_PATCH;
+		{	static constexpr unsigned ver = (VI_TM_VERSION_MAJOR * 1'000U + VI_TM_VERSION_MINOR) * 10'000U + VI_TM_VERSION_PATCH;
 			return &ver;
 		}
 
@@ -419,13 +438,13 @@ const void* VI_TM_CALL vi_tmStaticInfo(VI_TM_FLAGS info)
 		}
 
 		case vi_tmInfoGitDescribe: // Returns a pointer to the Git describe string (e.g., "v0.10.0-3-g96b37d4-dirty").
-			return misc::VI_TM_GIT_DESCRIBE.data();
+			return VI_TM_GIT_DESCRIBE;
 
 		case vi_tmInfoGitCommit: // Returns a pointer to the Git commit hash (e.g., "96b37d49d235140e86f6f6c246bc7f166ab773aa").
-			return misc::VI_TM_GIT_COMMIT.data();
+			return VI_TM_GIT_COMMIT;
 
 		case vi_tmInfoGitDateTime: // Returns a pointer to the Git commit date and time string (e.g., "2025-07-26 18:17:04 +0300").
-			return misc::VI_TM_GIT_DATETIME.data();
+			return VI_TM_GIT_DATETIME;
 
 		case vi_tmInfoResolution: // Returns a pointer to the clock resolution in ticks (double).
 		{	static const double resolution = properties_t::props().clock_resolution_ticks_;

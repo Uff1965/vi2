@@ -21,9 +21,9 @@
 *   - See LICENSE in the project root for full terms.
 \*****************************************************************************/
 
-#include <vi_timing/vi_timing.h>
-#include "version.h" // For build number generation.
+#include "build_number_generator.h" // For build number generation.
 #include "misc.h"
+#include <vi_timing/vi_timing.h>
 
 #include <algorithm> // std::min_element, std::max_element
 #include <cassert> // assert()

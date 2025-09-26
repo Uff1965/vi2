@@ -21,9 +21,8 @@
 *   - See LICENSE in the project root for full terms.
 \*****************************************************************************/
 
+#include "build_number_generator.h"
 #include "misc.h"
-
-#include "version.h"
 #include <vi_timing/vi_timing.h>
 #include <vi_timing/vi_timing_aux.h>
 

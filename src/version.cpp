@@ -21,7 +21,7 @@
 *   - See LICENSE in the project root for full terms.
 \*****************************************************************************/
 
-#include "version.h"
+#include "build_number_generator.h"
 
 #include <array>
 #include <cassert>
