@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+HELP_TEXT = (
+    "Automated build and test utility.\n\n"
+    "Performs full compilation of the target program and related examples "
+    "across all valid combinations of options and configurations. Ensures "
+    "correctness and compatibility of builds, streamlining debugging, "
+    "regression checks, and coverage analysis."
+)
+
 import argparse
 import datetime
 import itertools
@@ -11,7 +19,6 @@ import shutil
 import stat
 import subprocess
 import sys
-from typing import Counter
 
 START_ALL_TIME = datetime.datetime.now()
 PROJECT_ROOT = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
@@ -111,7 +118,7 @@ def run(cmd, cwd=None):
 
 def parse_params()->argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="A utility for automatically configuring, building, and testing the viTiming library with different combinations of options.",
+        description=HELP_TEXT,
         epilog = "Example usage:\n\tpython build_and_test.py -S . -B _tests -T _bin -C Release rf '\"\"'",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
@@ -155,6 +162,7 @@ def parse_params()->argparse.Namespace:
         default = build_config,
         help = "Choose configuration to test."
     )
+
     parser.add_argument(
         "filters",
         type=str,
@@ -213,7 +221,7 @@ def make_suffix(flags: list[str]) -> str:
             if "=" in flag_lower:
                 _, value = flag_lower.split("=", 1)
                 if value.strip() not in enabled_values:
-                    break  # Explicitly disabled � skip this option
+                    break  # Explicitly disabled, skip this option
 
             # Add the corresponding character to the result
             result += char
