@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-HELP_TEXT = (
-    "Automated build and test utility.\n\n"
-    "Performs full compilation of the target program and related examples "
-    "across all valid combinations of options and configurations. Ensures "
-    "correctness and compatibility of builds, streamlining debugging, "
-    "regression checks, and coverage analysis."
-)
+"""
+Automated build and test utility.
+Performs full compilation of the target program and related examples \
+across all valid combinations of options and configurations. Ensures \
+correctness and compatibility of builds, streamlining debugging, \
+regression checks, and coverage analysis.
+"""
 
 import argparse
 import datetime
@@ -19,9 +19,10 @@ import shutil
 import stat
 import subprocess
 import sys
+from dataclasses import dataclass, field
 
 START_ALL_TIME = datetime.datetime.now()
-PROJECT_ROOT = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
+PROJECT_ROOT:pathlib.Path = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
 EMPTY = "__EMPTY__"
 OPTIONS = [
     ("BUILD_SHARED_LIBS", 's', True),
@@ -33,12 +34,20 @@ OPTIONS = [
     ("VI_TM_THREADSAFE", 't', True),
 ]
 
-counter = 0
-build_config = "Release"
-path_to_result = "bin"
-path_to_source = PROJECT_ROOT
-path_to_build = "_tests"
-suffix_filters = []
+@dataclass
+class Config:
+    path_to_source: pathlib.Path = PROJECT_ROOT
+    path_to_build: pathlib.Path = "_tests"
+    path_to_result: pathlib.Path = "bin"
+    build_config: str = "Release"
+    suffix_filters: list[str] = field(default_factory=list)
+    list_only: bool = False
+    dry_run: bool = False
+    build_count: int = 0
+
+config: Config
+
+# ---------------- Helpers ----------------
 
 def format_duration(seconds: float) -> str:
     # Round to 1 decimal place for consistency
@@ -70,7 +79,7 @@ def format_duration(seconds: float) -> str:
     else:
         parts.append(f"{secs:.2f}s")
 
-    return ' '.join(parts)
+    return ':'.join(parts)
 
 def get_cmake_property(key: str = "CMAKE_CXX_COMPILER_ID", data: list[str] | None = None) -> str | None:
     """
@@ -112,87 +121,11 @@ def remove_readonly(func, path, _):
     os.chmod(path, stat.S_IWRITE)  # Change file permissions to writable
     func(path)                     # Retry the original removal function
 
-def run(cmd, cwd=None):
+def run(cmd: list[str], dry_run: bool = False, cwd = None):
     print(f"RUN: {' '.join(cmd)} (cwd={cwd or os.getcwd()})")
+    if dry_run:
+        return None
     result = subprocess.run(cmd, cwd=cwd, check=True)
-
-def parse_params()->argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=HELP_TEXT,
-        epilog = "Example usage:\n\tpython build_and_test.py -S . -B _tests -T _bin -C Release rf '\"\"'",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-
-    global path_to_source
-    parser.add_argument(
-        "-S",
-        "--path-to-source",
-        type = pathlib.Path,
-        metavar = "<dir>",
-        default = path_to_source,
-        help = "Explicitly specify a source directory."
-    )
-
-    global path_to_build
-    parser.add_argument(
-        "-B",
-        "--path-to-build",
-        type = pathlib.Path,
-        metavar = "<dir>",
-        default = path_to_build,
-        help = "Explicitly specify a build directory."
-    )
-
-    global path_to_result
-    parser.add_argument(
-        "-T",
-        "--path-to-result",
-        type = pathlib.Path,
-        metavar = "<dir>",
-        default = path_to_result,
-        help = "Explicitly specify a target directory."
-    )
-
-    global build_config
-    parser.add_argument(
-        "-C",
-        "--build-config",
-        type = str,
-        choices=["Release", "Debug"],
-        default = build_config,
-        help = "Choose configuration to test."
-    )
-
-    parser.add_argument(
-        "filters",
-        type=str,
-        nargs="*",
-        help="Build suffixes (e.g. 'rfm'). "
-            f"'{EMPTY}' or '\"\"' to pass an empty filter to Windows CMD. "
-            "If omitted, all combos will be tested."
-    )
-
-    params = parser.parse_args()
-
-    path_to_source = params.path_to_source
-    if not os.path.isabs(path_to_source):
-        path_to_source = os.path.abspath(os.path.join(PROJECT_ROOT, path_to_source))
-
-    path_to_build = params.path_to_build
-    if not os.path.isabs(path_to_build):
-        path_to_build = os.path.abspath(os.path.join(PROJECT_ROOT, path_to_build))
-    folder_remake(path_to_build)
-
-    path_to_result = params.path_to_result
-    if not os.path.isabs(path_to_result):
-        path_to_result = os.path.abspath(os.path.join(path_to_build, path_to_result))
-    folder_remake(path_to_result)
-
-    build_config = params.build_config;
-
-    global suffix_filters
-    suffix_filters = params.filters
-    suffix_filters = ["" if item == EMPTY else item for item in suffix_filters]
 
 def make_options(combo: tuple[bool,...])-> list[str]:
     result = []
@@ -227,7 +160,7 @@ def make_suffix(flags: list[str]) -> str:
             result += char
             break  # Move to the next option after first match
 
-    if build_config.upper() == "DEBUG":
+    if config.build_config.upper() == "DEBUG":
         result += "d"
 
     return result
@@ -275,21 +208,21 @@ def skip_suffix(suffix: str, filters: list[str]) -> bool:
 def configuring(build_dir: str, options: list[str]):
         print("Configuration the project:")
         params = ["cmake"]
-        params += ["-S", str(path_to_source)]
+        params += ["-S", str(config.path_to_source)]
         params += ["-B", str(build_dir)]
-        params += [f"-DCMAKE_BUILD_TYPE={build_config}"]
-        params += [f"-DVI_TM_OUTPUT_PATH={str(path_to_result)}"]
+        params += [f"-DCMAKE_BUILD_TYPE={config.build_config}"]
+        params += [f"-DVI_TM_OUTPUT_PATH={str(config.path_to_result)}"]
         params += options
-        run(params)
+        run(params, config.dry_run)
         print("Configuration the project - done\n")
 
 def build(build_dir: str):
         print("Build the project:")
         params = ["cmake"]
-        params += ["--build", build_dir]
-        params += ["--config", build_config]
+        params += ["--build", str(build_dir)]
+        params += ["--config", config.build_config]
         params += make_setjobs() #must be last
-        run(params)
+        run(params, config.dry_run)
         print("Build the project - done\n")
 
 def testing(build_dir: str):
@@ -300,12 +233,12 @@ def testing(build_dir: str):
             case "GNU" | "Clang":
                 None
             case "MSVC":
-                params += ["--build-config", build_config]
+                params += ["--build-config", config.build_config]
             case _:
                 print("Warning: Unknown compiler, skipping tests.")
 
         # Run the tests; the script will terminate upon the first error.
-        run(params)
+        run(params, config.dry_run)
         print("Test the project - done")
 
 def work(options: list[str]):
@@ -314,26 +247,71 @@ def work(options: list[str]):
         name = "vi_timing_" + suffix
         print(f"[START] {name}: {start.strftime('%H:%M:%S')}")
 
-        build_dir = os.path.join(path_to_build, "_build_" + suffix)
+        build_dir = (config.path_to_build / "_build_" / suffix)
         print(f"build_dir: \'{build_dir}\'")
         if os.path.exists(build_dir) and os.path.isdir(build_dir):
             shutil.rmtree(build_dir, onerror=remove_readonly)
 
-        configuring(build_dir, options)
-        build(build_dir)
-        testing(build_dir)
+        if not config.list_only:
+            configuring(build_dir, options)
+            build(build_dir)
+            testing(build_dir)
 
-        shutil.rmtree(build_dir, onerror=remove_readonly)
-        print(f"[FINISH] {counter}: {name} ["
+            if not config.dry_run:
+                shutil.rmtree(build_dir, onerror=remove_readonly)
+
+        print(f"[FINISH] {config.build_count}: {name} ["
             f"Elapsed: {format_duration((datetime.datetime.now() - start).total_seconds())} "
             f"(all: {format_duration((datetime.datetime.now() - START_ALL_TIME).total_seconds())})"
             "]\n")
         print("*" * 60)
 
-def main():
-    parse_params()
+# ---------------- CLI ----------------
 
-    global counter
+def parse_args() -> Config:
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        epilog = "Example usage:\n\tpython build_and_test.py -S . -B _tests -T _bin -C Release rf '\"\"'",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+
+    parser.add_argument("-S", "--path-to-source", type=pathlib.Path, metavar="<dir>", default=pathlib.Path("."), help="Explicitly specify a source directory.")
+    parser.add_argument("-B", "--path-to-build", type=pathlib.Path, metavar="<dir>", default=pathlib.Path("_tests"), help="Explicitly specify a build directory.")
+    parser.add_argument("-T", "--path-to-result", type=pathlib.Path, metavar="<dir>", default=pathlib.Path("bin"), help="Explicitly specify a target directory.")
+    parser.add_argument("-C", "--build-config", choices=["Release", "Debug"], default="Release", help="Choose configuration to test.")
+    parser.add_argument("filters", type=str, nargs="*", help="Build suffixes (e.g. 'rfm'). "
+            f"'{EMPTY}' or '\"\"' to pass an empty filter to Windows CMD. If omitted, all combos will be tested.")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    parser.add_argument("--list-only", action="store_true", help="List all combinations without building")
+    parser.add_argument("--dry-run", action="store_true", help="Show commands without executing them")
+
+    args = parser.parse_args()
+
+    source = args.path_to_source
+    if not source.is_absolute():
+        source = (PROJECT_ROOT / source).absolute()
+    if not source.exists() or not source.is_dir():
+        print(f"ERROR: Source directory '{source}' does not exist!")
+        exit(1)
+
+    build = args.path_to_build
+    if not build.is_absolute():
+        build = (PROJECT_ROOT / build).absolute()
+    folder_remake(build)
+
+    result = args.path_to_result
+    if not result.is_absolute():
+        result = (build / result).absolute()
+    folder_remake(result)
+
+    filters = ["" if f == EMPTY else f for f in args.filters]
+    return Config(source, build, result, args.build_config, filters, list_only=args.list_only, dry_run=args.dry_run)
+
+# ---------------- Main ----------------
+
+def main():
+    global config
+    config = parse_args()
 
     print(f"[START ALL]: {START_ALL_TIME.strftime('%H:%M:%S')}")
     print(f"Agrs: {sys.argv}")
@@ -348,18 +326,18 @@ def main():
         options = make_options(combo)
         suffix = make_suffix(options)
 
-        if skip_suffix(suffix, suffix_filters):
+        if skip_suffix(suffix, config.suffix_filters):
             continue
 
-        counter += 1
+        config.build_count += 1
         work(options)
 
-    print(f"All {counter} combinations have been successfully assembled and tested.")
+    print(f"All {config.build_count} combinations have been successfully assembled and tested.")
     print()
     print("Reminder:")
-    print(f"Source directory: \'{path_to_source}\'.")
-    print(f"Build directory: \'{path_to_build}\'.")
-    print(f"Target directory: \'{path_to_result}\'.")
+    print(f"Source directory: \'{config.path_to_source}\'.")
+    print(f"Build directory: \'{config.path_to_build}\'.")
+    print(f"Target directory: \'{config.path_to_result}\'.")
     print()
     print(f"[FINISH ALL] [Elapsed: {format_duration((datetime.datetime.now() - START_ALL_TIME).total_seconds())}].\n")
 
