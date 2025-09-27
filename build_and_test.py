@@ -331,13 +331,13 @@ def work(options: list[str]):
         print("*" * 60)
 
 def main():
+    parse_params()
+
     global counter
 
     print(f"[START ALL]: {START_ALL_TIME.strftime('%H:%M:%S')}")
     print(f"Agrs: {sys.argv}")
     print()
-
-    parse_params()
 
     # Iterate over all possible True/False combinations for each option
     for combo in itertools.product([False, True], repeat=len(OPTIONS)):
