@@ -274,7 +274,7 @@ def parse_args() -> Config:
 		path_to_result=result,
 		build_config=args.build_config,
 		suffix_filters=filters,
-		cmake_defines=args.cmake_defines,
+		cmake_defines=args.cmake_defines or [],
 		list_only=args.list_only,
 		dry_run=args.dry_run or args.list_only
 		)
