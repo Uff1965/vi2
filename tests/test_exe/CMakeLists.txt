@@ -57,18 +57,6 @@ if (VI_TM_ENABLE_TESTS)
     gtest_discover_tests(${PROJECT_NAME}
         DISCOVERY_TIMEOUT 30
     )
-
-    add_test(NAME ex_simple COMMAND 1ex_simple)
-    set_tests_properties(ex_simple
-    PROPERTIES
-        PASS_REGULAR_EXPRESSION "#  Name\.+:"
-    )
-    
-    add_test(NAME ex_disabled COMMAND 2ex_simple_disabled)
-#    set_tests_properties(ex_disabled
-#    PROPERTIES
-#        PASS_REGULAR_EXPRESSION "^Hello, World!"
-#    )
 endif()
 
 if (VI_TM_ENABLE_BENCHMARK)

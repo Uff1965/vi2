@@ -22,3 +22,15 @@ PROPERTIES
     OUTPUT_NAME_DEBUG "2ex_simple_disabled${VI_TM_NAME_SUFFIX}d${VI_TM_VER_SUFFIX}"
     OUTPUT_NAME_RELEASE "2ex_simple_disabled$<IF:$<BOOL:${VI_TM_NAME_SUFFIX}>,_${VI_TM_NAME_SUFFIX},>${VI_TM_VER_SUFFIX}"
 )
+
+add_test(NAME ex_simple COMMAND 1ex_simple)
+set_tests_properties(ex_simple
+PROPERTIES
+    PASS_REGULAR_EXPRESSION "#  Name\.+:"
+)
+    
+add_test(NAME ex_disabled COMMAND 2ex_simple_disabled)
+#    set_tests_properties(ex_disabled
+#    PROPERTIES
+#        PASS_REGULAR_EXPRESSION "^Hello, World!"
+#    )

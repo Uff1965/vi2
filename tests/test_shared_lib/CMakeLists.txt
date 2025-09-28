@@ -22,7 +22,7 @@ set(BUILD_SHARED_LIBS OFF) # Disable shared libraries for tests to ensure they a
 
 set(SOURCE_FILES)
 
-if (VI_TM_ENABLE_TESTS)
+if (VI_TM_ENABLE_TESTS OR VI_TM_ENABLE_BENCHMARK)
     set(FILE_GROUP)
     list(APPEND FILE_GROUP "../cmake/gtest.cmake")
     source_group("Extras" FILES ${FILE_GROUP})
@@ -36,10 +36,12 @@ if (VI_TM_ENABLE_TESTS)
 
     list(APPEND SOURCE_FILES ${FILE_GROUP})
 
+if (VI_TM_ENABLE_TESTS)
     target_link_libraries(${PROJECT_NAME}
     PRIVATE
         GTest::gtest
     )
+endif()
 
     target_compile_definitions(${PROJECT_NAME}
     PRIVATE

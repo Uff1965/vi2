@@ -121,7 +121,9 @@ namespace
 int main(int argc, char** argv)
 {
 	const auto gtest_arg = any_gtest_arg(argc, argv);
+#if VI_HAS_GTEST
 	::testing::InitGoogleTest(&argc, argv);
+#endif
 	if (!gtest_arg)
 	{	header(std::cout);
 		vi_WarmUp();
@@ -129,21 +131,27 @@ int main(int argc, char** argv)
 		endl(std::cout);
 	}
 
+#if VI_HAS_GTEST
 	if (const auto ret = RUN_ALL_TESTS(); gtest_arg || !!ret )
 	{	return ret;
 	}
+#endif
 
+#ifdef VI_HAS_GBENCHMARK
 	::benchmark::Initialize(&argc, argv);
 	if (::benchmark::ReportUnrecognizedArguments(argc, argv))
 	{	return 1;
 	}
+#endif
 
 	test_shared_lib_func();
 
+#ifdef VI_HAS_GBENCHMARK
 	endl(std::cout);
 	std::cout << "Benchmark:\n";
 	::benchmark::RunSpecifiedBenchmarks();
 	endl(std::cout);
+#endif
 
 	return 0;
 }

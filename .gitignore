@@ -404,3 +404,5 @@ FodyWeavers.xsd
 /out/build
 /src/version.out
 /include/vi_timing/vi_timing_version.h
+/vi2.pyproj
+/Testing/Temporary
