@@ -14,13 +14,13 @@ VI_TM("Global scope");
 int main()
 {	VI_TM_FUNC;
 
-	for (volatile int n = 0; n < CNT; ++n)
-	{	VI_TM_S(std::to_string(n).c_str());
+	for (volatile int n = 0; n < CNT; n = n + 1)
+	{	VI_TM(std::to_string(n).c_str());
 		volatile auto _ = fib(N);
 	}
 
 	VI_TM("Fib ext", CNT);
-	for (volatile int n = 0; n < CNT; ++n)
+	for (volatile int n = 0; n < CNT; n = n + 1)
 	{	VI_TM_S("Fib int");
 		volatile auto _ = fib(N);
 	}
