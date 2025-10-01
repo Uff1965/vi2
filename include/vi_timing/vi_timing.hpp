@@ -119,47 +119,74 @@ namespace vi_tm
 	// probe_t class: A RAII-style class for measuring code execution time.
 	// Unlike the API, this class is not thread-safe!!!
 	class probe_t
-	{	// Invariants:
+	{	// Signed type with the same size as VI_TM_SIZE
+		using signed_tm_size_t = std::make_signed_t<VI_TM_SIZE>;
+		struct paused_tag {};
+
+		// Invariants:
 		//  - meas_ is a non-owning handle; caller retains ownership and must ensure validity.
 		//  - cnt_ encodes state: >0 running (count = cnt_), <0 paused (count = -cnt_), 0 idle.
 		//  - start_ is meaningful only when cnt_ != 0 (running or paused).
 		VI_TM_HMEAS meas_{nullptr};
-		long long cnt_{0LL};
-		VI_TM_TICK start_{0}; // start_ must be the last member: initialization follows declaration order.
+		signed_tm_size_t cnt_{0};
+		VI_TM_TICK start_{VI_TM_TICK{ 0 }}; // Must be declared last - initializes after other members to minimize overhead between object construction and measurement start.
+
+		// Private constructor used by factory methods
+		explicit probe_t(paused_tag, VI_TM_HMEAS m, signed_tm_size_t cnt) noexcept
+		: meas_{ m }, cnt_{ cnt }
+		{	assert(!!meas_ && !!cnt_);
+		}
+		explicit probe_t(VI_TM_HMEAS m, signed_tm_size_t cnt) noexcept
+		: meas_{ m }, cnt_{ cnt }, start_{ cnt > 0 ? vi_tmGetTicks() : VI_TM_TICK{ 0 } }
+		{	assert(!!meas_ && !!cnt_);
+		}
 	public:
 		probe_t() = delete;
 		probe_t(const probe_t &) = delete;
-		void operator=(const probe_t &) = delete;
-		[[nodiscard]] explicit probe_t(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
-		:	meas_{ m },
-			cnt_{ static_cast<long long>(cnt)},
-			start_{ cnt > 0 ? vi_tmGetTicks() : 0LL }
-		{	assert(meas_);
+		probe_t& operator=(const probe_t &) = delete;
+
+		// === Factory methods ===
+
+		/// Create a running probe (started immediately).
+		[[nodiscard]] static probe_t make_running(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
+		{	assert(cnt != 0 && m);
+			return probe_t(m, static_cast<signed_tm_size_t>(cnt));
 		}
-		[[nodiscard]] explicit probe_t(std::true_type, VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
-		:	meas_{ m },
-			cnt_{ -static_cast<long long>(cnt)},
-			start_{ 0LL }
-		{	assert(meas_);
+
+		/// Create a paused probe (not started yet).
+		[[nodiscard]] static probe_t make_paused(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
+		{	assert(cnt != 0 && m);
+			return probe_t(paused_tag{}, m, -static_cast<signed_tm_size_t>(cnt));
 		}
+
+		// === Move support ===
+
 		probe_t(probe_t &&s) noexcept
 		:	meas_{std::exchange(s.meas_, nullptr)},
-			cnt_{std::exchange(s.cnt_, 0LL)},
-			start_{std::exchange(s.start_, 0)}
+			cnt_{ std::exchange(s.cnt_, signed_tm_size_t{ 0 }) },
+			start_{std::exchange(s.start_, VI_TM_TICK{ 0 })}
 		{
 		}
-		~probe_t() noexcept
-		{	stop();
-		}
-		[[nodiscard]] probe_t &operator =(probe_t &&s) noexcept
+
+		probe_t& operator =(probe_t &&s) noexcept
 		{	if (&s != this)
 			{	stop();
 				meas_ = std::exchange(s.meas_, nullptr);
-				cnt_ = std::exchange(s.cnt_, 0LL);
-				start_ = std::exchange(s.start_, 0);
+				cnt_ = std::exchange(s.cnt_, signed_tm_size_t{ 0 });
+				start_ = std::exchange(s.start_, VI_TM_TICK{ 0 });
 			}
 			return *this;
 		}
+
+		// === RAII cleanup ===
+
+		~probe_t() noexcept
+		{	stop();
+		}
+
+		// === Control ===
+
+		/// Pause a running probe (accumulate elapsed time).
 		void pause() noexcept
 		{	const auto t = vi_tmGetTicks();
 			assert(cnt_ > 0);
@@ -168,6 +195,8 @@ namespace vi_tm
 				cnt_ = -cnt_;
 			}
 		}
+
+		/// Resume a paused probe (continue from accumulated time).
 		void resume() noexcept
 		{	assert(cnt_ < 0);
 			if (cnt_ < 0)
@@ -175,17 +204,33 @@ namespace vi_tm
 				start_ = vi_tmGetTicks() - start_;
 			}
 		}
+
+		/// Stop probe and record measurement.
 		void stop() noexcept
-		{	const auto t = vi_tmGetTicks();
-			assert(!!meas_);
+		{	assert(!cnt_ || !!meas_);
 			if (cnt_ > 0)
-			{	vi_tmMeasurementAdd(meas_, t - start_, cnt_);
+			{	const auto t = vi_tmGetTicks(); // Read ticks first to avoid introducing measurement overhead in conditional branch
+				vi_tmMeasurementAdd(meas_, t - start_, cnt_);
 			}
 			else if (cnt_ < 0)
 			{	vi_tmMeasurementAdd(meas_, start_, -cnt_);
 			}
-			cnt_ = 0LL;
+			cnt_ = 0;
 		}
+
+		/// Obtaining the current accumulated time (for debugging/monitoring)
+		[[nodiscard]] VI_TM_TDIFF elapsed() const noexcept
+		{	if (cnt_ > 0)
+			{	return vi_tmGetTicks() - start_;
+			}
+			else if (cnt_ < 0)
+			{	return start_;
+			}
+			return VI_TM_TDIFF{ 0 };
+		}
+
+		// === State checks ===
+
 		[[nodiscard]] bool idle() const noexcept { return cnt_ == 0; }
 		[[nodiscard]] bool active() const noexcept { return cnt_ > 0; }
 		[[nodiscard]] bool paused() const noexcept { return cnt_ < 0; }
@@ -207,7 +252,7 @@ namespace vi_tm
 #	define VI_TM(...) \
 		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
 		{	const auto meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, name); \
-			return vi_tm::probe_t{meas, cnt}; \
+			return vi_tm::probe_t::make_running(meas, cnt); \
 		}(__VA_ARGS__)
 
 	/// <summary>
@@ -237,7 +282,7 @@ namespace vi_tm
 				assert(registered_name && 0 == std::strcmp(name, registered_name) && \
 					"One VI_TM macro cannot be reused with a different name value!"); \
 			) \
-			return vi_tm::probe_t{meas, cnt}; \
+			return vi_tm::probe_t::make_running(meas, cnt); \
 		}(__VA_ARGS__)
 
 	// This macro is used to create a probe_t object with the function name as the measurement name.

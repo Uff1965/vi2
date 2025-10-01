@@ -11,7 +11,7 @@
 using namespace std::chrono_literals;
 
 vi_tm::probe_t foo(VI_TM_HJOUR journal)
-{	return vi_tm::probe_t{vi_tmJournalGetMeas(journal, "start_stop_ext")};
+{	return vi_tm::probe_t::make_running(vi_tmJournalGetMeas(journal, "start_stop_ext"));
 }
 
 TEST(probe_t, start_stop)
@@ -21,7 +21,7 @@ TEST(probe_t, start_stop)
 	EXPECT_TRUE(start_stop_ext.active());
 
 	{	VI_TM("start_stop_VI_TM");
-		vi_tm::probe_t start_stop{ std::true_type{}, vi_tmJournalGetMeas(VI_TM_HGLOBAL, "start_stop") }; // Paused.
+		auto start_stop = vi_tm::probe_t::make_paused(vi_tmJournalGetMeas(VI_TM_HGLOBAL, "start_stop")); // Paused.
 		EXPECT_TRUE(start_stop.paused());
 
 		start_stop.resume();

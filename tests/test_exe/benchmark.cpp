@@ -47,7 +47,7 @@ static void BM_probe(benchmark::State &state)
 {	VI_TM_RESET("xxxx");
 	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
 	for (auto _ : state)
-	{	vi_tm::probe_t probe{ m };
+	{	auto probe = vi_tm::probe_t::make_running(m);
 	}
 }
 BENCHMARK(BM_probe);
@@ -55,7 +55,7 @@ BENCHMARK(BM_probe);
 static void BM_probe_ext(benchmark::State &state)
 {	VI_TM_RESET("xxxx");
 	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
-	vi_tm::probe_t probe{ std::true_type{}, m};
+	auto probe = vi_tm::probe_t::make_paused(m);
 	for (auto _ : state)
 	{	
 		probe.resume();
