@@ -152,13 +152,15 @@ namespace vi_tm
 
 		/// Create a running probe (started immediately).
 		[[nodiscard]] static probe_t make_running(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
-		{	assert(!!m && cnt != 0);
+		{	assert(!!m && cnt != 0 && cnt <= static_cast<std::uintmax_t>(std::numeric_limits<signed_tm_size_t>::max()));
+			// cnt must fit into signed_tm_size_t; caller is responsible for sane values.
 			return probe_t(m, cnt);
 		}
 
 		/// Create a paused probe (not started yet).
 		[[nodiscard]] static probe_t make_paused(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
-		{	assert(!!m && cnt != 0);
+		{	assert(!!m && cnt != 0 && cnt < static_cast<std::uintmax_t>(std::numeric_limits<signed_tm_size_t>::max()));
+			// cnt must fit into signed_tm_size_t; caller is responsible for sane values.
 			return probe_t(paused_tag{}, m, cnt);
 		}
 
@@ -168,7 +170,7 @@ namespace vi_tm
 		:	meas_{std::exchange(s.meas_, nullptr)},
 			cnt_{ std::exchange(s.cnt_, signed_tm_size_t{ 0 }) },
 			start_{std::exchange(s.start_, VI_TM_TICK{ 0 })}
-		{	assert(!!meas_ && !!cnt_);
+		{
 		}
 
 		probe_t& operator =(probe_t &&s) noexcept
@@ -177,7 +179,6 @@ namespace vi_tm
 				meas_ = std::exchange(s.meas_, nullptr);
 				cnt_ = std::exchange(s.cnt_, signed_tm_size_t{ 0 });
 				start_ = std::exchange(s.start_, VI_TM_TICK{ 0 });
-				assert(!!meas_ && !!cnt_);
 			}
 			return *this;
 		}
@@ -194,7 +195,7 @@ namespace vi_tm
 		void pause() noexcept
 		{	const auto t = vi_tmGetTicks();
 			assert(active());
-			if (active())
+			if (cnt_ > 0)
 			{	start_ = t - start_;
 				cnt_ = -cnt_;
 			}
@@ -203,7 +204,7 @@ namespace vi_tm
 		/// Resume a paused probe (continue from accumulated time).
 		void resume() noexcept
 		{	assert(paused());
-			if (paused())
+			if (cnt_ < 0)
 			{	cnt_ = -cnt_;
 				start_ = vi_tmGetTicks() - start_;
 			}
@@ -212,11 +213,11 @@ namespace vi_tm
 		/// Stop probe and record measurement.
 		void stop() noexcept
 		{	assert(!cnt_ || !!meas_);
-			if (active())
+			if (cnt_ > 0)
 			{	const auto t = vi_tmGetTicks(); // Read ticks first to avoid introducing measurement overhead in conditional branch
 				vi_tmMeasurementAdd(meas_, t - start_, cnt_);
 			}
-			else if (paused())
+			else if (cnt_ < 0)
 			{	vi_tmMeasurementAdd(meas_, start_, -cnt_);
 			}
 			cnt_ = 0;
@@ -227,7 +228,7 @@ namespace vi_tm
 		{	if (active())
 			{	return vi_tmGetTicks() - start_;
 			}
-			else if (paused())
+			else if (cnt_ < 0)
 			{	return start_;
 			}
 			return VI_TM_TDIFF{ 0 };
