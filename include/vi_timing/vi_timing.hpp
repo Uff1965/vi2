@@ -132,12 +132,15 @@ namespace vi_tm
 		VI_TM_TICK start_{VI_TM_TICK{ 0 }}; // Must be declared last - initializes after other members to minimize overhead between object construction and measurement start.
 
 		// Private constructor used by factory methods
-		explicit probe_t(paused_tag, VI_TM_HMEAS m, signed_tm_size_t cnt) noexcept
-		: meas_{ m }, cnt_{ cnt }
+		explicit probe_t(VI_TM_HMEAS m, VI_TM_SIZE cnt) noexcept
+		:	meas_{ m },
+			cnt_{ static_cast<signed_tm_size_t>(cnt) },
+			start_{ vi_tmGetTicks() }
 		{	assert(!!meas_ && !!cnt_);
 		}
-		explicit probe_t(VI_TM_HMEAS m, signed_tm_size_t cnt) noexcept
-		: meas_{ m }, cnt_{ cnt }, start_{ cnt > 0 ? vi_tmGetTicks() : VI_TM_TICK{ 0 } }
+		explicit probe_t(paused_tag, VI_TM_HMEAS m, VI_TM_SIZE cnt) noexcept
+		:	meas_{ m },
+			cnt_{ -static_cast<signed_tm_size_t>(cnt) }
 		{	assert(!!meas_ && !!cnt_);
 		}
 	public:
@@ -149,14 +152,14 @@ namespace vi_tm
 
 		/// Create a running probe (started immediately).
 		[[nodiscard]] static probe_t make_running(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
-		{	assert(cnt != 0 && m);
-			return probe_t(m, static_cast<signed_tm_size_t>(cnt));
+		{	assert(!!m && cnt != 0);
+			return probe_t(m, cnt);
 		}
 
 		/// Create a paused probe (not started yet).
 		[[nodiscard]] static probe_t make_paused(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
-		{	assert(cnt != 0 && m);
-			return probe_t(paused_tag{}, m, -static_cast<signed_tm_size_t>(cnt));
+		{	assert(!!m && cnt != 0);
+			return probe_t(paused_tag{}, m, cnt);
 		}
 
 		// === Move support ===
@@ -165,7 +168,7 @@ namespace vi_tm
 		:	meas_{std::exchange(s.meas_, nullptr)},
 			cnt_{ std::exchange(s.cnt_, signed_tm_size_t{ 0 }) },
 			start_{std::exchange(s.start_, VI_TM_TICK{ 0 })}
-		{
+		{	assert(!!meas_ && !!cnt_);
 		}
 
 		probe_t& operator =(probe_t &&s) noexcept
@@ -174,6 +177,7 @@ namespace vi_tm
 				meas_ = std::exchange(s.meas_, nullptr);
 				cnt_ = std::exchange(s.cnt_, signed_tm_size_t{ 0 });
 				start_ = std::exchange(s.start_, VI_TM_TICK{ 0 });
+				assert(!!meas_ && !!cnt_);
 			}
 			return *this;
 		}
@@ -189,8 +193,8 @@ namespace vi_tm
 		/// Pause a running probe (accumulate elapsed time).
 		void pause() noexcept
 		{	const auto t = vi_tmGetTicks();
-			assert(cnt_ > 0);
-			if (cnt_ > 0)
+			assert(active());
+			if (active())
 			{	start_ = t - start_;
 				cnt_ = -cnt_;
 			}
@@ -198,8 +202,8 @@ namespace vi_tm
 
 		/// Resume a paused probe (continue from accumulated time).
 		void resume() noexcept
-		{	assert(cnt_ < 0);
-			if (cnt_ < 0)
+		{	assert(paused());
+			if (paused())
 			{	cnt_ = -cnt_;
 				start_ = vi_tmGetTicks() - start_;
 			}
@@ -208,11 +212,11 @@ namespace vi_tm
 		/// Stop probe and record measurement.
 		void stop() noexcept
 		{	assert(!cnt_ || !!meas_);
-			if (cnt_ > 0)
+			if (active())
 			{	const auto t = vi_tmGetTicks(); // Read ticks first to avoid introducing measurement overhead in conditional branch
 				vi_tmMeasurementAdd(meas_, t - start_, cnt_);
 			}
-			else if (cnt_ < 0)
+			else if (paused())
 			{	vi_tmMeasurementAdd(meas_, start_, -cnt_);
 			}
 			cnt_ = 0;
@@ -220,10 +224,10 @@ namespace vi_tm
 
 		/// Obtaining the current accumulated time (for debugging/monitoring)
 		[[nodiscard]] VI_TM_TDIFF elapsed() const noexcept
-		{	if (cnt_ > 0)
+		{	if (active())
 			{	return vi_tmGetTicks() - start_;
 			}
-			else if (cnt_ < 0)
+			else if (paused())
 			{	return start_;
 			}
 			return VI_TM_TDIFF{ 0 };
