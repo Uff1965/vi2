@@ -43,6 +43,37 @@ static void BM_vi_tmGetTicks(benchmark::State& state) {
 }
 BENCHMARK(BM_vi_tmGetTicks);
 
+static void BM_probe(benchmark::State &state)
+{	VI_TM_RESET("xxxx");
+	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+	for (auto _ : state)
+	{	vi_tm::probe_t probe{ m };
+	}
+}
+BENCHMARK(BM_probe);
+
+static void BM_probe_ext(benchmark::State &state)
+{	VI_TM_RESET("xxxx");
+	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+	for (auto _ : state)
+	{	vi_tm::probe_t probe{ m };
+	}
+}
+BENCHMARK(BM_probe_ext);
+
+static void BM_probe_ext_pr(benchmark::State &state)
+{	VI_TM_RESET("xxxx");
+	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+	vi_tm::probe_t probe{ std::true_type{}, m};
+	for (auto _ : state)
+	{	
+		probe.resume();
+		probe.pause();
+	}
+	probe.stop();
+}
+BENCHMARK(BM_probe_ext_pr);
+
 static void BM_vi_tm(benchmark::State& state) {
 	VI_TM_RESET("xxxx");
     for (auto _ : state) {

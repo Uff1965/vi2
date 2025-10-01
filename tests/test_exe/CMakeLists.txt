@@ -31,6 +31,7 @@ if (VI_TM_ENABLE_TESTS)
     list(APPEND SOURCE_FILES ${FILE_GROUP})
 
     set(FILE_GROUP
+        "start_stop.cpp"
         "test.h"
         "test_filename.cpp"
         "test_format.cpp"

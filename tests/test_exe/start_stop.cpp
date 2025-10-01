@@ -1,0 +1,53 @@
+// This is an independent project of an individual developer. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
+#include <vi_timing/vi_timing.hpp>
+
+#include <gtest/gtest.h>
+
+#include <chrono>
+#include <thread>
+
+using namespace std::chrono_literals;
+
+vi_tm::probe_t foo(VI_TM_HJOUR journal)
+{	return vi_tm::probe_t{vi_tmJournalGetMeas(journal, "start_stop_ext")};
+}
+
+TEST(probe_t, start_stop)
+{
+	// "When a reference is bound to a temporary object, the temporary object's lifetime is extended to match the lifetime of the reference
+	const auto &&start_stop_ext = foo(VI_TM_HGLOBAL);
+	EXPECT_TRUE(start_stop_ext.active());
+
+	{	VI_TM("start_stop_VI_TM");
+		vi_tm::probe_t start_stop{ std::true_type{}, vi_tmJournalGetMeas(VI_TM_HGLOBAL, "start_stop") }; // Paused.
+		EXPECT_TRUE(start_stop.paused());
+
+		start_stop.resume();
+		EXPECT_TRUE(start_stop.active());
+
+		std::this_thread::sleep_for(100ms);
+		for (int n = 0; n < 5; n++)
+		{
+			start_stop.pause();
+			EXPECT_TRUE(start_stop.paused());
+
+			std::this_thread::sleep_for(100ms);
+			start_stop.resume();
+			EXPECT_TRUE(start_stop.active());
+		}
+		std::this_thread::sleep_for(100ms);
+		start_stop.stop();
+		EXPECT_TRUE(start_stop.idle());
+
+		std::this_thread::sleep_for(100ms);
+	}
+
+	std::this_thread::sleep_for(100ms);
+	EXPECT_TRUE(start_stop_ext.active());
+
+	// start_stop -> ~200 ms
+	// start_stop_VI_TM -> ~800 ms
+	// start_stop_ext -> ~900 ms
+}

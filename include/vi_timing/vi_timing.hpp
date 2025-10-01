@@ -25,10 +25,13 @@
 #	include "vi_timing.h"
 #	include "vi_timing_aux.h"
 
-#define VI_ID __LINE__
 #define VI_STR_CONCAT_AUX( a, b ) a##b
 #define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
-#define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, VI_ID )
+#ifdef __COUNTER__
+#	define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, __COUNTER__ )
+#else
+#	define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, __LINE__ )
+#endif
 
 #ifdef VI_TM_DISABLE
 	// Fallback macros for timing functions
@@ -44,6 +47,7 @@
 #		include <cassert>
 #		include <cstring>
 #		include <string>
+#		include <type_traits>
 #		include <utility>
 
 // By default, Visual Studio always returns the value 199711L for the __cplusplus preprocessor macro.
@@ -54,6 +58,14 @@
 
 namespace vi_tm
 {
+	inline std::string to_string(double val, unsigned char sig = 2U, unsigned char dec = 1U)
+	{	std::string result;
+		result.resize(sig + (9 + 1 + 1), '\0'); // "-00S.Se-308"
+		const auto len = vi_tmF2A(result.data(), result.size(), val, sig, dec);
+		result.resize(len - 1U);
+		return result;
+	}
+
 	class init_t
 	{
 		std::string title_ = "Timing report:\n";
@@ -107,64 +119,77 @@ namespace vi_tm
 	// probe_t class: A RAII-style class for measuring code execution time.
 	// Unlike the API, this class is not thread-safe!!!
 	class probe_t
-	{	VI_TM_HMEAS meas_ = nullptr;
-		VI_TM_SIZE cnt_ = 0U;
-		VI_TM_TICK start_ = 0U; // Order matters!!! 'start_' must be initialized last!
+	{	// Invariants:
+		//  - meas_ is a non-owning handle; caller retains ownership and must ensure validity.
+		//  - cnt_ encodes state: >0 running (count = cnt_), <0 paused (count = -cnt_), 0 idle.
+		//  - start_ is meaningful only when cnt_ != 0 (running or paused).
+		VI_TM_HMEAS meas_{nullptr};
+		long long cnt_{0LL};
+		VI_TM_TICK start_{0}; // start_ must be the last member: initialization follows declaration order.
 	public:
 		probe_t() = delete;
 		probe_t(const probe_t &) = delete;
-		probe_t(probe_t &&src) noexcept
-		:	meas_{ std::exchange(src.meas_, nullptr) },
-			cnt_{ std::exchange(src.cnt_, 0U) },
-			start_{ src.start_ }
-		{	assert(meas_);
-		}
-		explicit probe_t(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
-		:	meas_{ m },
-			cnt_{ cnt }
-		{	assert(meas_);
-			if (cnt_)
-			{	start_ = vi_tmGetTicks();
-			}
-		}
-		~probe_t() { finish(); }
 		void operator=(const probe_t &) = delete;
-		probe_t &operator=(probe_t &&src) noexcept
-		{	if (this != &src)
-			{	meas_ = std::exchange(src.meas_, nullptr);
-				cnt_ = std::exchange(src.cnt_, 0U);
-				start_ = src.start_;
+		[[nodiscard]] explicit probe_t(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
+		:	meas_{ m },
+			cnt_{ static_cast<long long>(cnt)},
+			start_{ cnt > 0 ? vi_tmGetTicks() : 0LL }
+		{	assert(meas_);
+		}
+		[[nodiscard]] explicit probe_t(std::true_type, VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
+		:	meas_{ m },
+			cnt_{ -static_cast<long long>(cnt)},
+			start_{ 0LL }
+		{	assert(meas_);
+		}
+		probe_t(probe_t &&s) noexcept
+		:	meas_{std::exchange(s.meas_, nullptr)},
+			cnt_{std::exchange(s.cnt_, 0LL)},
+			start_{std::exchange(s.start_, 0)}
+		{
+		}
+		~probe_t() noexcept
+		{	stop();
+		}
+		[[nodiscard]] probe_t &operator =(probe_t &&s) noexcept
+		{	if (&s != this)
+			{	stop();
+				meas_ = std::exchange(s.meas_, nullptr);
+				cnt_ = std::exchange(s.cnt_, 0LL);
+				start_ = std::exchange(s.start_, 0);
 			}
-			assert(meas_);
 			return *this;
-		};
-		bool is_active() const noexcept
-		{	return 0U != cnt_;
 		}
-		void start(VI_TM_SIZE cnt = 1U) noexcept
-		{	assert(!is_active() && 0U != cnt); // Ensure that the measurer is not already running and that a valid cnt is provided.
-			cnt_ = cnt;
-			start_ = vi_tmGetTicks(); // Reset start time.
-		}
-		void stop() noexcept // Stop the measurer without saved time.
-		{	cnt_ = 0U;
-		}
-		void finish()
-		{	if (is_active())
-			{	const auto finish = vi_tmGetTicks();
-				vi_tmMeasurementAdd(meas_, finish - start_, cnt_);
-				cnt_ = 0;
+		void pause() noexcept
+		{	const auto t = vi_tmGetTicks();
+			assert(cnt_ > 0);
+			if (cnt_ > 0)
+			{	start_ = t - start_;
+				cnt_ = -cnt_;
 			}
 		}
-	}; // class probe_t
-
-	inline std::string to_string(double val, unsigned char sig = 2U, unsigned char dec = 1U)
-	{	std::string result;
-		result.resize(sig + (9 + 1 + 1), '\0'); // "-00S.Se-308"
-		const auto len = vi_tmF2A(result.data(), result.size(), val, sig, dec);
-		result.resize(len - 1U);
-		return result;
-	}
+		void resume() noexcept
+		{	assert(cnt_ < 0);
+			if (cnt_ < 0)
+			{	cnt_ = -cnt_;
+				start_ = vi_tmGetTicks() - start_;
+			}
+		}
+		void stop() noexcept
+		{	const auto t = vi_tmGetTicks();
+			assert(!!meas_);
+			if (cnt_ > 0)
+			{	vi_tmMeasurementAdd(meas_, t - start_, cnt_);
+			}
+			else if (cnt_ < 0)
+			{	vi_tmMeasurementAdd(meas_, start_, -cnt_);
+			}
+			cnt_ = 0LL;
+		}
+		[[nodiscard]] bool idle() const noexcept { return cnt_ == 0; }
+		[[nodiscard]] bool active() const noexcept { return cnt_ > 0; }
+		[[nodiscard]] bool paused() const noexcept { return cnt_ < 0; }
+	};
 } // namespace vi_tm
 
 // Initializes the global journal and sets up the report callback.
