@@ -36,6 +36,7 @@ if (VI_TM_ENABLE_TESTS)
         "test_filename.cpp"
         "test_format.cpp"
         "test_misc.cpp"
+        "test_probe.cpp"
         "test_timing.cpp"
     )
 
