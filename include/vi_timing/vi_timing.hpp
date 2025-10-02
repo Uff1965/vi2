@@ -225,7 +225,7 @@ namespace vi_tm
 
 		/// Obtaining the current accumulated time (for debugging/monitoring)
 		[[nodiscard]] VI_TM_TDIFF elapsed() const noexcept
-		{	if (active())
+		{	if (cnt_ > 0)
 			{	return vi_tmGetTicks() - start_;
 			}
 			else if (cnt_ < 0)
