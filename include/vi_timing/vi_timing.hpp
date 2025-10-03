@@ -220,7 +220,7 @@ namespace vi_tm
 			else if (cnt_ < 0)
 			{	vi_tmMeasurementAdd(meas_, start_, -cnt_);
 			}
-			cnt_ = 0;
+			cnt_ = 0; // Set idle state.
 		}
 
 		/// Obtaining the current accumulated time (for debugging/monitoring)

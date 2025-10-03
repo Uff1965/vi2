@@ -129,8 +129,8 @@
 #		define VI_TM_API
 #	endif
 #else
-#	define VI_SYS_CALL
 #	define VI_TM_DISABLE "Unknown compiler!"
+#	define VI_SYS_CALL
 #	define VI_TM_CALL
 #	define VI_TM_API
 #endif
@@ -191,7 +191,7 @@ typedef uint32_t VI_TM_FLAGS;
 typedef double VI_TM_FP; // Floating-point type used for timing calculations, typically double precision.
 typedef size_t VI_TM_SIZE; // Size type used for counting events, typically size_t.
 typedef uint64_t VI_TM_TICK; // !!! UNSIGNED !!! Represents a tick count (typically from a high-resolution timer).
-typedef VI_TM_TICK VI_TM_TDIFF; // !!! UNSIGNED !!! Represents a difference between two tick counts (duration).
+typedef VI_TM_TICK VI_TM_TDIFF; // !!! UNSIGNED !!! Represents a difference between two tick counts (duration). Do NOT compare to zero as signed. If a signed value is needed (e.g. for debugging/printing), cast explicitly.
 typedef struct vi_tmMeasurement_t *VI_TM_HMEAS; // Opaque handle to a measurement entry.
 typedef struct vi_tmMeasurementsJournal_t *VI_TM_HJOUR; // Opaque handle to a measurements journal.
 typedef VI_TM_RESULT (VI_TM_CALL *vi_tmMeasEnumCb_t)(VI_TM_HMEAS meas, void* ctx); // Callback type for enumerating measurements; returning non-zero aborts enumeration.
@@ -246,7 +246,7 @@ typedef enum vi_tmReportFlags_e
 	vi_tmSortByName		= 0x01, // If set, the report will be sorted by measurement name.
 	vi_tmSortBySpeed	= 0x02, // If set, the report will be sorted by average time per event (speed).
 	vi_tmSortByAmount	= 0x03, // If set, the report will be sorted by the number of events measured.
-	vi_tmSortMask		= vi_tmSortByTime | vi_tmSortByName | vi_tmSortBySpeed | vi_tmSortByAmount,
+	vi_tmSortMask		= 0x03,
 
 	vi_tmSortAscending			= 1 << 3, // If set, the report will be sorted in ascending order.
 
@@ -261,14 +261,14 @@ typedef enum vi_tmReportFlags_e
 	vi_tmHideHeader				= 1 << 10, // If set, the report will not show the header with column names.
 	vi_tmDoNotSubtractOverhead	= 1 << 11, // If set, the overhead is not subtracted from the measured time in report.
 
-	vi_tmReportDefault			= vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByTime,
 	vi_tmReportFlagsMask		= 0x0FFF,
+	vi_tmReportDefault			= vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByTime,
 } vi_tmReportFlags_e;
 
 typedef enum vi_tmInitFlags_e
 {	vi_tmInitWarmup			= 1 << 0,
 	vi_tmInitThreadYield	= 1 << 1,
-	vi_tmInitFlagsMask		= vi_tmInitWarmup | vi_tmInitThreadYield,
+	vi_tmInitFlagsMask		= 0x03,
 } vi_tmInitFlags_e;
 
 typedef enum vi_tmStatus_e
@@ -280,7 +280,7 @@ typedef enum vi_tmStatus_e
 	vi_tmStatUseRMSE	= 1 << 4,
 	vi_tmStatUseFilter	= 1 << 5,
 	vi_tmStatUseMinMax	= 1 << 6,
-	vi_tmStatusMask		= 0x007F,
+	vi_tmStatusMask		= 0x7F,
 } vi_tmStatus_e;
 
 #define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global journal handle, used for global measurements.

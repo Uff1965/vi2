@@ -49,59 +49,59 @@
 
 namespace
 {
+	// A simple test handle value used as the measurement handle in tests.
+	VI_TM_HMEAS const TEST_MEAS = reinterpret_cast<VI_TM_HMEAS>(0x1234);
+	VI_TM_HMEAS const UNDEF_MEAS = reinterpret_cast<VI_TM_HMEAS>(0xBAADF00D);
+	VI_TM_TDIFF constexpr UNDEF_DIFF = VI_TM_TDIFF{ 0xBAADF00D };
+	VI_TM_SIZE constexpr UNDEF_SIZE = VI_TM_SIZE{ 0xBAADF00D };
+
 	// Controlled tick counter used by tests. Use plain atomic to be safe across threads.
-	static std::atomic<VI_TM_TICK> g_ticks{ VI_TM_TICK{ 0 } };
+	VI_TM_TICK g_ticks{ VI_TM_TICK{ 0 } };
 	// Helpers to manipulate the fake tick source from tests.
-	static void set_ticks(VI_TM_TICK t) noexcept { g_ticks.store(t, std::memory_order_relaxed); }
-	static void advance_ticks(VI_TM_TDIFF delta) noexcept { g_ticks.fetch_add(delta, std::memory_order_relaxed); }
+	void set_ticks(VI_TM_TICK t) noexcept { g_ticks = t; }
+	void advance_ticks(VI_TM_TDIFF delta) noexcept { g_ticks += delta; }
 
 	// Last measurement observed by the fake vi_tmMeasurementAdd_fake.
 	// Stored as atomic-friendly integer / pointer types.
-	static std::atomic<VI_TM_HMEAS> g_last_meas{ nullptr };
-	static std::atomic<VI_TM_TDIFF> g_last_dur{ VI_TM_TDIFF{ 0 } };
-	static std::atomic<VI_TM_SIZE> g_last_cnt{ VI_TM_SIZE{ 0 } };
-
-	// Test implementations of the C API functions.
-	// The signatures must match exactly the declarations in vi_timing_c.h.
-	// The linker will prefer these definitions in the test binary.
-	extern "C" VI_TM_TICK VI_TM_CALL vi_tmGetTicks_fake(void) VI_NOEXCEPT
-	{
-		return g_ticks.load(std::memory_order_relaxed);
-	}
-
-	extern "C" void VI_TM_CALL vi_tmMeasurementAdd_fake(VI_TM_HMEAS m, VI_TM_TDIFF dur, VI_TM_SIZE cnt) VI_NOEXCEPT
-	{
-		// Record the values for assertions in tests.
-		g_last_meas.store(m, std::memory_order_relaxed);
-		g_last_dur.store(dur, std::memory_order_relaxed);
-		g_last_cnt.store(cnt, std::memory_order_relaxed);
-	}
+	VI_TM_HMEAS g_last_meas = UNDEF_MEAS;
+	VI_TM_TDIFF g_last_dur{ UNDEF_DIFF };
+	VI_TM_SIZE g_last_cnt{ UNDEF_SIZE };
 
 	// Clear recorded measurement state between tests.
-	static void clear_last_measurement() noexcept
-	{
-		g_last_meas.store(nullptr, std::memory_order_relaxed);
-		g_last_dur.store(VI_TM_TDIFF{ 0 }, std::memory_order_relaxed);
-		g_last_cnt.store(VI_TM_SIZE{ 0 }, std::memory_order_relaxed);
+	void clear_last_measurement() noexcept
+	{	g_last_meas = UNDEF_MEAS;
+		g_last_dur = UNDEF_DIFF;
+		g_last_cnt = UNDEF_SIZE;
 	}
 
-	// A simple test handle value used as the measurement handle in tests.
-	static VI_TM_HMEAS const TEST_MEAS = reinterpret_cast<VI_TM_HMEAS>(0x1234);
+	// ---------------------------------------------------------------------------
+	// Test fixture
+	// ---------------------------------------------------------------------------
+
+	struct ProbeTest : ::testing::Test {
+		void SetUp() override {
+			clear_last_measurement();
+			set_ticks(VI_TM_TICK{0});
+		}
+		void TearDown() override {
+			clear_last_measurement();
+		}
+	};
 }
 
-// ---------------------------------------------------------------------------
-// Test fixture
-// ---------------------------------------------------------------------------
+// Test implementations of the C API functions.
+// The signatures must match exactly the declarations in vi_timing_c.h.
+// The linker will prefer these definitions in the test binary.
+extern "C" VI_TM_TICK VI_TM_CALL vi_tmGetTicks_fake(void) VI_NOEXCEPT
+{	return g_ticks;
+}
 
-struct ProbeTest : ::testing::Test {
-	void SetUp() override {
-		clear_last_measurement();
-		set_ticks(VI_TM_TICK{0});
-	}
-	void TearDown() override {
-		clear_last_measurement();
-	}
-};
+extern "C" void VI_TM_CALL vi_tmMeasurementAdd_fake(VI_TM_HMEAS m, VI_TM_TDIFF dur, VI_TM_SIZE cnt) VI_NOEXCEPT
+{	// Record the values for assertions in tests.
+	g_last_meas = m;
+	g_last_dur = dur;
+	g_last_cnt = cnt;
+}
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -117,17 +117,17 @@ TEST_F(ProbeTest, StartStopRecordsDurationAndCount) {
 	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{50});
 	p.stop();
 	EXPECT_TRUE(p.idle());
-	EXPECT_EQ(g_last_meas.load(std::memory_order_relaxed), TEST_MEAS);
-	EXPECT_EQ(g_last_dur.load(std::memory_order_relaxed), VI_TM_TDIFF{50});
-	EXPECT_EQ(g_last_cnt.load(std::memory_order_relaxed), VI_TM_SIZE{3});
+	EXPECT_EQ(g_last_meas, TEST_MEAS);
+	EXPECT_EQ(g_last_dur, VI_TM_TDIFF{50});
+	EXPECT_EQ(g_last_cnt, VI_TM_SIZE{3});
 
 	// Stopping again must be a no-op.
 	clear_last_measurement();
 	p.stop();
 	EXPECT_TRUE(p.idle());
-	EXPECT_EQ(g_last_meas.load(std::memory_order_relaxed), nullptr);
-	EXPECT_EQ(g_last_dur.load(std::memory_order_relaxed), VI_TM_TDIFF{0});
-	EXPECT_EQ(g_last_cnt.load(std::memory_order_relaxed), VI_TM_SIZE{0});
+	EXPECT_EQ(g_last_meas, UNDEF_MEAS);
+	EXPECT_EQ(g_last_dur, UNDEF_DIFF);
+	EXPECT_EQ(g_last_cnt, UNDEF_SIZE);
 }
 TEST_F(ProbeTest, PauseAccumulatesAndResumeContinues) {
 	// Run, pause, resume, and stop; total duration should be sum of parts.
@@ -142,11 +142,13 @@ TEST_F(ProbeTest, PauseAccumulatesAndResumeContinues) {
 	advance_ticks(VI_TM_TDIFF{3}); // tick source jumps while paused
 	p.resume();
 	EXPECT_TRUE(p.active());
+	EXPECT_EQ(p.elapsed(), 7);
 	advance_ticks(VI_TM_TDIFF{5});
 	p.stop();
-	EXPECT_EQ(g_last_meas.load(std::memory_order_relaxed), TEST_MEAS);
-	EXPECT_EQ(g_last_dur.load(std::memory_order_relaxed), VI_TM_TDIFF{12}); // 7 + 5
-	EXPECT_EQ(g_last_cnt.load(std::memory_order_relaxed), VI_TM_SIZE{2});
+	EXPECT_TRUE(p.idle());
+	EXPECT_EQ(g_last_meas, TEST_MEAS);
+	EXPECT_EQ(g_last_dur, VI_TM_TDIFF{12}); // 7 + 5
+	EXPECT_EQ(g_last_cnt, VI_TM_SIZE{2});
 }
 TEST_F(ProbeTest, PausedStopRecordsAccumulated) {
 	// Pause without resume, then stop should record the accumulated time.
@@ -155,9 +157,9 @@ TEST_F(ProbeTest, PausedStopRecordsAccumulated) {
 	advance_ticks(VI_TM_TDIFF{8});
 	p.pause();
 	p.stop();
-	EXPECT_EQ(g_last_meas.load(std::memory_order_relaxed), TEST_MEAS);
-	EXPECT_EQ(g_last_dur.load(std::memory_order_relaxed), VI_TM_TDIFF{8});
-	EXPECT_EQ(g_last_cnt.load(std::memory_order_relaxed), VI_TM_SIZE{1});
+	EXPECT_EQ(g_last_meas, TEST_MEAS);
+	EXPECT_EQ(g_last_dur, VI_TM_TDIFF{8});
+	EXPECT_EQ(g_last_cnt, VI_TM_SIZE{1});
 }
 
 TEST_F(ProbeTest, ElapsedReflectsRunningPausedIdle) {
@@ -191,9 +193,9 @@ TEST_F(ProbeTest, MoveConstructionTransfersOwnershipAndDoesNotDoubleRecord) {
 
 	// Stopping 'b' should record a single measurement.
 	b.stop();
-	EXPECT_EQ(g_last_meas.load(std::memory_order_relaxed), TEST_MEAS);
-	EXPECT_EQ(g_last_dur.load(std::memory_order_relaxed), VI_TM_TDIFF{5});
-	EXPECT_EQ(g_last_cnt.load(std::memory_order_relaxed), VI_TM_SIZE{2});
+	EXPECT_EQ(g_last_meas, TEST_MEAS);
+	EXPECT_EQ(g_last_dur, VI_TM_TDIFF{5});
+	EXPECT_EQ(g_last_cnt, VI_TM_SIZE{2});
 }
 
 TEST_F(ProbeTest, MoveAssignmentStopsTargetBeforeOverwrite) {
@@ -209,9 +211,9 @@ TEST_F(ProbeTest, MoveAssignmentStopsTargetBeforeOverwrite) {
 	b = std::move(a);
 
 	// The measurement recorded by the stop inside operator= must reflect the previous target ('b').
-	EXPECT_EQ(g_last_cnt.load(std::memory_order_relaxed), VI_TM_SIZE{2});
-	EXPECT_EQ(g_last_dur.load(std::memory_order_relaxed), VI_TM_TDIFF{7});
-	EXPECT_NE(g_last_meas.load(std::memory_order_relaxed), nullptr);
+	EXPECT_EQ(g_last_cnt, VI_TM_SIZE{2});
+	EXPECT_EQ(g_last_dur, VI_TM_TDIFF{7});
+	EXPECT_NE(g_last_meas, nullptr);
 	EXPECT_TRUE(b.active());
 	EXPECT_TRUE(a.idle());
 
@@ -220,9 +222,9 @@ TEST_F(ProbeTest, MoveAssignmentStopsTargetBeforeOverwrite) {
 	advance_ticks(VI_TM_TDIFF{1}); // advance so duration increases from 3 to 4
 	b.stop();
 
-	EXPECT_EQ(g_last_meas.load(std::memory_order_relaxed), TEST_MEAS);
-	EXPECT_EQ(g_last_dur.load(std::memory_order_relaxed), VI_TM_TDIFF{11});
-	EXPECT_EQ(g_last_cnt.load(std::memory_order_relaxed), VI_TM_SIZE{1});
+	EXPECT_EQ(g_last_meas, TEST_MEAS);
+	EXPECT_EQ(g_last_dur, VI_TM_TDIFF{11});
+	EXPECT_EQ(g_last_cnt, VI_TM_SIZE{1});
 }
 
 #ifndef NDEBUG
@@ -231,7 +233,11 @@ TEST_F(ProbeTest, DoublePauseTriggersDebugAssert) {
 	// Debug-only assert behavior. Adjust EXPECT_DEATH regex if your runtime prints something specific.
 	auto p = vi_tm::probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
 	p.pause();
+	EXPECT_TRUE(p.paused());
 	EXPECT_DEATH({ p.pause(); }, ".*");
+	p.resume();
+	EXPECT_TRUE(p.active());
+	EXPECT_DEATH({ p.resume(); }, ".*");
 	errno = 0;
 }
 #endif
@@ -244,5 +250,5 @@ TEST_F(ProbeTest, StopOnIdleDoesNotRecord) {
 	clear_last_measurement();
 	// Subsequent stop must be a no-op.
 	p.stop();
-	EXPECT_EQ(g_last_meas.load(std::memory_order_relaxed), nullptr);
+	EXPECT_EQ(g_last_meas, UNDEF_MEAS);
 }
