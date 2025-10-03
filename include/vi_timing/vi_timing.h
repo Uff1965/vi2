@@ -180,8 +180,12 @@ extern "C" {
 #	define VI_NODISCARD [[nodiscard]]
 #	define VI_NOEXCEPT noexcept
 #	define VI_DEFAULT(v) =(v)
-#else
+#elif __GNUC__
 #	define VI_NODISCARD __attribute__((warn_unused_result))
+#	define VI_NOEXCEPT
+#	define VI_DEFAULT(v)
+#else
+#	define VI_NODISCARD
 #	define VI_NOEXCEPT
 #	define VI_DEFAULT(v)
 #endif
