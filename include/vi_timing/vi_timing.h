@@ -181,7 +181,7 @@ extern "C" {
 #	define VI_NOEXCEPT noexcept
 #	define VI_DEFAULT(v) =(v)
 #else
-#	define VI_NODISCARD
+#	define VI_NODISCARD __attribute__((warn_unused_result))
 #	define VI_NOEXCEPT
 #	define VI_DEFAULT(v)
 #endif
