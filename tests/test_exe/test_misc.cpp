@@ -12,7 +12,7 @@
 
 TEST_F(ViTimingJournalFixture, measurement)
 {   const char name[] = "test_entry";
-	vi_tmMeasurementStats_t stats{};
+	vi_tmStats_t stats{};
 	const char *pname = nullptr;
 
 	const auto meas = vi_tmJournalGetMeas(journal(), name);
@@ -46,7 +46,7 @@ TEST_F(ViTimingJournalFixture, Journal)
     }
 
     // Get measurement statistics
-    vi_tmMeasurementStats_t stats{};
+    vi_tmStats_t stats{};
     vi_tmMeasurementGet(meas, nullptr, &stats);
     EXPECT_EQ(stats.calls_, CNT) << "Number of calls should be " << CNT;
 #if VI_TM_STAT_USE_RAW

@@ -131,7 +131,7 @@ namespace
 	/// meterage_t is a class for collecting and managing timing measurement statistics.
 	/// </summary>
 	/// <remarks>
-	/// This class encapsulates a vi_tmMeasurementStats_t structure, which stores statistics such as
+	/// This class encapsulates a vi_tmStats_t structure, which stores statistics such as
 	/// the number of calls, total and filtered event counts, sum of durations, minimum/maximum/average
 	/// values, and variance.
 	/// <para>
@@ -151,14 +151,14 @@ namespace
 	/// The class is aligned to the hardware cache line size to minimize false sharing in multithreaded scenarios.
 	/// </para>
 	class alignas(hardware_constructive_interference_size) meterage_t
-	{	static_assert(std::is_standard_layout_v<vi_tmMeasurementStats_t>); // Ensure standard layout for compatibility with C.
-		vi_tmMeasurementStats_t stats_;
+	{	static_assert(std::is_standard_layout_v<vi_tmStats_t>); // Ensure standard layout for compatibility with C.
+		vi_tmStats_t stats_;
 		VI_TM_THREADSAFE_ONLY(mutable adaptive_mutex_t mtx_);
 	public:
 		meterage_t() noexcept { vi_tmStatsReset(&stats_); }
 		void add(VI_TM_TDIFF val, VI_TM_SIZE cnt) noexcept;
-		void merge(const vi_tmMeasurementStats_t &src) noexcept;
-		vi_tmMeasurementStats_t get() const noexcept;
+		void merge(const vi_tmStats_t &src) noexcept;
+		vi_tmStats_t get() const noexcept;
 		void reset() noexcept;
 	};
 
@@ -209,12 +209,12 @@ inline void meterage_t::add(VI_TM_TDIFF v, VI_TM_SIZE n) noexcept
 	vi_tmStatsAdd(&stats_, v, n);
 }
 
-inline void meterage_t::merge(const vi_tmMeasurementStats_t &src) noexcept
+inline void meterage_t::merge(const vi_tmStats_t &src) noexcept
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lg(mtx_));
 	vi_tmStatsMerge(&stats_, &src);
 }
 
-inline vi_tmMeasurementStats_t meterage_t::get() const noexcept
+inline vi_tmStats_t meterage_t::get() const noexcept
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lg(mtx_));
 	return stats_;
 }
@@ -241,7 +241,7 @@ int vi_tmMeasurementsJournal_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void 
 
 //vvvv API Implementation vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
-VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmMeasurementStats_t *meas) noexcept
+VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmStats_t *meas) noexcept
 {	if(!verify(!!meas))
 	{	return VI_EXIT_FAILURE;
 	}
@@ -304,7 +304,7 @@ VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmMeasurementStats_t *meas) n
 	return VI_EXIT_SUCCESS;
 }
 
-void VI_TM_CALL vi_tmStatsReset(vi_tmMeasurementStats_t *meas) noexcept
+void VI_TM_CALL vi_tmStatsReset(vi_tmStats_t *meas) noexcept
 {	if (!verify(!!meas))
 	{	return;
 	}
@@ -327,7 +327,7 @@ void VI_TM_CALL vi_tmStatsReset(vi_tmMeasurementStats_t *meas) noexcept
 	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(meas));
 }
 
-void VI_TM_CALL vi_tmStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cnt) noexcept
+void VI_TM_CALL vi_tmStatsAdd(vi_tmStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cnt) noexcept
 {	(void)dur;
 	if (!verify(!!meas) || 0U == cnt)
 	{	return;
@@ -386,7 +386,7 @@ void VI_TM_CALL vi_tmStatsAdd(vi_tmMeasurementStats_t *meas, VI_TM_TDIFF dur, VI
 	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(meas));
 }
 
-void VI_TM_CALL vi_tmStatsMerge(vi_tmMeasurementStats_t* VI_RESTRICT dst, const vi_tmMeasurementStats_t* VI_RESTRICT src) noexcept
+void VI_TM_CALL vi_tmStatsMerge(vi_tmStats_t* VI_RESTRICT dst, const vi_tmStats_t* VI_RESTRICT src) noexcept
 {	if(!verify(!!dst) || !verify(!!src) || dst == src || 0U == src->calls_)
 	{	return;
 	}
@@ -450,11 +450,11 @@ void VI_TM_CALL vi_tmMeasurementAdd(VI_TM_HMEAS meas, VI_TM_TDIFF tick_diff, VI_
 {	if (verify(meas)) { meas->second.add(tick_diff, cnt); }
 }
 
-void VI_TM_CALL vi_tmMeasurementMerge(VI_TM_HMEAS meas, const vi_tmMeasurementStats_t *src) noexcept
+void VI_TM_CALL vi_tmMeasurementMerge(VI_TM_HMEAS meas, const vi_tmStats_t *src) noexcept
 {	if (verify(meas)) { meas->second.merge(*src); }
 }
 
-void VI_TM_CALL vi_tmMeasurementGet(VI_TM_HMEAS meas, const char* *name, vi_tmMeasurementStats_t *data)
+void VI_TM_CALL vi_tmMeasurementGet(VI_TM_HMEAS meas, const char* *name, vi_tmStats_t *data)
 {	if (verify(meas))
 	{	if (name) { *name = meas->first.c_str(); }
 		if (data) { *data = meas->second.get(); }

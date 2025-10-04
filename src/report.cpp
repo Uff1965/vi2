@@ -95,7 +95,7 @@ namespace
 		std::string max_txt_{ NotAvailable };
 #endif
 
-		metering_t(const char *name, const vi_tmMeasurementStats_t &meas, unsigned flags) noexcept;
+		metering_t(const char *name, const vi_tmStats_t &meas, unsigned flags) noexcept;
 	};
 
 	template<vi_tmReportFlags_e E> auto make_tuple(const metering_t &v);
@@ -186,7 +186,7 @@ namespace
 		(	journal_handle,
 			[](VI_TM_HMEAS h, void *callback_data)
 			{	const char *name;
-				vi_tmMeasurementStats_t meas;
+				vi_tmStats_t meas;
 				vi_tmMeasurementGet(h, &name, &meas);
 				auto& [v, f] = *static_cast<data_t*>(callback_data); // The pointer to void is necessary for C compatibility.
 				v.emplace_back(name, std::move(meas), f);
@@ -256,7 +256,7 @@ namespace
 
 } // namespace
 
-metering_t::metering_t(const char *name, const vi_tmMeasurementStats_t &meas, unsigned flags) noexcept
+metering_t::metering_t(const char *name, const vi_tmStats_t &meas, unsigned flags) noexcept
 :	name_{ name }
 {	
 	if (!verify(VI_EXIT_SUCCESS == vi_tmStatsIsValid(&meas)) || 0 == meas.calls_)

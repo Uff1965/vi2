@@ -61,7 +61,7 @@ TEST(vi_tmMultithreaded, Add)
 		}
 	}
 
-	{	vi_tmMeasurementStats_t stats;
+	{	vi_tmStats_t stats;
 
 		auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME_1);
 		vi_tmMeasurementGet(m, nullptr, &stats);
@@ -94,7 +94,7 @@ TEST(vi_tmMultithreaded, AddGetReset)
 
 			for (auto i = 0U; i < LOOP_COUNT; ++i)
 			{	vi_tmMeasurementAdd(mfunc, DUR, CNT);
-				vi_tmMeasurementStats_t stats;
+				vi_tmStats_t stats;
 				vi_tmMeasurementGet(mfunc, nullptr, &stats);
 				ASSERT_EQ(vi_tmStatsIsValid(&stats), 0);
 				vi_tmMeasurementReset(mfunc);
@@ -112,7 +112,7 @@ TEST(vi_tmMultithreaded, AddGetReset)
 		}
 	}
 
-	{	vi_tmMeasurementStats_t stats;
+	{	vi_tmStats_t stats;
 
 		auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME_2);
 		vi_tmMeasurementGet(m, nullptr, &stats);

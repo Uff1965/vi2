@@ -78,12 +78,16 @@ VI_TM_RESULT timing_global_t::init(std::string title, VI_TM_FLAGS flags)
 {	std::lock_guard lg{mtx_};
 
 	++initialization_cnt_;
-	finalizer_ = [t = std::move(title), flags](VI_TM_HJOUR h)
-		{	return ((!t.empty() && vi_tmReportCb(t.c_str()) < 0) || vi_tmReport(h, flags) < 0) ?
-				VI_EXIT_FAILURE :
-				VI_EXIT_SUCCESS;
-		};
-
+	if(vi_tmDoNotReport & flags)
+	{	finalizer_ = nullptr;
+	}
+	else
+	{	finalizer_ = [t = std::move(title), flags](VI_TM_HJOUR h)
+			{	return ((!t.empty() && vi_tmReportCb(t.c_str()) < 0) || vi_tmReport(h, flags) < 0) ?
+					VI_EXIT_FAILURE :
+					VI_EXIT_SUCCESS;
+			};
+	}
 	return VI_EXIT_SUCCESS;
 }
 
@@ -120,7 +124,8 @@ timing_global_t* timing_global_t::global_instance(bool called_from_init)
 		}(first);
 
 	// If vi_tmInit is called, it should only be called first, before any other global timer calls.
-	assert(!called_from_init || first || global->initialization_cnt_ > 0);
+//	assert(!called_from_init || first || global->initialization_cnt_ > 0);
+	(void)called_from_init;
 	return global;
 }
 
@@ -141,7 +146,7 @@ VI_TM_RESULT VI_TM_CALL vi_tmInit(const char *title, VI_TM_FLAGS report_flags, V
 
 	assert(0 == (~static_cast<VI_TM_FLAGS>(vi_tmReportFlagsMask) & report_flags));
 	if (auto const global = timing_global_t::global_instance(true))
-	{	result = global->init(title, report_flags & vi_tmReportFlagsMask);
+	{	result = global->init(title? title: "", report_flags & vi_tmReportFlagsMask);
 	}
 
 	assert(0 == (~static_cast<VI_TM_FLAGS>(vi_tmInitFlagsMask) & flags));

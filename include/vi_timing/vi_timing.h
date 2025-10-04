@@ -201,10 +201,10 @@ typedef struct vi_tmMeasurementsJournal_t *VI_TM_HJOUR; // Opaque handle to a me
 typedef VI_TM_RESULT (VI_TM_CALL *vi_tmMeasEnumCb_t)(VI_TM_HMEAS meas, void* ctx); // Callback type for enumerating measurements; returning non-zero aborts enumeration.
 typedef VI_TM_RESULT (VI_SYS_CALL *vi_tmReportCb_t)(const char* str, void* ctx); // Callback type for report function. ABI must be compatible with std::fputs!
 
-// vi_tmMeasurementStats_t: Structure holding statistics for a timing measurement.
+// vi_tmStats_t: Structure holding statistics for a timing measurement.
 // This structure is used to store the number of calls, total time spent, and other statistical data for a measurement.
 // !!!Use the vi_tmStatsReset function to reset the structure to its initial state!!!
-typedef struct vi_tmMeasurementStats_t
+typedef struct vi_tmStats_t
 {	VI_TM_SIZE calls_;		// The number of times the measurement was invoked.
 #if VI_TM_STAT_USE_RAW
 	VI_TM_SIZE cnt_;		// The number of all measured events, including discarded ones.
@@ -221,7 +221,7 @@ typedef struct vi_tmMeasurementStats_t
 	VI_TM_FP min_; //!!!! INFINITY - initially!!! Minimum time taken for a single event, in ticks.
 	VI_TM_FP max_; //!!!! -INFINITY - initially!!! Maximum time taken for a single event, in ticks.
 #endif
-} vi_tmMeasurementStats_t;
+} vi_tmStats_t;
 
 // vi_tmInfo_e: Enumeration for various timing information types used in the vi_timing library.
 // Each value corresponds to a specific static information query, such as version, build type, or timing characteristics.
@@ -264,8 +264,9 @@ typedef enum vi_tmReportFlags_e
 
 	vi_tmHideHeader				= 1 << 10, // If set, the report will not show the header with column names.
 	vi_tmDoNotSubtractOverhead	= 1 << 11, // If set, the overhead is not subtracted from the measured time in report.
+	vi_tmDoNotReport		= 1 << 12, // If set, no report will be generated.
 
-	vi_tmReportFlagsMask		= 0x0FFF,
+	vi_tmReportFlagsMask		= 0x1FFF,
 	vi_tmReportDefault			= vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByTime,
 } vi_tmReportFlags_e;
 
@@ -390,16 +391,16 @@ typedef enum vi_tmStatus_e
     /// <param name="m">A handle to the measurement object to be updated.</param>
     /// <param name="src">Pointer to the source measurement statistics to merge.</param>
     /// <returns>This function does not return a value.</returns>
-    VI_TM_API void VI_TM_CALL vi_tmMeasurementMerge(VI_TM_HMEAS m, const vi_tmMeasurementStats_t* src) VI_NOEXCEPT;
+    VI_TM_API void VI_TM_CALL vi_tmMeasurementMerge(VI_TM_HMEAS m, const vi_tmStats_t* src) VI_NOEXCEPT;
 
     /// <summary>
     /// Retrieves measurement information from a VI_TM_HMEAS object, including its name and statistics.
     /// </summary>
     /// <param name="m">The measurement handle from which to retrieve information.</param>
     /// <param name="name">Pointer to a string pointer that will receive the name of the measurement. Can be nullptr if not needed.</param>
-    /// <param name="dst">Pointer to a vi_tmMeasurementStats_t structure that will receive the measurement statistics. Can be nullptr if not needed.</param>
+    /// <param name="dst">Pointer to a vi_tmStats_t structure that will receive the measurement statistics. Can be nullptr if not needed.</param>
     /// <returns>This function does not return a value.</returns>
-	VI_TM_API void VI_TM_CALL vi_tmMeasurementGet(VI_TM_HMEAS m, const char **name, vi_tmMeasurementStats_t *dst);
+	VI_TM_API void VI_TM_CALL vi_tmMeasurementGet(VI_TM_HMEAS m, const char **name, vi_tmStats_t *dst);
 
 	/// <summary>
 	/// Resets the measurement state for the specified measurement handle. The handle remains valid.
@@ -416,7 +417,7 @@ typedef enum vi_tmStatus_e
     /// <param name="cnt">The number of measured events.</param>
     /// <returns>This function does not return a value.</returns>
 	VI_TM_API void VI_TM_CALL vi_tmStatsAdd(
-		vi_tmMeasurementStats_t *dst,
+		vi_tmStats_t *dst,
 		VI_TM_TDIFF dur,
 		VI_TM_SIZE cnt VI_DEFAULT(1)
 	) VI_NOEXCEPT;
@@ -428,8 +429,8 @@ typedef enum vi_tmStatus_e
     /// <param name="src">Pointer to the source measurement statistics structure to merge.</param>
     /// <returns>This function does not return a value.</returns>
 	VI_TM_API void VI_TM_CALL vi_tmStatsMerge(
-		vi_tmMeasurementStats_t* VI_RESTRICT dst,
-		const vi_tmMeasurementStats_t* VI_RESTRICT src
+		vi_tmStats_t* VI_RESTRICT dst,
+		const vi_tmStats_t* VI_RESTRICT src
 	) VI_NOEXCEPT;
 
 	/// <summary>
@@ -437,13 +438,13 @@ typedef enum vi_tmStatus_e
 	/// </summary>
 	/// <param name="m">Pointer to the measurement statistics structure to reset.</param>
 	/// <returns>This function does not return a value.</returns>
-	VI_TM_API void VI_TM_CALL vi_tmStatsReset(vi_tmMeasurementStats_t *m) VI_NOEXCEPT;
+	VI_TM_API void VI_TM_CALL vi_tmStatsReset(vi_tmStats_t *m) VI_NOEXCEPT;
 
 	/// <summary>
 	/// Checks if the given measurement statistics structure contains valid data.
 	/// Returns zero if valid.
 	/// </summary>
-	VI_NODISCARD VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmMeasurementStats_t *m) VI_NOEXCEPT;
+	VI_NODISCARD VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmStats_t *m) VI_NOEXCEPT;
 
 	/// <summary>
 	/// Retrieves static information about the timing module based on the specified info type.

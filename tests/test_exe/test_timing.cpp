@@ -28,14 +28,14 @@ namespace
 	constexpr char NAME[] = "dummy";
 
 	template<std::size_t NS, std::size_t NX, std::size_t NM>
-	constexpr vi_tmMeasurementStats_t calc
+	constexpr vi_tmStats_t calc
 	(	const VI_TM_TICK (&s)[NS],
 		const VI_TM_TICK (&x)[NX],
 		const VI_TM_TICK (&m)[NM],
 		std::size_t M
 	)
 	{	(void)M;
-		vi_tmMeasurementStats_t result;
+		vi_tmStats_t result;
 		vi_tmStatsReset(&result);
 		result.calls_ = NS + NX + NM;
 		assert(result.calls_);
@@ -100,7 +100,7 @@ namespace
 		return result;
 	}
 
-	void expect_eq(const vi_tmMeasurementStats_t &l, const vi_tmMeasurementStats_t &r)
+	void expect_eq(const vi_tmStats_t &l, const vi_tmStats_t &r)
 	{
 		EXPECT_EQ(l.calls_, r.calls_);
 #if VI_TM_STAT_USE_RAW
@@ -146,7 +146,7 @@ namespace
 			}
 
 			const char *name = nullptr;
-			vi_tmMeasurementStats_t md;
+			vi_tmStats_t md;
 			vi_tmStatsReset(&md);
 
 			vi_tmMeasurementGet(hmeas, &name, &md);
@@ -170,7 +170,7 @@ namespace
 #if VI_TM_STAT_USE_RMSE
 #	if VI_TM_STAT_USE_FILTER
 			vi_tmMeasurementAdd(hmeas, 10111); // It should be filtered out.
-			{	vi_tmMeasurementStats_t tmp;
+			{	vi_tmStats_t tmp;
 				vi_tmStatsReset(&tmp);
 
 				vi_tmMeasurementGet(hmeas, &name, &tmp);
@@ -181,7 +181,7 @@ namespace
 			vi_tmMeasurementGet(hmeas, &name, &md);
 #	endif
 			vi_tmMeasurementAdd(hmeas, 10110); // It should not be filtered out.
-			{	vi_tmMeasurementStats_t tmp;
+			{	vi_tmStats_t tmp;
 				vi_tmStatsReset(&tmp);
 
 				vi_tmMeasurementGet(hmeas, &name, &tmp);
@@ -209,7 +209,7 @@ namespace
 		}
 
 		const char *name = nullptr; // Name of the measurement to be filled in.
-		vi_tmMeasurementStats_t md; // Measurement data to be filled in.
+		vi_tmStats_t md; // Measurement data to be filled in.
 		vi_tmStatsReset(&md);
 		vi_tmMeasurementGet(hmeas, &name, &md); // Get the measurement data and name.
 		EXPECT_STREQ(name, NAME);
@@ -228,7 +228,7 @@ namespace
 		{	vi_tmMeasurementAdd(hmeas, x, 1);
 		}
 
-		vi_tmMeasurementStats_t meas;
+		vi_tmStats_t meas;
 		vi_tmStatsReset(&meas);
 		for (auto x : SAMPLES_MULTIPLE) // Add multiple samples M times at once.
 		{	vi_tmStatsAdd(&meas, M * x, M);
