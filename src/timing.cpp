@@ -107,6 +107,7 @@ namespace
 
 // Checking for FMA support by the compiler/platform
 #if defined(__FMA__) || (defined(_MSC_VER) && (defined(__AVX2__) || defined(__AVX512F__)))
+	// x * y + z
 	#define FMA(x, y, z) std::fma((x), (y), (z))
 #else
 	#define FMA(x, y, z) ((x) * (y) + (z))
@@ -369,16 +370,17 @@ void VI_TM_CALL vi_tmStatsAdd(vi_tmStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cn
 		const auto deviation = f_val - meas->flt_avg_; // Difference from the mean value.
 #	if VI_TM_STAT_USE_FILTER
 		constexpr VI_TM_FP K = 2.5; // Threshold for outliers.
-		if(	dur <= 1U || // The measurable interval is probably smaller than the resolution of the clock.
-			FMA(deviation * deviation, meas->flt_cnt_, - K * K * meas->flt_ss_) < fp_ZERO || // Sigma clipping to avoids outliers.
-			deviation < fp_ZERO || // The minimum value is usually closest to the true value. "deviation < .0" - for some reason slowly!!!
+		if(	deviation < fp_ZERO || // The minimum value is usually closest to the true value. "deviation < .0" - for some reason slowly!!!
 			meas->flt_calls_ <= 2U || // If we have less than 2 measurements, we cannot calculate the standard deviation.
+			dur <= 1U || // The measurable interval is probably smaller than the resolution of the clock.
+			FMA(deviation * deviation, meas->flt_cnt_, - K * K * meas->flt_ss_) < fp_ZERO || // Sigma clipping to avoids outliers.
 			meas->flt_ss_ <= 1.0 // A pair of zero initial measurements will block the addition of other.
 		)
 #	endif
 		{	meas->flt_cnt_ += f_cnt;
-			meas->flt_avg_ = FMA(deviation, f_cnt / meas->flt_cnt_, meas->flt_avg_);
-			meas->flt_ss_ = FMA(deviation * (f_val - meas->flt_avg_), f_cnt, meas->flt_ss_);
+			const auto m = deviation * f_cnt;
+			meas->flt_avg_ = FMA(m, 1.0 / meas->flt_cnt_, meas->flt_avg_);
+			meas->flt_ss_ = FMA(m, f_val - meas->flt_avg_, meas->flt_ss_);
 			meas->flt_calls_++;
 		}
 #endif

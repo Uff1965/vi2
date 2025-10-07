@@ -50,8 +50,8 @@
 namespace
 {
 	// A simple test handle value used as the measurement handle in tests.
-	VI_TM_HMEAS const TEST_MEAS = reinterpret_cast<VI_TM_HMEAS>(0x1234);
-	VI_TM_HMEAS const UNDEF_MEAS = reinterpret_cast<VI_TM_HMEAS>(0xBAADF00D);
+	VI_TM_HMEAS const TEST_MEAS = reinterpret_cast<VI_TM_HMEAS>(static_cast<std::uintptr_t>(0x1234));
+	VI_TM_HMEAS const UNDEF_MEAS = reinterpret_cast<VI_TM_HMEAS>(static_cast<std::uintptr_t>(0xBAADF00D));
 	VI_TM_TDIFF constexpr UNDEF_DIFF = VI_TM_TDIFF{ 0xBAADF00D };
 	VI_TM_SIZE constexpr UNDEF_SIZE = VI_TM_SIZE{ 0xBAADF00D };
 
@@ -243,6 +243,7 @@ TEST_F(ProbeTest, DoublePauseTriggersDebugAssert) {
 	errno = 0;
 }
 #endif
+
 TEST_F(ProbeTest, StopOnIdleDoesNotRecord) {
 	// Ensure calling stop() on an idle/moved-from object does not record a new measurement.
 	auto p = vi_tm::probe_t::make_paused(TEST_MEAS, VI_TM_SIZE{1});

@@ -146,13 +146,13 @@ namespace
 	{	const auto start = vi_tmGetTicks();
 		const auto finish = vi_tmGetTicks();
 		const auto h = vi_tmJournalGetMeas(journal, name);
-		vi_tmMeasurementAdd(h, finish - start, 1U);
+		vi_tmMeasurementAdd(h, 1000 + finish - start, 1U);
 	};
 
 	void body_measuring_with_caching(VI_TM_HMEAS m)
 	{	const auto start = vi_tmGetTicks();
 		const auto finish = vi_tmGetTicks();
-		vi_tmMeasurementAdd(m, finish - start, 1U);
+		vi_tmMeasurementAdd(m, 1000 + finish - start, 1U);
 	};
 
 	double meas_resolution()
