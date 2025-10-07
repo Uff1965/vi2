@@ -69,14 +69,14 @@ void add_wf(vi_tmStats_t& stats, VI_TM_TDIFF diff, VI_TM_SIZE cnt = 1)
 
 TEST(api, RMSE)
 {	static const auto arr = generate(100e6, 20e6, 1'000);
-
 	vi_tmStats_t ws;
-	vi_tmStatsReset(&ws);
 	vi_tmStats_t stats;
-	vi_tmStatsReset(&stats);
-	for (auto &&v : arr)
-	{	add_wf(ws, v);
-		vi_tmStatsAdd(&stats, v);
+	{	vi_tmStatsReset(&ws);
+		vi_tmStatsReset(&stats);
+		for (auto &&v : arr)
+		{	add_wf(ws, v);
+			vi_tmStatsAdd(&stats, v);
+		}
 	}
 
 	ASSERT_EQ(ws.calls_, arr.size());
@@ -97,28 +97,41 @@ TEST(api, RMSE)
 
 #if VI_TM_STAT_USE_RMSE
 	ASSERT_LE(ws.flt_cnt_, arr.size());
-	EXPECT_DOUBLE_EQ(stats.flt_cnt_, ws.flt_cnt_);
+	EXPECT_EQ(stats.flt_cnt_, ws.flt_cnt_);
 	EXPECT_DOUBLE_EQ(stats.flt_avg_, ws.flt_avg_);
 	EXPECT_DOUBLE_EQ(stats.flt_ss_, ws.flt_ss_);
 
 #	if VI_TM_STAT_USE_FILTER
-	{	const auto cnt_old = stats.flt_cnt_;
-		const auto s = sqrt(stats.flt_ss_ / stats.flt_cnt_); // Sample Standard Deviation.
+	{	const auto flt_calls_old = ws.flt_calls_;
+		const auto flt_cnt_old = ws.flt_cnt_;
+		const auto flt_avg_old = ws.flt_avg_;
+		const auto flt_ss_old = ws.flt_ss_;
+		const auto s = sqrt(ws.flt_ss_ / ws.flt_cnt_); // Sample Standard Deviation.
 		const auto low = s * (K - 1e-6);
 		const auto big = s * (K + 1e-6);
 
 		// Values exceeding the average by more than K standard deviations are filtered out.
-		add_wf(ws, static_cast<VI_TM_TDIFF>(stats.flt_avg_ + big));
-		EXPECT_EQ(ws.flt_cnt_, cnt_old);
-		vi_tmStatsAdd(&stats, static_cast<VI_TM_TDIFF>(stats.flt_avg_ + big));
-		EXPECT_EQ(stats.flt_cnt_, cnt_old);
+		add_wf(ws, static_cast<VI_TM_TDIFF>(ws.flt_avg_ + big)); // Must be filtered out!
+		ASSERT_EQ(ws.flt_calls_, flt_calls_old);
+		ASSERT_EQ(ws.flt_cnt_, flt_cnt_old);
+		ASSERT_EQ(ws.flt_avg_, flt_avg_old);
+		ASSERT_EQ(ws.flt_ss_, flt_ss_old);
+		vi_tmStatsAdd(&stats, static_cast<VI_TM_TDIFF>(stats.flt_avg_ + big)); // Must be filtered out!
+		EXPECT_EQ(stats.flt_calls_, ws.flt_calls_);
+		EXPECT_EQ(stats.flt_cnt_, ws.flt_cnt_);
+		EXPECT_DOUBLE_EQ(stats.flt_avg_, ws.flt_avg_);
+		EXPECT_DOUBLE_EQ(stats.flt_ss_, ws.flt_ss_);
 
 		// We do not discard measurements that are below average.
 		// Values that differ from the mean by less than K standard deviations are not filtered out.
-		add_wf(ws, static_cast<VI_TM_TDIFF>(stats.flt_avg_ + low));
-		EXPECT_EQ(ws.flt_cnt_, cnt_old + 1);
-		vi_tmStatsAdd(&stats, static_cast<VI_TM_TDIFF>(stats.flt_avg_ + low));
-		EXPECT_EQ(stats.flt_cnt_, cnt_old + 1);
+		add_wf(ws, static_cast<VI_TM_TDIFF>(stats.flt_avg_ + low)); // Must not be filtered out!
+		ASSERT_EQ(ws.flt_calls_, flt_calls_old + 1.0);
+		ASSERT_EQ(ws.flt_cnt_, flt_cnt_old + 1.0);
+		vi_tmStatsAdd(&stats, static_cast<VI_TM_TDIFF>(stats.flt_avg_ + low)); // Must not be filtered out!
+		EXPECT_EQ(stats.flt_calls_, ws.flt_calls_);
+		EXPECT_EQ(stats.flt_cnt_, ws.flt_cnt_);
+		EXPECT_DOUBLE_EQ(stats.flt_avg_, ws.flt_avg_);
+		EXPECT_DOUBLE_EQ(stats.flt_ss_, ws.flt_ss_);
 	}
 #	endif
 #endif
@@ -127,14 +140,14 @@ TEST(api, RMSE)
 TEST(api, multy)
 {	constexpr VI_TM_SIZE M = 100;
 	static const auto arr = generate(100e6, 20e6, 1'000);
-
 	vi_tmStats_t ws;
-	vi_tmStatsReset(&ws);
 	vi_tmStats_t stats;
-	vi_tmStatsReset(&stats);
-	for (auto &&v : arr)
-	{	add_wf(ws, v, M);
-		vi_tmStatsAdd(&stats, v, M);
+	{	vi_tmStatsReset(&ws);
+		vi_tmStatsReset(&stats);
+		for (auto &&v : arr)
+		{	add_wf(ws, v, M);
+			vi_tmStatsAdd(&stats, v, M);
+		}
 	}
 
 	ASSERT_EQ(ws.calls_, arr.size());
@@ -156,9 +169,41 @@ TEST(api, multy)
 
 #if VI_TM_STAT_USE_RMSE
 	ASSERT_NE(ws.flt_cnt_, arr.size());
+	EXPECT_DOUBLE_EQ(stats.flt_cnt_, ws.flt_cnt_);
+	EXPECT_DOUBLE_EQ(stats.flt_avg_, ws.flt_avg_);
+	EXPECT_DOUBLE_EQ(stats.flt_ss_, ws.flt_ss_);
 
 #	if VI_TM_STAT_USE_FILTER
-	{
+	{	const auto flt_calls_old = ws.flt_calls_;
+		const auto flt_cnt_old = ws.flt_cnt_;
+		const auto flt_avg_old = ws.flt_avg_;
+		const auto flt_ss_old = ws.flt_ss_;
+		const auto s = sqrt(ws.flt_ss_ / ws.flt_cnt_); // Sample Standard Deviation.
+		const auto low = s * (K - 1e-3);
+		const auto big = s * (K + 1e-3);
+
+		// Values exceeding the average by more than K standard deviations are filtered out.
+		add_wf(ws, static_cast<VI_TM_TDIFF>(ws.flt_avg_ + big) * M, M); // Must be filtered out!
+		ASSERT_EQ(ws.flt_calls_, flt_calls_old);
+		ASSERT_EQ(ws.flt_cnt_, flt_cnt_old);
+		ASSERT_EQ(ws.flt_avg_, flt_avg_old);
+		ASSERT_EQ(ws.flt_ss_, flt_ss_old);
+		vi_tmStatsAdd(&stats, static_cast<VI_TM_TDIFF>(stats.flt_avg_ + big) * M, M); // Must be filtered out!
+		EXPECT_EQ(stats.flt_calls_, ws.flt_calls_);
+		EXPECT_EQ(stats.flt_cnt_, ws.flt_cnt_);
+		EXPECT_DOUBLE_EQ(stats.flt_avg_, ws.flt_avg_);
+		EXPECT_DOUBLE_EQ(stats.flt_ss_, ws.flt_ss_);
+
+		// We do not discard measurements that are below average.
+		// Values that differ from the mean by less than K standard deviations are not filtered out.
+		add_wf(ws, static_cast<VI_TM_TDIFF>(ws.flt_avg_ + low) * M, M); // Must not be filtered out!
+		ASSERT_EQ(ws.flt_calls_, flt_calls_old + 1.0);
+		ASSERT_EQ(ws.flt_cnt_, flt_cnt_old + M);
+		vi_tmStatsAdd(&stats, static_cast<VI_TM_TDIFF>(stats.flt_avg_ + low) * M, M); // Must not be filtered out!
+		EXPECT_EQ(stats.flt_calls_, ws.flt_calls_);
+		EXPECT_EQ(stats.flt_cnt_, ws.flt_cnt_);
+		EXPECT_DOUBLE_EQ(stats.flt_avg_, ws.flt_avg_);
+		EXPECT_DOUBLE_EQ(stats.flt_ss_, ws.flt_ss_);
 	}
 #	endif
 #endif
