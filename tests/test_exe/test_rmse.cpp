@@ -148,9 +148,9 @@ TEST(api, multy)
 #endif
 
 #if VI_TM_STAT_USE_MINMAX
-	ASSERT_DOUBLE_EQ(ws.min_, static_cast<double>(*std::min_element(arr.cbegin(), arr.cend())));
+	ASSERT_DOUBLE_EQ(ws.min_, static_cast<double>(*std::min_element(arr.cbegin(), arr.cend())) / M);
 	EXPECT_DOUBLE_EQ(stats.min_, ws.min_);
-	ASSERT_DOUBLE_EQ(ws.max_, static_cast<double>(*std::max_element(arr.cbegin(), arr.cend())));
+	ASSERT_DOUBLE_EQ(ws.max_, static_cast<double>(*std::max_element(arr.cbegin(), arr.cend())) / M);
 	EXPECT_DOUBLE_EQ(stats.max_, ws.max_);
 #endif
 
