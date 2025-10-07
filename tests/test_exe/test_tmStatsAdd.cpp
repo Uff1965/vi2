@@ -12,25 +12,21 @@
 #include <cmath>
 
 namespace
-{
-	using vector = std::vector<VI_TM_TDIFF>;
+{	using vector = std::vector<VI_TM_TDIFF>;
 	constexpr auto fp_ZERO = static_cast<VI_TM_FP>(0);
 	constexpr VI_TM_FP K = 2.5; // Threshold for outliers.
 
 	vector generate(double mean, double stddev, VI_TM_SIZE n)
-	{
-		//	std::mt19937 gen(std::random_device{}());
+	{	//	std::mt19937 gen(std::random_device{}());
 		std::mt19937 gen;
 		std::normal_distribution dist(mean, stddev);
 
 		vector result;
 		result.reserve(n);
 		for (VI_TM_SIZE i = 0; i < n; ++i)
-		{
-			vector::value_type value;
+		{	vector::value_type value;
 			do
-			{
-				value = static_cast<vector::value_type>(dist(gen));
+			{	value = static_cast<vector::value_type>(dist(gen));
 			} while (value <= 0);
 
 			result.push_back(value);
@@ -39,8 +35,7 @@ namespace
 	}
 
 	void add_wf(vi_tmStats_t &stats, VI_TM_TDIFF diff, VI_TM_SIZE cnt = 1)
-	{
-		stats.calls_++;
+	{	stats.calls_++;
 #if VI_TM_STAT_USE_RAW
 		stats.cnt_ += cnt;
 		stats.sum_ += diff;
@@ -62,8 +57,7 @@ namespace
 			std::fma(deviation * deviation, stats.flt_cnt_, -K * K * stats.flt_ss_) < fp_ZERO // Sigma clipping to avoids outliers.
 			)
 #	endif
-		{
-			stats.flt_cnt_ += cnt;
+		{	stats.flt_cnt_ += cnt;
 			stats.flt_avg_ = std::fma(deviation, cnt / stats.flt_cnt_, stats.flt_avg_);
 			stats.flt_ss_ = std::fma(deviation * cnt, static_cast<double>(dur) - stats.flt_avg_, stats.flt_ss_);
 			++stats.flt_calls_;

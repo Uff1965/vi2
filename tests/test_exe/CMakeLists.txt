@@ -37,7 +37,7 @@ if (VI_TM_ENABLE_TESTS)
         "test_format.cpp"
         "test_misc.cpp"
         "test_probe.cpp"
-        "test_rmse.cpp"
+        "test_tmStatsAdd.cpp"
         "test_timing.cpp"
     )
 
