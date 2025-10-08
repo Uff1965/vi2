@@ -8,6 +8,7 @@
 
 #include <ctime> // for timespec_get
 #include <chrono> // for std::chrono
+#include <random>
 
 VI_TM_TICK stdclock(void) noexcept
 {	VI_TM_S("std::timespec_get");
@@ -124,4 +125,47 @@ BENCHMARK(BM_VI_TM_S);
 		}
 	}
 	BENCHMARK(BM_RPi4);
+#endif
+
+#if 0
+using vector = std::vector<VI_TM_TDIFF>;
+
+// This function generates a set of VI_TM_TDIFF arguments based on a normal distribution.
+// It applies them to the benchmark using ->Apply().
+void generate(benchmark::internal::Benchmark* b)
+{	//	std::mt19937 gen(std::random_device{}());
+	std::mt19937 gen;
+	std::normal_distribution dist(100e6, 20e6);
+
+	constexpr auto N = 1'000;
+	vector result;
+	result.reserve(N);
+	for (VI_TM_SIZE i = 0; i < N; ++i)
+	{	vector::value_type value;
+		do
+		{	value = static_cast<vector::value_type>(dist(gen));
+		} while (value <= 0);
+
+		result.push_back(value);
+	}
+
+	for (auto arg : result)
+	{	b->Arg(arg);  // Register each unique value as a benchmark parameter}
+	}
+}
+
+// This is the benchmark function.
+// It receives one parameter via state.range(0) and performs a computation.
+static void BM_vi_tm_2(benchmark::State &state)
+{
+	VI_TM_RESET("xxxx");
+	auto input = state.range(0);  // Get the current parameter
+	for (auto _ : state)
+	{	const auto meas = vi_tmJournalGetMeas(((VI_TM_HJOUR)-1), "XXXX");
+		benchmark::DoNotOptimize(vi_tmGetTicks());
+		benchmark::DoNotOptimize(vi_tmGetTicks());
+		vi_tmMeasurementAdd(meas, static_cast<VI_TM_TDIFF>(input), 1U);
+	}
+}
+BENCHMARK(BM_vi_tm_2)->Apply(generate); // Register the benchmark and apply the normal distribution parameters
 #endif

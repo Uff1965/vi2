@@ -99,7 +99,7 @@ namespace
 #endif
 
 #if VI_TM_STAT_USE_RMSE
-		ASSERT_NE(ws.flt_cnt_, arr.size());
+		ASSERT_LE(ws.flt_cnt_, M * arr.size());
 		EXPECT_DOUBLE_EQ(stats.flt_cnt_, ws.flt_cnt_);
 		EXPECT_DOUBLE_EQ(stats.flt_avg_, ws.flt_avg_);
 		EXPECT_DOUBLE_EQ(stats.flt_ss_, ws.flt_ss_);
