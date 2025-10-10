@@ -29,98 +29,83 @@ namespace
 		}();
 }
 
-TEST(vi_tmMultithreaded, Add)
+TEST(Multithreaded, vi_tmJournalGetMeas)
 {
-	auto threadFunc = [](std::size_t)
-		{	std::mt19937 gen{/*std::random_device{}()*/ };
-			std::uniform_int_distribution dis{ 0, 3 };
-			static auto const mfunc = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME_1);
-			(void)vi_tmGetTicks();
-
-			std::this_thread::sleep_for(std::chrono::milliseconds(dis(gen)));
+	auto threadFunc = []
+		{	std::uniform_int_distribution dis{ 0, 3 };
+			std::this_thread::sleep_for(std::chrono::milliseconds(dis(std::mt19937{})));
 
 			for (auto i = 0U; i < LOOP_COUNT; ++i)
-			{	auto const mloop = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
-				(void)vi_tmGetTicks();
-				(void)vi_tmGetTicks();
-				vi_tmMeasurementAdd(mloop, DUR, CNT);
+			{	auto const meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
+				vi_tmMeasurementAdd(meas, DUR, CNT);
 			}
-
-			(void)vi_tmGetTicks();
-			vi_tmMeasurementAdd(mfunc, DUR, CNT);
 		};
 
-	{	std::vector<std::thread> threads;
-		threads.reserve(numThreads);
-		for (auto i = numThreads; i; --i)
-		{	threads.emplace_back(threadFunc, i);
-		}
-
-		for (auto &t : threads)
-		{	t.join();
-		}
-	}
+	std::vector<std::thread> threads{ numThreads };
+	for (auto &t : threads) t = std::thread{ threadFunc };
+	for (auto &t : threads) t.join();
 
 	{	vi_tmStats_t stats;
-
-		auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME_1);
-		vi_tmMeasurementGet(m, nullptr, &stats);
+		auto meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
+		vi_tmMeasurementGet(meas, nullptr, &stats);
 		ASSERT_EQ(vi_tmStatsIsValid(&stats), 0);
-		ASSERT_EQ(stats.calls_, numThreads);
+		EXPECT_EQ(stats.calls_, numThreads * LOOP_COUNT);
 #if VI_TM_STAT_USE_RAW
-		ASSERT_EQ(stats.cnt_, stats.calls_ * CNT);
-		ASSERT_EQ(stats.sum_, stats.calls_ * DUR);
+		EXPECT_EQ(stats.cnt_, stats.calls_ * CNT);
+		EXPECT_EQ(stats.sum_, stats.calls_ * DUR);
 #endif
-
-		m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
-		vi_tmMeasurementGet(m, nullptr, &stats);
-		ASSERT_EQ(vi_tmStatsIsValid(&stats), 0);
-		ASSERT_EQ(stats.calls_, numThreads * LOOP_COUNT);
-#if VI_TM_STAT_USE_RAW
-		ASSERT_EQ(stats.cnt_, stats.calls_ * CNT);
-		ASSERT_EQ(stats.sum_, stats.calls_ * DUR);
+#if VI_TM_STAT_USE_MINMAX
+		EXPECT_EQ(stats.flt_min_, DUR / CNT);
+		EXPECT_EQ(stats.flt_max_, DUR / CNT);
+#endif
+#if VI_TM_STAT_USE_RMSE
+		EXPECT_EQ(stats.flt_calls_, stats.calls_);
+		EXPECT_EQ(stats.flt_cnt_, stats.cnt_);
+		EXPECT_EQ(stats.flt_avg_, DUR / CNT);
+		EXPECT_EQ(stats.flt_ss_, 0U);
 #endif
 	}
 }
 
-TEST(vi_tmMultithreaded, AddGetReset)
-{
-	static auto const mfunc = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME_2);
-	auto threadFunc = [](std::size_t)
-		{	std::mt19937 gen{/*std::random_device{}()*/ };
-			std::uniform_int_distribution dis{ 0, 3 };
+TEST(Multithreaded, vi_tmMeasurementAdd)
+{	static auto const meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME_2);
+	auto action = []
+		{	static auto threadFunc = +[]
+			{	std::uniform_int_distribution dis{ 0, 3 };
+				std::this_thread::sleep_for(std::chrono::milliseconds(dis(std::mt19937{})));
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(dis(gen)));
+				for (auto i = 0U; i < LOOP_COUNT; ++i)
+				{	vi_tmMeasurementAdd(meas, DUR, CNT);
+					vi_tmStats_t stats;
+					vi_tmMeasurementGet(meas, nullptr, &stats);
+					ASSERT_EQ(vi_tmStatsIsValid(&stats), 0);
+				}
+			};
 
-			for (auto i = 0U; i < LOOP_COUNT; ++i)
-			{	vi_tmMeasurementAdd(mfunc, DUR, CNT);
-				vi_tmStats_t stats;
-				vi_tmMeasurementGet(mfunc, nullptr, &stats);
-				ASSERT_EQ(vi_tmStatsIsValid(&stats), 0);
-				vi_tmMeasurementReset(mfunc);
-			}
+			std::vector<std::thread> threads{numThreads};
+			for (auto &t : threads) t.swap(std::thread{ threadFunc });
+			for (auto &t : threads) t.join();
 		};
 
-	{	std::vector<std::thread> threads;
-		threads.reserve(numThreads);
-		for (auto i = numThreads; i; --i)
-		{	threads.emplace_back(threadFunc, i);
-		}
-
-		for (auto &t : threads)
-		{	t.join();
-		}
-	}
+	ASSERT_NO_THROW(action());
 
 	{	vi_tmStats_t stats;
-
-		auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME_2);
-		vi_tmMeasurementGet(m, nullptr, &stats);
+		vi_tmMeasurementGet(meas, nullptr, &stats);
 		ASSERT_EQ(vi_tmStatsIsValid(&stats), 0);
-		ASSERT_EQ(stats.calls_, 0U);
+		EXPECT_EQ(stats.calls_, LOOP_COUNT * numThreads);
 #if VI_TM_STAT_USE_RAW
-		ASSERT_EQ(stats.cnt_, 0U);
-		ASSERT_EQ(stats.sum_, 0);
+		EXPECT_EQ(stats.cnt_, stats.calls_ * CNT);
+		EXPECT_EQ(stats.sum_, stats.calls_ * DUR);
+#endif
+#if VI_TM_STAT_USE_MINMAX
+		EXPECT_EQ(stats.flt_min_, DUR / CNT);
+		EXPECT_EQ(stats.flt_max_, DUR / CNT);
+#endif
+#if VI_TM_STAT_USE_RMSE
+		EXPECT_EQ(stats.flt_calls_, stats.calls_);
+		EXPECT_EQ(stats.flt_cnt_, stats.cnt_);
+		EXPECT_EQ(stats.flt_avg_, DUR / CNT);
+		EXPECT_EQ(stats.flt_ss_, 0U);
 #endif
 	}
 }

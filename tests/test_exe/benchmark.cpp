@@ -6,54 +6,103 @@
 #include <vi_timing/vi_timing.hpp>
 #include <benchmark/benchmark.h>
 
+#include <algorithm>
+#include <array>
 #include <ctime> // for timespec_get
 #include <chrono> // for std::chrono
 #include <random>
 
-VI_TM_TICK stdclock(void) noexcept
-{	VI_TM_S("std::timespec_get");
-	timespec ts;
-	(void)std::timespec_get(&ts, TIME_UTC);
-	return 1'000'000'000U * ts.tv_sec + ts.tv_nsec; //-V104
-}
+const auto arr = []
+	{	constexpr double mean = 100e6;
+		constexpr double stddev = 0.15 * mean;
+		constexpr unsigned N = 1'000;
+		std::array<VI_TM_TDIFF, N> result;
+		std::normal_distribution<> dist(mean, stddev);
+		std::mt19937 gen; // gen(std::random_device{}());
+		std::generate(result.begin(), result.end(), [&dist, &gen] { return static_cast<VI_TM_TDIFF>(dist(gen)); });
+		return result;
+	}();
 
-static void BM_timespec_get(benchmark::State& state) {
+static void BM_vi_tm_ovh(benchmark::State &state)
+{	static std::size_t n = 0;
+	for (auto _ : state)
+	{	benchmark::DoNotOptimize(arr[n++ % arr.size()]);
+		benchmark::ClobberMemory();
+	}
+}
+BENCHMARK(BM_vi_tm_ovh);
+
+static void BM_timespec_get(benchmark::State& state)
+{
+	static auto cclock = +[]() noexcept ->VI_TM_TICK
+		{	VI_TM_S("std::timespec_get");
+			timespec ts;
+			(void)std::timespec_get(&ts, TIME_UTC);
+			return 1'000'000'000U * ts.tv_sec + ts.tv_nsec; //-V104
+		};
+
     for (auto _ : state) {
-        benchmark::DoNotOptimize(stdclock());
+        benchmark::DoNotOptimize(cclock());
+		benchmark::ClobberMemory();
     }
 }
 BENCHMARK(BM_timespec_get);
 
-VI_TM_TICK stdchrono(void) noexcept {
-	VI_TM_S("steady_clock");
-	const auto tp = std::chrono::steady_clock::now().time_since_epoch();
-    return std::chrono::duration_cast<std::chrono::nanoseconds>(tp).count();
-}
+static void BM_steady_clock_now(benchmark::State& state)
+{
+	static auto now = +[]() noexcept->VI_TM_TICK
+		{	VI_TM_S("steady_clock");
+			const auto tp = std::chrono::steady_clock::now().time_since_epoch();
+			return std::chrono::duration_cast<std::chrono::nanoseconds>(tp).count();
+		};
 
-static void BM_steady_clock(benchmark::State& state) {
     for (auto _ : state) {
-        benchmark::DoNotOptimize(stdchrono());
+        benchmark::DoNotOptimize(now());
+		benchmark::ClobberMemory();
     }
 }
-BENCHMARK(BM_steady_clock);
+BENCHMARK(BM_steady_clock_now);
 
 static void BM_vi_tmGetTicks(benchmark::State& state) {
     for (auto _ : state) {
         benchmark::DoNotOptimize(vi_tmGetTicks());
+		benchmark::ClobberMemory();
     }
 }
 BENCHMARK(BM_vi_tmGetTicks);
 
-static void BM_probe(benchmark::State &state)
+static void BM_vi_tmJournalGetMeas(benchmark::State &state)
+{	VI_TM_RESET("xxxx");
+	for (auto _ : state)
+	{	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+		benchmark::DoNotOptimize(m);
+		benchmark::ClobberMemory();
+	}
+}
+BENCHMARK(BM_vi_tmJournalGetMeas);
+
+static void BM_vi_tmMeasurementAdd(benchmark::State &state)
+{	VI_TM_RESET("xxxx");
+	static std::size_t n = 0;
+	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+	for (auto _ : state)
+	{	vi_tmMeasurementAdd(m, arr[n++ % arr.size()], 1);
+		benchmark::ClobberMemory();
+	}
+}
+BENCHMARK(BM_vi_tmMeasurementAdd);
+
+static void BM_probe_make_paused(benchmark::State &state)
 {	VI_TM_RESET("xxxx");
 	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
 	for (auto _ : state)
-	{	auto probe = vi_tm::probe_t::make_running(m);
+	{	auto probe = vi_tm::probe_t::make_paused(m);
+		benchmark::ClobberMemory();
 	}
 }
-BENCHMARK(BM_probe);
+BENCHMARK(BM_probe_make_paused);
 
-static void BM_probe_ext(benchmark::State &state)
+static void BM_probe_resume_pause(benchmark::State &state)
 {	VI_TM_RESET("xxxx");
 	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
 	auto probe = vi_tm::probe_t::make_paused(m);
@@ -61,48 +110,11 @@ static void BM_probe_ext(benchmark::State &state)
 	{	
 		probe.resume();
 		probe.pause();
+		benchmark::ClobberMemory();
 	}
 	probe.stop();
 }
-BENCHMARK(BM_probe_ext);
-
-static void BM_vi_tm(benchmark::State& state) {
-	VI_TM_RESET("xxxx");
-    for (auto _ : state) {
-		auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
-        const auto s = vi_tmGetTicks();
-        const auto f = vi_tmGetTicks();
-		vi_tmMeasurementAdd(m, f - s, 1U);
-    }
-}
-BENCHMARK(BM_vi_tm);
-
-static void BM_VI_TM(benchmark::State& state) {
-	VI_TM_RESET("xxxx");
-    for (auto _ : state) {
-        VI_TM("xxxx");
-    }
-}
-BENCHMARK(BM_VI_TM);
-
-static void BM_vi_tm_S(benchmark::State& state) {
-	VI_TM_RESET("xxxx");
-    for (auto _ : state) {
-		static auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
-        const auto s = vi_tmGetTicks();
-        const auto f = vi_tmGetTicks();
-		vi_tmMeasurementAdd(m, f - s, 1U);
-    }
-}
-BENCHMARK(BM_vi_tm_S);
-
-static void BM_VI_TM_S(benchmark::State& state) {
-	VI_TM_RESET("xxxx");
-    for (auto _ : state) {
-        VI_TM_S("xxxx");
-    }
-}
-BENCHMARK(BM_VI_TM_S);
+BENCHMARK(BM_probe_resume_pause);
 
 #if __ARM_ARCH >= 8 // ARMv8 (RaspberryPi4)
 	VI_TM_TICK VI_TM_CALL RPi4(void) noexcept
@@ -122,50 +134,57 @@ BENCHMARK(BM_VI_TM_S);
 	static void BM_RPi4(benchmark::State& state) {
 		for (auto _ : state) {
 			benchmark::DoNotOptimize(RPi4());
+			benchmark::ClobberMemory();
 		}
 	}
 	BENCHMARK(BM_RPi4);
 #endif
 
-#if 0
-using vector = std::vector<VI_TM_TDIFF>;
-
-// This function generates a set of VI_TM_TDIFF arguments based on a normal distribution.
-// It applies them to the benchmark using ->Apply().
-void generate(benchmark::internal::Benchmark* b)
-{	//	std::mt19937 gen(std::random_device{}());
-	std::mt19937 gen;
-	std::normal_distribution dist(100e6, 20e6);
-
-	constexpr auto N = 1'000;
-	vector result;
-	result.reserve(N);
-	for (VI_TM_SIZE i = 0; i < N; ++i)
-	{	vector::value_type value;
-		do
-		{	value = static_cast<vector::value_type>(dist(gen));
-		} while (value <= 0);
-
-		result.push_back(value);
-	}
-
-	for (auto arg : result)
-	{	b->Arg(arg);  // Register each unique value as a benchmark parameter}
-	}
-}
-
-// This is the benchmark function.
-// It receives one parameter via state.range(0) and performs a computation.
-static void BM_vi_tm_2(benchmark::State &state)
-{
+static void BM_VI_TM(benchmark::State& state) {
 	VI_TM_RESET("xxxx");
-	auto input = state.range(0);  // Get the current parameter
+    for (auto _ : state) {
+        VI_TM("xxxx");
+		benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_VI_TM);
+
+static void BM_vi_tm(benchmark::State &state)
+{	VI_TM_RESET("xxxx");
+	static std::size_t n = 0;
 	for (auto _ : state)
-	{	const auto meas = vi_tmJournalGetMeas(((VI_TM_HJOUR)-1), "XXXX");
-		benchmark::DoNotOptimize(vi_tmGetTicks());
-		benchmark::DoNotOptimize(vi_tmGetTicks());
-		vi_tmMeasurementAdd(meas, static_cast<VI_TM_TDIFF>(input), 1U);
+	{
+		const auto meas_ = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+		const auto start = vi_tmGetTicks();
+		const auto finish = vi_tmGetTicks();
+		benchmark::DoNotOptimize(finish - start);
+		vi_tmMeasurementAdd(meas_, arr[n++ % arr.size()], 1);
+		benchmark::ClobberMemory();
 	}
 }
-BENCHMARK(BM_vi_tm_2)->Apply(generate); // Register the benchmark and apply the normal distribution parameters
-#endif
+BENCHMARK(BM_vi_tm);
+
+static void BM_VI_TM_S(benchmark::State& state) {
+	VI_TM_RESET("xxxx");
+    for (auto _ : state) {
+        VI_TM_S("xxxx");
+		benchmark::ClobberMemory();
+    }
+}
+BENCHMARK(BM_VI_TM_S);
+
+static void BM_vi_tm_S(benchmark::State &state)
+{	VI_TM_RESET("xxxx");
+	static std::size_t n = 0;
+
+	for (auto _ : state)
+	{
+		static const auto meas_ = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+		const auto start = vi_tmGetTicks();
+		const auto finish = vi_tmGetTicks();
+		benchmark::DoNotOptimize(finish - start);
+		vi_tmMeasurementAdd(meas_, arr[n++ % arr.size()], 1);
+		benchmark::ClobberMemory();
+	}
+}
+BENCHMARK(BM_vi_tm_S);
