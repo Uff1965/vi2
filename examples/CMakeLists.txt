@@ -30,7 +30,3 @@ PROPERTIES
 )
     
 add_test(NAME ex_disabled COMMAND 2ex_simple_disabled)
-#    set_tests_properties(ex_disabled
-#    PROPERTIES
-#        PASS_REGULAR_EXPRESSION "^Hello, World!"
-#    )

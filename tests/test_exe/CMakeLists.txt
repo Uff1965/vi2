@@ -125,7 +125,10 @@ elseif(UNIX)
         $<$<CONFIG:Release>: -O3 -flto=auto -s> # Optimize for speed, strip symbols.
     )
 
-    target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:Release>:-flto=auto>")
+    target_link_options(${PROJECT_NAME}
+    PRIVATE
+        "$<$<CONFIG:Release>:-flto=auto>"
+    )
 endif()
 
 set(BUILD_SHARED_LIBS ${_original_BUILD_SHARED_LIBS})
