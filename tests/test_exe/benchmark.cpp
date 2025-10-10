@@ -26,7 +26,8 @@ const auto arr = []
 static void BM_vi_tm_ovh(benchmark::State &state)
 {	static std::size_t n = 0;
 	for (auto _ : state)
-	{	benchmark::DoNotOptimize(arr[n++ % arr.size()]);
+	{	auto tmp = arr[n++ % arr.size()];
+		benchmark::DoNotOptimize(tmp);
 		benchmark::ClobberMemory();
 	}
 }

@@ -83,7 +83,7 @@ TEST(Multithreaded, vi_tmMeasurementAdd)
 			};
 
 			std::vector<std::thread> threads{numThreads};
-			for (auto &t : threads) t.swap(std::thread{ threadFunc });
+			for (auto &t : threads) t = std::thread{ threadFunc };
 			for (auto &t : threads) t.join();
 		};
 
