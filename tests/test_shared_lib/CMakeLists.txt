@@ -89,10 +89,10 @@ elseif(UNIX)
         -fvisibility=hidden # Hide symbols by default, only export those marked with VI_TM_EXPORTS.
         -Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
         -march=native # Switch on all instruction sets supported by the host CPU. Support FMA, AVX, AVX2, etc.
-        $<$<CONFIG:Release>: -O3 -flto -s> # Optimize for speed, strip symbols.
+        $<$<CONFIG:Release>: -O3 -flto=auto -s> # Optimize for speed, strip symbols.
     )
 
-    target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:Release>:-flto>")
+    target_link_options(${PROJECT_NAME} PUBLIC "$<$<CONFIG:Release>:-flto=auto>")
 endif()
 
 set(BUILD_SHARED_LIBS ${_original_BUILD_SHARED_LIBS})
