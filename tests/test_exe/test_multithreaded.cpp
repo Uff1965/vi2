@@ -62,8 +62,8 @@ TEST(Multithreaded, vi_tmJournalGetMeas)
 		EXPECT_EQ(stats.max_, DUR / CNT);
 #endif
 #if VI_TM_STAT_USE_RMSE
-		EXPECT_EQ(stats.flt_calls_, stats.calls_);
-		EXPECT_EQ(stats.flt_cnt_, stats.cnt_);
+		EXPECT_EQ(stats.flt_calls_, numThreads * LOOP_COUNT);
+		EXPECT_EQ(stats.flt_cnt_, stats.calls_ * CNT);
 		EXPECT_EQ(stats.flt_avg_, DUR / CNT);
 		EXPECT_EQ(stats.flt_ss_, 0U);
 #endif
@@ -106,7 +106,7 @@ TEST(Multithreaded, vi_tmMeasurementAdd)
 #endif
 #if VI_TM_STAT_USE_RMSE
 		EXPECT_EQ(stats.flt_calls_, stats.calls_);
-		EXPECT_EQ(stats.flt_cnt_, stats.cnt_);
+		EXPECT_EQ(stats.flt_cnt_, stats.calls_ * CNT);
 		EXPECT_EQ(stats.flt_avg_, DUR / CNT);
 		EXPECT_EQ(stats.flt_ss_, 0U);
 #endif
