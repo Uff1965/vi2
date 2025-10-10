@@ -17,8 +17,7 @@ using namespace std::chrono_literals;
 
 namespace
 {
-	constexpr char THREADFUNC_NAME_1[] = "threadFunc1";
-	constexpr char THREADFUNC_NAME_2[] = "threadFunc2";
+	constexpr char THREADFUNC_NAME[] = "threadFunc2";
 	constexpr char THREADFUNCLOOP_NAME[] = "threadFunc loop";
 	constexpr auto LOOP_COUNT = 32'768U;
 	constexpr auto CNT = 2U;
@@ -34,11 +33,11 @@ TEST(Multithreaded, vi_tmJournalGetMeas)
 	auto action = []
 		{	auto threadFunc = [](int delay)
 			{	std::this_thread::sleep_for(std::chrono::milliseconds{ delay });
-					for (auto i = 0U; i < LOOP_COUNT; ++i)
-					{	auto const meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
-						vi_tmMeasurementAdd(meas, DUR, CNT);
-					}
-				};
+				for (auto i = 0U; i < LOOP_COUNT; ++i)
+				{	auto const meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
+					vi_tmMeasurementAdd(meas, DUR, CNT);
+				}
+			};
 
 			std::mt19937 gen;
 			std::uniform_int_distribution dis{ 0, 3 };
@@ -59,8 +58,8 @@ TEST(Multithreaded, vi_tmJournalGetMeas)
 		EXPECT_EQ(stats.sum_, stats.calls_ * DUR);
 #endif
 #if VI_TM_STAT_USE_MINMAX
-		EXPECT_EQ(stats.flt_min_, DUR / CNT);
-		EXPECT_EQ(stats.flt_max_, DUR / CNT);
+		EXPECT_EQ(stats.min_, DUR / CNT);
+		EXPECT_EQ(stats.max_, DUR / CNT);
 #endif
 #if VI_TM_STAT_USE_RMSE
 		EXPECT_EQ(stats.flt_calls_, stats.calls_);
@@ -72,7 +71,7 @@ TEST(Multithreaded, vi_tmJournalGetMeas)
 }
 
 TEST(Multithreaded, vi_tmMeasurementAdd)
-{	static auto const meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME_2);
+{	static auto const meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME);
 	auto action = []
 		{	auto threadFunc = [](int delay)
 			{	std::this_thread::sleep_for(std::chrono::milliseconds{ delay });
@@ -102,8 +101,8 @@ TEST(Multithreaded, vi_tmMeasurementAdd)
 		EXPECT_EQ(stats.sum_, stats.calls_ * DUR);
 #endif
 #if VI_TM_STAT_USE_MINMAX
-		EXPECT_EQ(stats.flt_min_, DUR / CNT);
-		EXPECT_EQ(stats.flt_max_, DUR / CNT);
+		EXPECT_EQ(stats.min_, DUR / CNT);
+		EXPECT_EQ(stats.max_, DUR / CNT);
 #endif
 #if VI_TM_STAT_USE_RMSE
 		EXPECT_EQ(stats.flt_calls_, stats.calls_);
