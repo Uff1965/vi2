@@ -31,19 +31,23 @@ namespace
 
 TEST(Multithreaded, vi_tmJournalGetMeas)
 {
-	auto threadFunc = []
-		{	std::uniform_int_distribution dis{ 0, 3 };
-			std::this_thread::sleep_for(std::chrono::milliseconds(dis(std::mt19937{})));
+	auto action = []
+		{	auto threadFunc = [](int delay)
+			{	std::this_thread::sleep_for(std::chrono::milliseconds{ delay });
+					for (auto i = 0U; i < LOOP_COUNT; ++i)
+					{	auto const meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
+						vi_tmMeasurementAdd(meas, DUR, CNT);
+					}
+				};
 
-			for (auto i = 0U; i < LOOP_COUNT; ++i)
-			{	auto const meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
-				vi_tmMeasurementAdd(meas, DUR, CNT);
-			}
+			std::mt19937 gen;
+			std::uniform_int_distribution dis{ 0, 3 };
+			std::vector<std::thread> threads{ numThreads };
+			for (auto &t : threads) t = std::thread{ threadFunc, dis(gen) };
+			for (auto &t : threads) t.join();
 		};
 
-	std::vector<std::thread> threads{ numThreads };
-	for (auto &t : threads) t = std::thread{ threadFunc };
-	for (auto &t : threads) t.join();
+	ASSERT_NO_THROW(action());
 
 	{	vi_tmStats_t stats;
 		auto meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
@@ -70,10 +74,8 @@ TEST(Multithreaded, vi_tmJournalGetMeas)
 TEST(Multithreaded, vi_tmMeasurementAdd)
 {	static auto const meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME_2);
 	auto action = []
-		{	static auto threadFunc = +[]
-			{	std::uniform_int_distribution dis{ 0, 3 };
-				std::this_thread::sleep_for(std::chrono::milliseconds(dis(std::mt19937{})));
-
+		{	auto threadFunc = [](int delay)
+			{	std::this_thread::sleep_for(std::chrono::milliseconds{ delay });
 				for (auto i = 0U; i < LOOP_COUNT; ++i)
 				{	vi_tmMeasurementAdd(meas, DUR, CNT);
 					vi_tmStats_t stats;
@@ -82,8 +84,10 @@ TEST(Multithreaded, vi_tmMeasurementAdd)
 				}
 			};
 
+			std::mt19937 gen;
+			std::uniform_int_distribution dis{ 0, 3 };
 			std::vector<std::thread> threads{numThreads};
-			for (auto &t : threads) t = std::thread{ threadFunc };
+			for (auto &t : threads) t = std::thread{ threadFunc, dis(gen) };
 			for (auto &t : threads) t.join();
 		};
 
