@@ -15,6 +15,7 @@
 #	include <mach-o/dyld.h>
 #elif defined(__linux__)
 #	include <dlfcn.h>
+#	include <link.h>
 #	include <limits.h>
 #	include <unistd.h>
 #endif
@@ -59,8 +60,15 @@ namespace platform
 			FreeLibrary(hModule);
 		}
 #elif defined(__linux__)
-		if (Dl_info info{}; dladdr(addr, &info))
-		{	result = info.dli_fname;
+		Dl_info info{};
+		void *extra_info = nullptr;
+		if (dladdr1(addr, &info, &extra_info, RTLD_DL_LINKMAP))
+		{	if (const link_map *lm = static_cast<const link_map *>(extra_info); lm && lm->l_name && lm->l_name[0] != '\0')
+			{	result = lm->l_name;
+			}
+			else if (info.dli_fname && info.dli_fname[0] != '\0')
+			{	result = info.dli_fname;
+			}
 		}
 #else
 #	error "Error: Unknown platform!"
@@ -85,7 +93,8 @@ TEST(filename, exe)
 
 #if VI_TM_SHARED
 TEST(filename, lib)
-{	const auto module_name = file_name
+{	(void)vi_tmStaticInfo(vi_tmInfoVer); // Just to be sure the library is loaded.
+	const auto module_name = file_name
 	(	platform::get_module_path(reinterpret_cast<const void*>(&vi_tmStaticInfo))
 	);
 	EXPECT_TRUE(ends_with(module_name, suffix)) << "Where module_name: \'" << module_name << "\' and suffix: \'" << suffix << "\'.";

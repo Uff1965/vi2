@@ -123,6 +123,7 @@ elseif(UNIX)
         -Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
         -march=native # Switch on all instruction sets supported by the host CPU. Support FMA, AVX, AVX2, etc.
         $<$<CONFIG:Release>: -O3 -flto=auto -s> # Optimize for speed, strip symbols.
+        -fno-plt # Remove PLT to correctly determine the module name by the function address.
     )
 
     target_link_options(${PROJECT_NAME}
