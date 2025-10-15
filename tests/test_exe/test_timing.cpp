@@ -34,7 +34,8 @@ namespace
 		const VI_TM_TICK (&m)[NM],
 		std::size_t M
 	)
-	{	(void)M;
+	{	(void)M; (void)m; (void)x; (void)s;
+
 		vi_tmStats_t result;
 		vi_tmStatsReset(&result);
 		result.calls_ = NS + NX + NM;
@@ -162,8 +163,8 @@ namespace
 				EXPECT_EQ(md.flt_calls_, md.calls_);
 #endif
 #if VI_TM_STAT_USE_MINMAX
-				EXPECT_EQ(md.min_, *std::min_element(std::begin(samples_simple), std::end(samples_simple)));
-				EXPECT_EQ(md.max_, *std::max_element(std::begin(samples_simple), std::end(samples_simple)));
+				EXPECT_DOUBLE_EQ(md.min_, *std::min_element(std::begin(samples_simple), std::end(samples_simple)));
+				EXPECT_DOUBLE_EQ(md.max_, *std::max_element(std::begin(samples_simple), std::end(samples_simple)));
 #endif
 			}
 

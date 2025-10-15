@@ -38,8 +38,13 @@ if (VI_TM_ENABLE_TESTS)
         "test_misc.cpp"
         "test_probe.cpp"
         "test_tmStatsAdd.cpp"
+        "test_stats_validation.cpp"
         "test_timing.cpp"
     )
+
+    if(VI_TM_STAT_USE_FILTER)
+        list(APPEND FILE_GROUP "test_outlier_filtering.cpp")
+    endif()
 
     if(VI_TM_THREADSAFE)
         list(APPEND FILE_GROUP "test_multithreaded.cpp")
@@ -123,7 +128,7 @@ elseif(UNIX)
         -Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
         -march=native # Switch on all instruction sets supported by the host CPU. Support FMA, AVX, AVX2, etc.
         $<$<CONFIG:Release>: -O3 -flto=auto -s> # Optimize for speed, strip symbols.
-        -fno-plt # Remove PLT to correctly determine the module name by the function address.
+#        -fno-plt # Remove PLT to correctly determine the module name by the function address.
     )
 
     target_link_options(${PROJECT_NAME}

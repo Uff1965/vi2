@@ -243,62 +243,62 @@ int vi_tmMeasurementsJournal_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void 
 //vvvv API Implementation vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
 VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmStats_t *meas) noexcept
-{	if(!verify(!!meas))
+{	if(nullptr == meas)
 	{	return VI_EXIT_FAILURE;
 	}
 
 #if VI_TM_STAT_USE_RAW
-	if (!verify((0U != meas->cnt_) == (0U != meas->calls_))) return VI_EXIT_FAILURE; // cnt_ and calls_ must be both zero or both non-zero.
-	if (!verify(meas->cnt_ >= meas->calls_)) return VI_EXIT_FAILURE; // cnt_ must be greater than or equal to calls_.
+	if ((0U == meas->cnt_) != (0U == meas->calls_)) return VI_EXIT_FAILURE; // cnt_ and calls_ must be both zero or both non-zero.
+	if (meas->cnt_ < meas->calls_) return VI_EXIT_FAILURE; // cnt_ must be greater than or equal to calls_.
 #endif
 
 #if VI_TM_STAT_USE_MINMAX
 	if (meas->calls_ == 0U)
-	{	if (!verify(meas->min_ == fp_limits_t::infinity())) return VI_EXIT_FAILURE; // If calls_ is zero, min_ must be infinity.
-		if (!verify(meas->max_ == -fp_limits_t::infinity())) return VI_EXIT_FAILURE; // If calls_ is zero, max_ must be negative infinity. 
+	{	if (meas->min_ != fp_limits_t::infinity()) return VI_EXIT_FAILURE; // If calls_ is zero, min_ must be infinity.
+		if (meas->max_ != -fp_limits_t::infinity()) return VI_EXIT_FAILURE; // If calls_ is zero, max_ must be negative infinity. 
 	}
 	else
-	{	if (!verify(meas->min_ != fp_limits_t::infinity())) return VI_EXIT_FAILURE; // min_ must not be infinity.
+	{	if (meas->min_ == fp_limits_t::infinity()) return VI_EXIT_FAILURE; // min_ must not be infinity.
 		if (meas->calls_ == 1U)
-		{	if (!verify(meas->min_ == meas->max_)) return VI_EXIT_FAILURE; // If there is only one call, min_ and max_ must be equal.
+		{	if (meas->min_ != meas->max_) return VI_EXIT_FAILURE; // If there is only one call, min_ and max_ must be equal.
 		}
 		else
-		{	if (!verify(meas->min_ <= meas->max_)) return VI_EXIT_FAILURE; // min_ must be less than or equal to max_.
+		{	if (meas->min_ > meas->max_) return VI_EXIT_FAILURE; // min_ must be less than or equal to max_.
 		}
 	}
 #endif
 
 #if VI_TM_STAT_USE_RAW && VI_TM_STAT_USE_MINMAX
-	if (meas->calls_ == 1U && !verify(static_cast<VI_TM_FP>(meas->sum_) == meas->min_ * meas->cnt_)) return VI_EXIT_FAILURE; // If there is only one call, sum_ must equal min_ multiplied by cnt_.
-	if (meas->calls_ >= 1U && !verify(static_cast<VI_TM_FP>(meas->sum_) >= meas->max_)) return VI_EXIT_FAILURE; // sum_ must be greater than or equal to max_.
+	if (meas->calls_ == 1U && (static_cast<VI_TM_FP>(meas->sum_) != meas->min_ * meas->cnt_)) return VI_EXIT_FAILURE; // If there is only one call, sum_ must equal min_ multiplied by cnt_.
+	if (meas->calls_ >= 1U && (static_cast<VI_TM_FP>(meas->sum_) < meas->max_)) return VI_EXIT_FAILURE; // sum_ must be greater than or equal to max_.
 #endif
 
 #if VI_TM_STAT_USE_RMSE
-	if (!verify(meas->flt_calls_ <= meas->calls_)) return VI_EXIT_FAILURE; // flt_calls_ must be less than or equal to calls_.
-	if (!verify((fp_ZERO != meas->flt_cnt_) == (0U != meas->flt_calls_))) return VI_EXIT_FAILURE; // flt_cnt_ and flt_calls_ must be both zero or both non-zero.
-	if (!verify(meas->flt_cnt_ >= static_cast<VI_TM_FP>(meas->flt_calls_))) return VI_EXIT_FAILURE; // flt_cnt_ must be greater than or equal to flt_calls_.
-	if (VI_TM_FP _; !verify(std::modf(meas->flt_cnt_, &_) == fp_ZERO)) return VI_EXIT_FAILURE; // flt_cnt_ must be an integer value.
-	if (!verify(meas->flt_avg_ >= fp_ZERO)) return VI_EXIT_FAILURE; // flt_avg_ must be non-negative.
-	if (!verify(meas->flt_ss_ >= fp_ZERO)) return VI_EXIT_FAILURE; // flt_ss_ must be non-negative.
+	if (meas->flt_calls_ > meas->calls_) return VI_EXIT_FAILURE; // flt_calls_ must be less than or equal to calls_.
+	if ((fp_ZERO != meas->flt_cnt_) != (0U != meas->flt_calls_)) return VI_EXIT_FAILURE; // flt_cnt_ and flt_calls_ must be both zero or both non-zero.
+	if (meas->flt_cnt_ < static_cast<VI_TM_FP>(meas->flt_calls_)) return VI_EXIT_FAILURE; // flt_cnt_ must be greater than or equal to flt_calls_.
+	if (VI_TM_FP _; std::modf(meas->flt_cnt_, &_) != fp_ZERO) return VI_EXIT_FAILURE; // flt_cnt_ must be an integer value.
+	if (meas->flt_avg_ < fp_ZERO) return VI_EXIT_FAILURE; // flt_avg_ must be non-negative.
+	if (meas->flt_ss_ < fp_ZERO) return VI_EXIT_FAILURE; // flt_ss_ must be non-negative.
 
 	if (meas->flt_cnt_ == fp_ZERO)
-	{	if (!verify(meas->flt_avg_ == fp_ZERO)) return VI_EXIT_FAILURE; // If flt_cnt_ is zero, flt_avg_ must also be zero.
-		if (!verify(meas->flt_ss_ == fp_ZERO)) return VI_EXIT_FAILURE; // If flt_cnt_ is zero, flt_ss_ must also be zero.
+	{	if (meas->flt_avg_ != fp_ZERO) return VI_EXIT_FAILURE; // If flt_cnt_ is zero, flt_avg_ must also be zero.
+		if (meas->flt_ss_ != fp_ZERO) return VI_EXIT_FAILURE; // If flt_cnt_ is zero, flt_ss_ must also be zero.
 	}
 	else if (meas->flt_cnt_ == fp_ONE)
-	{	if (!verify(meas->flt_ss_ == fp_ZERO)) return VI_EXIT_FAILURE;
+	{	if (meas->flt_ss_ != fp_ZERO) return VI_EXIT_FAILURE;
 	}
 #endif
 
 #if VI_TM_STAT_USE_RAW && VI_TM_STAT_USE_RMSE
-	if (!verify(meas->flt_cnt_ <= static_cast<VI_TM_FP>(meas->cnt_))) return VI_EXIT_FAILURE; // flt_cnt_ must be less than or equal to cnt_.
+	if (meas->flt_cnt_ > static_cast<VI_TM_FP>(meas->cnt_)) return VI_EXIT_FAILURE; // flt_cnt_ must be less than or equal to cnt_.
 #endif
 
 #if VI_TM_STAT_USE_MINMAX && VI_TM_STAT_USE_RMSE
 	if (meas->flt_calls_ > 0U)
 	{	constexpr auto fp_EPSILON = fp_limits_t::epsilon();
-		if (!verify((meas->min_ - meas->flt_avg_) / meas->flt_avg_ < fp_EPSILON)) return VI_EXIT_FAILURE;
-		if (!verify((meas->flt_avg_ - meas->max_) / meas->flt_avg_ < fp_EPSILON)) return VI_EXIT_FAILURE;
+		if ((meas->min_ - meas->flt_avg_) / meas->flt_avg_ >= fp_EPSILON) return VI_EXIT_FAILURE;
+		if ((meas->flt_avg_ - meas->max_) / meas->flt_avg_ >= fp_EPSILON) return VI_EXIT_FAILURE;
 	}
 #endif
 
@@ -369,11 +369,11 @@ void VI_TM_CALL vi_tmStatsAdd(vi_tmStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cn
 #if VI_TM_STAT_USE_RMSE
 		const auto deviation = f_val - meas->flt_avg_; // Difference from the mean value.
 #	if VI_TM_STAT_USE_FILTER
-		constexpr VI_TM_FP K = 2.5; // Threshold for outliers.
-		if(	deviation < fp_ZERO || // The minimum value is usually closest to the true value. "deviation < .0" - for some reason slowly!!!
+		constexpr VI_TM_FP K2 = 2.5 * 2.5; // Threshold for outliers.
+		if(	deviation <= fp_ZERO || // The minimum value is usually closest to the true value. "deviation < .0" - for some reason slowly!!!
 			meas->flt_calls_ <= 2U || // If we have less than 2 measurements, we cannot calculate the standard deviation.
-			dur <= 1U || // The measurable interval is probably smaller than the resolution of the clock.
-			FMA(deviation * deviation, meas->flt_cnt_, - K * K * meas->flt_ss_) < fp_ZERO || // Sigma clipping to avoids outliers.
+//			dur <= 1U || // The measurable interval is probably smaller than the resolution of the clock.
+			FMA(deviation * deviation, meas->flt_cnt_, - K2 * meas->flt_ss_) < fp_ZERO || // Sigma clipping to avoids outliers.
 			meas->flt_ss_ <= 1.0 // A pair of zero initial measurements will block the addition of other.
 		)
 #	endif

@@ -35,7 +35,9 @@ namespace
 	}
 
 	void add_wf(vi_tmStats_t &stats, VI_TM_TDIFF diff, VI_TM_SIZE cnt = 1)
-	{	stats.calls_++;
+	{	(void)cnt; (void)diff;
+
+		stats.calls_++;
 #if VI_TM_STAT_USE_RAW
 		stats.cnt_ += cnt;
 		stats.sum_ += diff;

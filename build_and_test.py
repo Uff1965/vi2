@@ -211,7 +211,8 @@ def work(options: list[str]):
 		else:
 			print(f"[START] {name}: {start.strftime('%H:%M:%S')}")
 
-			build_dir = (config.path_to_build / ("_build_" + suffix))
+			build_dir = (config.path_to_build / "_build")
+#			build_dir = (config.path_to_build / ("_build_" + suffix))
 			print(f"build_dir: \'{build_dir}\'")
 
 			if not config.dry_run and os.path.exists(build_dir) and os.path.isdir(build_dir):
