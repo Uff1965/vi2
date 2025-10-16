@@ -218,8 +218,8 @@ typedef struct vi_tmStats_t
 #endif
 #if VI_TM_STAT_USE_MINMAX
 	// The minimum and maximum times are represented with a floating point because they can be initialized with the average of the batch.
-	VI_TM_FP min_; //!!!! INFINITY - initially!!! Minimum time taken for a single event, in ticks.
-	VI_TM_FP max_; //!!!! -INFINITY - initially!!! Maximum time taken for a single event, in ticks.
+	VI_TM_FP min_; //!!!! VI_TM_FP_POSITIVE_INF - initially!!! Minimum time taken for a single event, in ticks.
+	VI_TM_FP max_; //!!!! VI_TM_FP_NEGATIVE_INF - initially!!! Maximum time taken for a single event, in ticks.
 #endif
 } vi_tmStats_t;
 

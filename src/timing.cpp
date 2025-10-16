@@ -259,11 +259,12 @@ VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmStats_t *meas) noexcept
 
 #if VI_TM_STAT_USE_MINMAX
 	if (meas->calls_ == 0U)
-	{	if (meas->min_ != VI_TM_FP_POSITIVE_INF) return VI_EXIT_FAILURE; // If calls_ is zero, min_ must be infinity.
-		if (meas->max_ != VI_TM_FP_NEGATIVE_INF) return VI_EXIT_FAILURE; // If calls_ is zero, max_ must be negative infinity. 
+	{	if (std::memcmp(&meas->min_, &VI_TM_FP_POSITIVE_INF, sizeof(VI_TM_FP))) return VI_EXIT_FAILURE; // If calls_ is zero, min_ must be infinity.
+		if (std::memcmp(&meas->max_, &VI_TM_FP_NEGATIVE_INF, sizeof(VI_TM_FP))) return VI_EXIT_FAILURE; // If calls_ is zero, max_ must be negative infinity. 
 	}
 	else
-	{	if (meas->min_ == VI_TM_FP_POSITIVE_INF) return VI_EXIT_FAILURE; // min_ must not be infinity.
+	{	if (0 == std::memcmp(&meas->min_, &VI_TM_FP_POSITIVE_INF, sizeof(VI_TM_FP))) return VI_EXIT_FAILURE; // min_ must not be infinity.
+		if (0 == std::memcmp(&meas->max_, &VI_TM_FP_NEGATIVE_INF, sizeof(VI_TM_FP))) return VI_EXIT_FAILURE; // max_ must not be infinity.
 		if (meas->calls_ == 1U)
 		{	if (meas->min_ != meas->max_) return VI_EXIT_FAILURE; // If there is only one call, min_ and max_ must be equal.
 		}

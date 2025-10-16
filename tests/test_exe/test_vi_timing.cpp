@@ -125,7 +125,7 @@ int main(int argc, char** argv)
 	std::memcpy(&inf, &VI_TM_FP_POSITIVE_INF, std::min(sizeof(inf), sizeof(VI_TM_FP_POSITIVE_INF)));
 	std::cout << "VI_TM_FP_POSITIVE_INF: 0x" << std::hex << std::uppercase << inf << "\n";
 	std::memcpy(&inf, &VI_TM_FP_NEGATIVE_INF, std::min(sizeof(inf), sizeof(VI_TM_FP_NEGATIVE_INF)));
-	std::cout << "VI_TM_FP_POSITIVE_INF: 0x" << std::hex << std::uppercase << inf << "\n";
+	std::cout << "VI_TM_FP_NEGATIVE_INF: 0x" << std::hex << std::uppercase << inf << "\n";
 	endl(std::cout);
 #endif
 
