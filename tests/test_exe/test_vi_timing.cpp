@@ -120,15 +120,6 @@ namespace
 
 int main(int argc, char** argv)
 {
-#if VI_TM_STAT_USE_MINMAX
-	std::uint64_t inf = 0;
-	std::memcpy(&inf, &VI_TM_FP_POSITIVE_INF, std::min(sizeof(inf), sizeof(VI_TM_FP_POSITIVE_INF)));
-	std::cout << "VI_TM_FP_POSITIVE_INF: 0x" << std::hex << std::uppercase << inf << "\n";
-	std::memcpy(&inf, &VI_TM_FP_NEGATIVE_INF, std::min(sizeof(inf), sizeof(VI_TM_FP_NEGATIVE_INF)));
-	std::cout << "VI_TM_FP_NEGATIVE_INF: 0x" << std::hex << std::uppercase << inf << "\n";
-	endl(std::cout);
-#endif
-
 	const auto gtest_arg = any_gtest_arg(argc, argv);
 #if VI_HAS_GTEST
 	::testing::InitGoogleTest(&argc, argv);

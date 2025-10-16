@@ -266,11 +266,9 @@ TEST(OutlierFiltering, FilteringDisabled)
 	vi_tmMeasurementGet(meas, nullptr, &stats_after);
 	
 	// When filtering is disabled, all values should be accepted
-#if VI_TM_STAT_USE_RMSE
+#	if VI_TM_STAT_USE_RMSE
 	EXPECT_EQ(stats_after.flt_calls_, stats_after.calls_);
-#endif
-#else
-	GTEST_SKIP() << "Filtering is enabled in this build";
+#	endif
 #endif
 }
 
