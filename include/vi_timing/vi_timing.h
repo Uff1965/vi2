@@ -223,6 +223,11 @@ typedef struct vi_tmStats_t
 #endif
 } vi_tmStats_t;
 
+#if VI_TM_STAT_USE_MINMAX
+VI_TM_API extern const VI_TM_FP VI_TM_FP_POSITIVE_INF;
+VI_TM_API extern const VI_TM_FP VI_TM_FP_NEGATIVE_INF;
+#endif
+
 // vi_tmInfo_e: Enumeration for various timing information types used in the vi_timing library.
 // Each value corresponds to a specific static information query, such as version, build type, or timing characteristics.
 // The return type for each enum value is indicated in the comment.

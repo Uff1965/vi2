@@ -37,8 +37,8 @@ TEST(StatsValidation, EmptyStats)
 	EXPECT_EQ(stats.sum_, 0U);
 #endif
 #if VI_TM_STAT_USE_MINMAX
-	EXPECT_EQ(stats.min_, fp_limits_t::infinity());
-	EXPECT_EQ(stats.max_, -fp_limits_t::infinity());
+	EXPECT_EQ(stats.min_, VI_TM_FP_POSITIVE_INF);
+	EXPECT_EQ(stats.max_, VI_TM_FP_NEGATIVE_INF);
 #endif
 #if VI_TM_STAT_USE_RMSE
 	EXPECT_EQ(stats.flt_calls_, 0U);
@@ -137,8 +137,8 @@ TEST(StatsValidation, ZeroCountIgnored)
 	EXPECT_EQ(stats.sum_, 0U);
 #endif
 #if VI_TM_STAT_USE_MINMAX
-	EXPECT_EQ(stats.min_, fp_limits_t::infinity());
-	EXPECT_EQ(stats.max_, -fp_limits_t::infinity());
+	EXPECT_EQ(stats.min_, VI_TM_FP_POSITIVE_INF);
+	EXPECT_EQ(stats.max_, VI_TM_FP_NEGATIVE_INF);
 #endif
 #if VI_TM_STAT_USE_RMSE
 	EXPECT_EQ(stats.flt_calls_, 0U);
@@ -236,8 +236,8 @@ TEST(StatsValidation, ResetAfterOperations)
 	EXPECT_EQ(stats.sum_, 0U);
 #endif
 #if VI_TM_STAT_USE_MINMAX
-	EXPECT_EQ(stats.min_, fp_limits_t::infinity());
-	EXPECT_EQ(stats.max_, -fp_limits_t::infinity());
+	EXPECT_EQ(stats.min_, VI_TM_FP_POSITIVE_INF);
+	EXPECT_EQ(stats.max_, VI_TM_FP_NEGATIVE_INF);
 #endif
 #if VI_TM_STAT_USE_RMSE
 	EXPECT_EQ(stats.flt_calls_, 0U);

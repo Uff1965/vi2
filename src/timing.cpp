@@ -242,6 +242,11 @@ int vi_tmMeasurementsJournal_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void 
 
 //vvvv API Implementation vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
+#if VI_TM_STAT_USE_MINMAX
+const VI_TM_FP VI_TM_FP_POSITIVE_INF = fp_limits_t::infinity();
+const VI_TM_FP VI_TM_FP_NEGATIVE_INF = -fp_limits_t::infinity();
+#endif
+
 VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmStats_t *meas) noexcept
 {	if(nullptr == meas)
 	{	return VI_EXIT_FAILURE;
@@ -254,11 +259,11 @@ VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmStats_t *meas) noexcept
 
 #if VI_TM_STAT_USE_MINMAX
 	if (meas->calls_ == 0U)
-	{	if (meas->min_ != fp_limits_t::infinity()) return VI_EXIT_FAILURE; // If calls_ is zero, min_ must be infinity.
-		if (meas->max_ != -fp_limits_t::infinity()) return VI_EXIT_FAILURE; // If calls_ is zero, max_ must be negative infinity. 
+	{	if (meas->min_ != VI_TM_FP_POSITIVE_INF) return VI_EXIT_FAILURE; // If calls_ is zero, min_ must be infinity.
+		if (meas->max_ != VI_TM_FP_NEGATIVE_INF) return VI_EXIT_FAILURE; // If calls_ is zero, max_ must be negative infinity. 
 	}
 	else
-	{	if (meas->min_ == fp_limits_t::infinity()) return VI_EXIT_FAILURE; // min_ must not be infinity.
+	{	if (meas->min_ == VI_TM_FP_POSITIVE_INF) return VI_EXIT_FAILURE; // min_ must not be infinity.
 		if (meas->calls_ == 1U)
 		{	if (meas->min_ != meas->max_) return VI_EXIT_FAILURE; // If there is only one call, min_ and max_ must be equal.
 		}
@@ -316,8 +321,8 @@ void VI_TM_CALL vi_tmStatsReset(vi_tmStats_t *meas) noexcept
 	meas->sum_ = 0U;
 #endif
 #if VI_TM_STAT_USE_MINMAX
-	meas->min_ = fp_limits_t::infinity();
-	meas->max_ = -fp_limits_t::infinity();
+	meas->min_ = VI_TM_FP_POSITIVE_INF;
+	meas->max_ = VI_TM_FP_NEGATIVE_INF;
 #endif
 #if VI_TM_STAT_USE_RMSE
 	meas->flt_calls_ = 0U;
