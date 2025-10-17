@@ -11,13 +11,15 @@
 
 #if defined(_WIN32)
 #	include <windows.h>
-#elif defined(__APPLE__)
-#	include <mach-o/dyld.h>
-#elif defined(__linux__)
+#elif defined(__GNU_SOURCE)
 #	include <dlfcn.h>
 #	include <link.h>
 #	include <limits.h>
 #	include <unistd.h>
+#elif defined(__APPLE__)
+#	include <mach-o/dyld.h>
+#else
+#	error "Error: Unknown platform!"
 #endif
 
 namespace fs = std::filesystem;
@@ -25,78 +27,78 @@ namespace fs = std::filesystem;
 namespace
 {
 	const std::string suffix = VI_TM_LIB_SUFFIX;
-	void function_located_in_an_executable_module() {}
 
 	bool ends_with(std::string_view l, std::string_view r)
 	{	return(l.size() >= r.size() && 0 == l.compare(l.size() - r.size(), r.size(), r));
 	}
 
-	std::string file_name(const fs::path& p, bool trim_extension = true)
-	{	const auto fn = p.filename().string();
-		if (trim_extension)
-		{	if (const auto pos = fn.rfind('.'); pos != std::string::npos)
-			{	return fn.substr(0, pos);
-			}
+	[[nodiscard]] fs::path get_module_path(const void* addr)
+	{	if(!addr)
+		{	assert(false);
+			return {};
 		}
-		return fn;
-	}
-}
 
-namespace platform
-{
-	fs::path get_module_path(const void* addr)
-	{	std::string result;
 #if defined(_WIN32)
-		if (HMODULE hModule = NULL; GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, reinterpret_cast<LPCSTR>(addr), &hModule))
-		{	result.resize(MAX_PATH);
-			DWORD len = 0;
-			while((len = GetModuleFileNameA(hModule, result.data(), static_cast<DWORD>(result.size()))))
-			{	if (len < result.size())
-				{	break;
-				}
-				result.resize(len * 2);
-			}
-			result.resize(len);
-			FreeLibrary(hModule);
+		HMODULE hModule = NULL;
+		if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, static_cast<LPCWSTR>(addr), &hModule) || !hModule)
+		{	assert(false);
+			return {};
 		}
+
+		std::wstring path(MAX_PATH, L'\0');
+		DWORD len = 0;
+		while((len = GetModuleFileNameW(hModule, path.data(), static_cast<DWORD>(path.size()))) >= path.size())
+		{	path.resize(len * 2);
+		}
+		path.resize(len);
+
+		FreeLibrary(hModule);
+		return { path };
 #elif defined(__linux__)
 		Dl_info info{};
-		void *extra_info = nullptr;
-		if (dladdr1(addr, &info, &extra_info, RTLD_DL_LINKMAP))
-		{	if (const link_map *lm = static_cast<const link_map *>(extra_info); lm && lm->l_name && lm->l_name[0] != '\0')
-			{	result = lm->l_name;
-			}
-			else if (info.dli_fname && info.dli_fname[0] != '\0')
-			{	result = info.dli_fname;
-			}
+#	if defined(__GLIBC__)
+		link_map *lm = nullptr;
+		if (!dladdr1(addr, &info, reinterpret_cast<void**>(&lm), RTLD_DL_LINKMAP))
+#	else
+		if (!dladdr(addr, &info))
+#	endif
+		{	assert(false);
+			return {};
 		}
+
+		fs::path result;
+#	if defined(__GLIBC__)
+		if (lm && lm->l_name && lm->l_name[0] != '\0')
+		{	return{ lm->l_name };
+		}
+#	endif
+		if (info.dli_fname && info.dli_fname[0] != '\0')
+		{	return{ info.dli_fname };
+		}
+		assert(false);
+		return {};
 #else
 #	error "Error: Unknown platform!"
 #endif
-		return { result };
 	}
-}
+} // namespace
 
 TEST(filename, exe)
-{
+{	auto module_name = get_module_path(reinterpret_cast<const void *>(&get_module_path));
 #ifdef _WIN32
-	static constexpr auto trim_extension = true;
-#else
-	static constexpr auto trim_extension = false;
+	module_name = module_name.stem();
 #endif
-	const auto module_name = file_name
-	(	platform::get_module_path(reinterpret_cast<const void*>(&function_located_in_an_executable_module)),
-		trim_extension
-	);
-	EXPECT_TRUE(ends_with(module_name, suffix)) << "Where module_name: \'" << module_name << "\' and suffix: \'" << suffix << "\'.";
+	EXPECT_TRUE(ends_with(module_name.string(), suffix)) <<
+		"Where module_name: \'" << module_name <<
+		"\' and suffix: \'" << suffix << "\'.";
 }
 
 #if VI_TM_SHARED
 TEST(filename, lib)
-{	(void)vi_tmStaticInfo(vi_tmInfoVer); // Just to be sure the library is loaded.
-	const auto module_name = file_name
-	(	platform::get_module_path(reinterpret_cast<const void*>(&vi_tmStaticInfo))
-	);
-	EXPECT_TRUE(ends_with(module_name, suffix)) << "Where module_name: \'" << module_name << "\' and suffix: \'" << suffix << "\'.";
+{	auto* const flags = vi_tmStaticInfo(vi_tmInfoFlags); // We get a pointer to the data stored in the library.
+	const auto module_name = get_module_path(flags).stem();
+	EXPECT_TRUE(ends_with(module_name.string(), suffix)) <<
+		"Where module_name: \'" << module_name <<
+		"\' and suffix: \'" << suffix << "\'.";
 }
 #endif
