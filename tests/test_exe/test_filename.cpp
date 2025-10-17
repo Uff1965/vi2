@@ -11,7 +11,7 @@
 
 #if defined(_WIN32)
 #	include <windows.h>
-#elif defined(__GNU_SOURCE)
+#elif defined(__GLIBC__)
 #	include <dlfcn.h>
 #	include <link.h>
 #	include <limits.h>
