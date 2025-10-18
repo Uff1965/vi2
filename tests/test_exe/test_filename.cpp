@@ -10,14 +10,10 @@
 #include <string>
 
 #if defined(_WIN32)
-#	include <windows.h>
-#elif defined(__GLIBC__)
-#	include <dlfcn.h>
-#	include <link.h>
-#	include <limits.h>
-#	include <unistd.h>
-#elif defined(__APPLE__)
-#	include <mach-o/dyld.h>
+#	include <windows.h> // GetModuleHandleExW(), GetModuleFileNameW(), FreeLibrary()
+#elif defined(__linux__)
+#	include <dlfcn.h> // dladdr()
+#	include <link.h> // link_map 
 #else
 #	error "Error: Unknown platform!"
 #endif
