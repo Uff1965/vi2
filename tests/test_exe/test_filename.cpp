@@ -11,13 +11,13 @@
 
 #if defined(_WIN32)
 #	include <windows.h>
-#elif defined(__GLIBC__)
-#	include <dlfcn.h>
-#	include <link.h>
-#	include <limits.h>
-#	include <unistd.h>
-#elif defined(__APPLE__)
-#	include <mach-o/dyld.h>
+#elif defined(__linux__)
+#	if defined(__GLIBC__)
+#	endif
+#	include <dlfcn.h> // dladdr()
+#	include <link.h> // link_map 
+//#	include <limits.h>
+//#	include <unistd.h>
 #else
 #	error "Error: Unknown platform!"
 #endif
