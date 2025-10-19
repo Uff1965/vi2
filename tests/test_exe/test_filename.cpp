@@ -1,6 +1,3 @@
-// This is an independent project of an individual developer. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
-
 #include <vi_timing/vi_timing.hpp>
 
 #include <gtest/gtest.h>
@@ -46,10 +43,9 @@ namespace
 		while((len = GetModuleFileNameW(hModule, path.data(), static_cast<DWORD>(path.size()))) >= path.size())
 		{	path.resize(len * 2);
 		}
-		path.resize(len);
 
 		FreeLibrary(hModule);
-		return { path };
+		return { path.begin(), next(path.begin(), len) };
 #elif defined(__linux__)
 		Dl_info info{};
 #	if defined(__GLIBC__)

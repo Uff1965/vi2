@@ -1,11 +1,9 @@
+// This is an independent project of an individual developer. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
+
 #if defined(_WIN32)
 #	include <windows.h>
-#else
-#	include <dlfcn.h>
 #endif
-
-#include <cassert>
-#include <cstddef>
 
 #include <vi_timing/vi_timing.hpp>
 
@@ -28,7 +26,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
 		break;
 
 	default:
-		assert(DLL_THREAD_ATTACH == ul_reason_for_call || DLL_THREAD_DETACH == ul_reason_for_call);
+		assert((DLL_THREAD_ATTACH == ul_reason_for_call) || (DLL_THREAD_DETACH == ul_reason_for_call));
 		break;
 	}
 	return TRUE;

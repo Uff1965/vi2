@@ -1,6 +1,3 @@
-// This is an independent project of an individual developer. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++, C#, and Java: http://www.viva64.com
-
 /*****************************************************************************\
 * This file is part of the vi_timing library.
 * 
@@ -24,15 +21,10 @@
 #include "header.h"
 
 #include <vi_timing/vi_timing.hpp>
-//#include <gtest/gtest.h>
 
 //VI_TM_INIT();
 
 VI_TM("GLOBAL lib/source.cpp");
-
-//TEST(vi_tmF2A, common)
-//{
-//}
 
 void test_shared_lib_func(void)
 {

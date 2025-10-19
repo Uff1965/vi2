@@ -31,15 +31,15 @@ if (VI_TM_ENABLE_TESTS)
     list(APPEND SOURCE_FILES ${FILE_GROUP})
 
     set(FILE_GROUP
-        "start_stop.cpp"
         "test.h"
         "test_filename.cpp"
         "test_format.cpp"
         "test_misc.cpp"
         "test_probe.cpp"
-        "test_tmStatsAdd.cpp"
+        "test_start_stop.cpp"
         "test_stats_validation.cpp"
         "test_timing.cpp"
+        "test_tmStatsAdd.cpp"
     )
 
     if(VI_TM_STAT_USE_FILTER)
