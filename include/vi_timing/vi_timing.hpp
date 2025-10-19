@@ -33,7 +33,7 @@
 #	define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, __LINE__ )
 #endif
 
-#ifdef VI_TM_DISABLE
+#if defined(VI_TM_DISABLE)
 	// Fallback macros for timing functions
 #	define VI_TM_INIT(...) static const int vi_tm__UNIC_ID = 0
 #	define VI_TM(...) const int VI_UNIC_ID(vi_tm__) = 0
@@ -42,30 +42,21 @@
 #	define VI_TM_REPORT(...) ((void)0)
 #	define VI_TM_RESET(...) ((void)0)
 #	define VI_TM_FULLVERSION ""
-#else
-#	ifdef __cplusplus
-#		include <cassert>
-#		include <cstring>
-#		include <string>
-#		include <type_traits>
-#		include <utility>
+#elif defined(__cplusplus)
+// Visual Studio historically leaves __cplusplus as 199711L;
+// use _MSVC_LANG for actual MSVC standard (or enable /Zc:__cplusplus).
+#	if __cplusplus < 201703L && (!defined(_MSVC_LANG) || _MSVC_LANG < 201703L)
+#		error "vi_timing requires C++17 or later."
+#	endif
 
-// By default, Visual Studio always returns the value 199711L for the __cplusplus preprocessor macro.
-// The Microsoft-specific macro _MSVC_LANG also reports the version standard.
-#		if __cplusplus < 201703L && _MSVC_LANG < 201703L
-#			error "vi_timing requires C++17 or later."
-#		endif
+#	include <cassert>
+#	include <cstring>
+#	include <string>
+#	include <type_traits>
+#	include <utility>
 
 namespace vi_tm
 {
-	inline std::string to_string(double val, unsigned char sig = 2U, unsigned char dec = 1U)
-	{	std::string result;
-		result.resize(sig + (9 + 1 + 1), '\0'); // "-00S.Se-308"
-		const auto len = vi_tmF2A(result.data(), result.size(), val, sig, dec);
-		result.resize(len - 1U);
-		return result;
-	}
-
 	class init_t
 	{
 		std::string title_ = "Timing report:\n";
@@ -74,14 +65,6 @@ namespace vi_tm
 
 		init_t(const init_t &) = delete;
 		init_t& operator=(const init_t &) = delete;
-
-		template<typename... Args>
-		VI_TM_RESULT init(Args&&... args)
-		{	VI_TM_RESULT result = 0;
-			((result |= init_aux(std::forward<Args>(args))), ...);
-			result |= vi_tmInit(title_.c_str(), report_flags_, flags_);
-			return result;
-		}
 
 		template<typename T>
 		VI_TM_RESULT init_aux(T &&v)
@@ -105,6 +88,14 @@ namespace vi_tm
 
 			return result;
 		}
+
+		template<typename... Args>
+		VI_TM_RESULT init(Args&&... args)
+		{	VI_TM_RESULT result = 0;
+			((result |= init_aux(std::forward<Args>(args))), ...);
+			result |= vi_tmInit(title_.c_str(), report_flags_, flags_);
+			return result;
+		}
 	public:
 		init_t() { auto ret = init(); (void)ret; assert(0 == ret); } // Default flags and other settings.
 		template<typename... Args> explicit init_t(Args&&... args)
@@ -119,9 +110,8 @@ namespace vi_tm
 	// probe_t class: A RAII-style class for measuring code execution time.
 	// Unlike the API, this class is not thread-safe!!!
 	class probe_t
-	{	// Signed type with the same size as VI_TM_SIZE
-		using signed_tm_size_t = std::make_signed_t<VI_TM_SIZE>;
-		struct paused_tag {};
+	{	using signed_tm_size_t = std::make_signed_t<VI_TM_SIZE>; // Signed type with the same size as VI_TM_SIZE
+		struct paused_tag {}; // Tag type for paused constructor
 
 		// Invariants:
 		//  - meas_ is a non-owning handle; caller retains ownership and must ensure validity.
@@ -137,13 +127,13 @@ namespace vi_tm
 			cnt_{ -static_cast<signed_tm_size_t>(cnt) }
 		{	assert(!!meas_ && !!cnt_);
 		}
-	public:
 		explicit probe_t(VI_TM_HMEAS m, VI_TM_SIZE cnt) noexcept
 		:	meas_{ m },
 			cnt_{ static_cast<signed_tm_size_t>(cnt) },
 			start_{ vi_tmGetTicks() }
 		{	assert(!!meas_ && !!cnt_);
 		}
+	public:
 		probe_t() = delete;
 		probe_t(const probe_t &) = delete;
 		probe_t& operator=(const probe_t &) = delete;
@@ -239,7 +229,15 @@ namespace vi_tm
 		[[nodiscard]] bool idle() const noexcept { return cnt_ == 0; }
 		[[nodiscard]] bool active() const noexcept { return cnt_ > 0; }
 		[[nodiscard]] bool paused() const noexcept { return cnt_ < 0; }
-	};
+	}; // class probe_t
+
+	inline std::string to_string(double val, unsigned char sig = 2U, unsigned char dec = 1U)
+	{	std::string result;
+		result.resize(sig + (9 + 1 + 1), '\0'); // "-00S.Se-308"
+		const auto len = vi_tmF2A(result.data(), result.size(), val, sig, dec);
+		result.resize(len - 1U);
+		return result;
+	}
 } // namespace vi_tm
 
 // Initializes the global journal and sets up the report callback.
@@ -254,12 +252,6 @@ namespace vi_tm
 #		define VI_TM_DEBUG_ONLY(t)
 #	endif
 
-#	define VI_TM(...) \
-		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
-		{	const auto meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, name); \
-			return vi_tm::probe_t::make_running(meas, cnt); \
-		}(__VA_ARGS__)
-
 	/// <summary>
 	/// Starts a scoped timing probe for high-resolution profiling.
 	/// </summary>
@@ -271,12 +263,26 @@ namespace vi_tm
 	/// </param>
 	/// <remarks>
 	/// The macro defines a unique probe object whose underlying measurement handle
-	/// is initialized once and cached (static) to avoid repeated lookups by name.
-	/// 
-	/// Each invocation of VI_TM_S at the same source location
-	/// must use the exact same <paramref name="name"/> and <paramref name="cnt"/>.
-	/// Re-invoking the macro in the same place with different arguments
-	/// is forbidden and will produce inconsistent or invalid profiling data.
+	/// is obtained from the global journal. The handle is looked up by name and
+	/// used to construct a RAII-style `vi_tm::probe_t` that starts immediately.
+	/// </remarks>
+#	define VI_TM(...) \
+		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
+		{	const auto meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, name); \
+			return vi_tm::probe_t::make_running(meas, cnt); \
+		}(__VA_ARGS__)
+
+	/// <summary>
+	/// See <see cref="VI_TM"/> for the full description. Starts a scoped timing probe with a cached measurement lookup.
+	/// </summary>
+	/// <remarks>
+	/// Behavior is the same as <see cref="VI_TM"/> except that the measurement handle is cached
+	/// in a static variable to avoid repeated lookups by name.
+	///
+	/// Important: each invocation of <c>VI_TM_S</c> at the same source location MUST use the
+	/// exact same <paramref name="name"/> and <paramref name="cnt"/> values. Reusing the macro
+	/// at the same location with different arguments is forbidden and will produce inconsistent
+	/// or invalid profiling data.
 	/// </remarks>
 #	define VI_TM_S(...) \
 		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
@@ -302,5 +308,4 @@ namespace vi_tm
 	// Full version string of the library (Example: "0.1.0.2506151515R static").
 #	define VI_TM_FULLVERSION static_cast<const char*>(vi_tmStaticInfo(vi_tmInfoVersion))
 #endif // #ifdef __cplusplus
-#endif // #ifdef VI_TM_DISABLE #else
 #endif // #ifndef VI_TIMING_VI_TIMING_H

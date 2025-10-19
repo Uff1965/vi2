@@ -24,14 +24,9 @@
 
 #if __has_include("vi_timing_version.h")
 #	include "vi_timing_version.h" // Include the generated version data.
-//#else
-//#	define VI_TM_VERSION_MAJOR 0;
-//#	define VI_TM_VERSION_MINOR 0;
-//#	define VI_TM_VERSION_PATCH 0;
-//
-//#	define VI_TM_GIT_DESCRIBE "";
-//#	define VI_TM_GIT_COMMIT "unknown";
-//#	define VI_TM_GIT_DATETIME "unknown";
+#else
+#	define VI_TM_VERSION_MAJOR 0;
+#	define VI_TM_VERSION_MINOR 1;
 #endif
 
 #	include <stdint.h> // uint64_t
@@ -77,10 +72,8 @@
 // Library rebuild required
 #if VI_TM_STAT_USE_FILTER && !VI_TM_STAT_USE_RMSE
 #	error "The filter is only available when RMSE is enabled."
-#elif !defined(VI_TM_STAT_USE_FILTER)
-#	if VI_TM_STAT_USE_RMSE
-#		define VI_TM_STAT_USE_FILTER 1
-#	endif
+#elif !defined(VI_TM_STAT_USE_FILTER) && VI_TM_STAT_USE_RMSE
+#	define VI_TM_STAT_USE_FILTER 1
 #endif
 
 // Uncomment the next line to store minimum and maximum measurement values. Library rebuild required

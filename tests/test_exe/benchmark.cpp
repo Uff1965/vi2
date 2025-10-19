@@ -20,7 +20,7 @@ const auto arr = []
 		return result;
 	}();
 
-static void BM_vi_tm_ovh(benchmark::State &state)
+static void BM_benchmark_ovh(benchmark::State &state)
 {	static std::size_t n = 0;
 	for (auto _ : state)
 	{	auto tmp = arr[n++ % arr.size()];
@@ -28,7 +28,7 @@ static void BM_vi_tm_ovh(benchmark::State &state)
 		benchmark::ClobberMemory();
 	}
 }
-BENCHMARK(BM_vi_tm_ovh);
+BENCHMARK(BM_benchmark_ovh);
 
 static void BM_timespec_get(benchmark::State& state)
 {
