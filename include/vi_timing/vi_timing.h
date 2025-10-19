@@ -244,25 +244,25 @@ typedef enum vi_tmInfo_e
 // These flags allow customization of sorting, display options, and report details.
 typedef enum vi_tmReportFlags_e
 {
-	vi_tmSortByTime		= 0x00, // If set, the report will be sorted by time spent in the measurement.
-	vi_tmSortByName		= 0x01, // If set, the report will be sorted by measurement name.
-	vi_tmSortBySpeed	= 0x02, // If set, the report will be sorted by average time per event (speed).
-	vi_tmSortByAmount	= 0x03, // If set, the report will be sorted by the number of events measured.
+	vi_tmSortByTime		= 0x00, // sort by time spent on the measurement.
+	vi_tmSortByName		= 0x01, // sort by measurement name.
+	vi_tmSortBySpeed	= 0x02, // sort by average time per event (speed).
+	vi_tmSortByAmount	= 0x03, // sort by the number of events measured.
 	vi_tmSortMask		= 0x03,
 
-	vi_tmSortAscending			= 1 << 3, // If set, the report will be sorted in ascending order.
+	vi_tmSortAscending			= 1 << 3, // sort in ascending order.
 
-	vi_tmShowOverhead			= 1 << 4, // If set, the report will show the overhead of the clock.
-	vi_tmShowUnit				= 1 << 5, // If set, the report will show the time unit (seconds per tick).
-	vi_tmShowDuration			= 1 << 6, // If set, the report will show the duration of the measurement in seconds.
-	vi_tmShowDurationEx			= 1 << 7, // If set, the report will show the duration, including overhead costs, in seconds.
-	vi_tmShowResolution			= 1 << 8, // If set, the report will show the clock resolution in seconds.
-	vi_tmShowAux				= 1 << 9, // If set, the report will show auxiliary information such as overhead.
+	vi_tmShowOverhead			= 1 << 4, // show the overhead of the clock.
+	vi_tmShowUnit				= 1 << 5, // show the time unit (seconds per tick).
+	vi_tmShowDuration			= 1 << 6, // show the duration of the measurement in seconds.
+	vi_tmShowDurationEx			= 1 << 7, // show the duration, including overhead costs, in seconds.
+	vi_tmShowResolution			= 1 << 8, // show the clock resolution in seconds.
+	vi_tmShowAux				= 1 << 9, // show auxiliary information such as overhead.
 	vi_tmShowMask				= 0x03F0, // Mask for all show flags.
 
 	vi_tmHideHeader				= 1 << 10, // If set, the report will not show the header with column names.
 	vi_tmDoNotSubtractOverhead	= 1 << 11, // If set, the overhead is not subtracted from the measured time in report.
-	vi_tmDoNotReport		= 1 << 12, // If set, no report will be generated.
+	vi_tmDoNotReport			= 1 << 12, // If set, no report will be generated.
 
 	vi_tmReportFlagsMask		= 0x1FFF,
 	vi_tmReportDefault			= vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByTime,
