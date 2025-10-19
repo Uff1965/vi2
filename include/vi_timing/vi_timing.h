@@ -90,15 +90,14 @@
 
 // Define: VI_SYS_CALL, VI_TM_CALL and VI_TM_API vvvvvvvvvvvvvv
 #if defined(_MSC_VER)
-
-#	ifdef _M_IX86 // x86 architecture
+#	ifdef _M_IX86 // x86 architecture MSVC
 #		define VI_SYS_CALL __cdecl
 #		define VI_TM_CALL __cdecl
 #	else
 #		define VI_SYS_CALL
 #		define VI_TM_CALL
 #	endif
-
+#
 #	if ! VI_TM_SHARED
 #		define VI_TM_API
 #	elif ! VI_TM_EXPORTS
@@ -106,16 +105,15 @@
 #	else
 #		define VI_TM_API __declspec(dllexport)
 #	endif
-
 #elif defined (__GNUC__) || defined(__clang__)
-#	ifdef __i386__
+#	ifdef __i386__ // x86 architecture GCC/Clang
 #		define VI_SYS_CALL __attribute__((cdecl))
 #		define VI_TM_CALL __attribute__((cdecl))
 #	else
 #		define VI_SYS_CALL
 #		define VI_TM_CALL
 #	endif
-
+#
 #	if VI_TM_EXPORTS
 #		define VI_TM_API __attribute__((visibility("default")))
 #	else

@@ -25,16 +25,16 @@
 #	include "vi_timing.h"
 #	include "vi_timing_aux.h"
 
-#define VI_STR_CONCAT_AUX( a, b ) a##b
-#define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
-#ifdef __COUNTER__
-#	define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, __COUNTER__ )
-#else
-#	define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, __LINE__ )
-#endif
+#	define VI_STR_CONCAT_AUX( a, b ) a##b
+#	define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
+#	ifdef __COUNTER__
+#		define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, __COUNTER__ )
+#	else
+#		define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, __LINE__ )
+#	endif
 
 #if defined(VI_TM_DISABLE)
-	// Fallback macros for timing functions
+#	// Fallback macros for timing functions
 #	define VI_TM_INIT(...) static const int vi_tm__UNIC_ID = 0
 #	define VI_TM(...) const int VI_UNIC_ID(vi_tm__) = 0
 #	define VI_TM_S(...) const int VI_UNIC_ID(vi_tm__) = 0
@@ -43,12 +43,12 @@
 #	define VI_TM_RESET(...) ((void)0)
 #	define VI_TM_FULLVERSION ""
 #elif defined(__cplusplus)
-// Visual Studio historically leaves __cplusplus as 199711L;
-// use _MSVC_LANG for actual MSVC standard (or enable /Zc:__cplusplus).
+#	// Visual Studio historically leaves __cplusplus as 199711L;
+#	// use _MSVC_LANG for actual MSVC standard (or enable /Zc:__cplusplus).
 #	if __cplusplus < 201703L && (!defined(_MSVC_LANG) || _MSVC_LANG < 201703L)
 #		error "vi_timing requires C++17 or later."
 #	endif
-
+#
 #	include <cassert>
 #	include <cstring>
 #	include <string>
@@ -296,13 +296,10 @@ namespace vi_tm
 
 	// This macro is used to create a probe_t object with the function name as the measurement name.
 #	define VI_TM_FUNC VI_TM(VI_FUNCNAME)
-
 	// Generates a report for the global journal.
 #	define VI_TM_REPORT(...) vi_tmReport(VI_TM_HGLOBAL, __VA_ARGS__)
-
 	// Resets the data of the specified measure entry in global journal. The handle remains valid.
 #	define VI_TM_RESET(name) vi_tmMeasurementReset(vi_tmJournalGetMeas(VI_TM_HGLOBAL, (name)))
-
 	// Full version string of the library (Example: "0.1.0.2506151515R static").
 #	define VI_TM_FULLVERSION static_cast<const char*>(vi_tmStaticInfo(vi_tmInfoVersion))
 #endif // #ifdef __cplusplus
