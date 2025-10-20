@@ -243,10 +243,8 @@ namespace vi_tm
 
 // VI_[N]DEBUG_ONLY macro: Expands to its argument only in debug builds, otherwise expands to nothing.
 #	if VI_TM_DEBUG
-#		define VI_TM_NDEBUG_ONLY(t)
 #		define VI_TM_DEBUG_ONLY(t) t
 #	else
-#		define VI_TM_NDEBUG_ONLY(t) t
 #		define VI_TM_DEBUG_ONLY(t)
 #	endif
 
