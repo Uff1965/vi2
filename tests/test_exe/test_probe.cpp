@@ -89,10 +89,12 @@ namespace
 // Test implementations of the C API functions.
 // The signatures must match exactly the declarations in vi_timing_c.h.
 // The linker will prefer these definitions in the test binary.
+#pragma warning(suppress: 4273)
 VI_TM_TICK VI_TM_CALL vi_tmGetTicks_fake(void) VI_NOEXCEPT
 {	return g_ticks;
 }
 
+#pragma warning(suppress: 4273)
 void VI_TM_CALL vi_tmMeasurementAdd_fake(VI_TM_HMEAS m, VI_TM_TDIFF dur, VI_TM_SIZE cnt) VI_NOEXCEPT
 {	// Record the values for assertions in tests.
 	g_last_meas = m;

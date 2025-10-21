@@ -23,7 +23,7 @@ import sys
 from dataclasses import dataclass, field
 
 START_ALL_TIME = datetime.datetime.now()
-PROJECT_ROOT:pathlib.Path = os.path.dirname(__file__) if '__file__' in globals() else os.getcwd()
+PROJECT_ROOT:pathlib.Path = pathlib.Path(__file__).parent if '__file__' in globals() else pathlib.Path.cwd()
 EMPTY = "__EMPTY__"
 OPTIONS = [
 	("BUILD_SHARED_LIBS", 's'),
@@ -45,10 +45,20 @@ class Config:
 	list_only: bool = False
 	dry_run: bool = False
 	build_count: int = 0
+	total: int = 0
 
 config: Config
 
 # ---------------- Helpers ----------------
+
+def make_relative_if_subpath(target: pathlib.Path, base: pathlib.Path = pathlib.Path.cwd()) -> pathlib.Path:
+	target = target.resolve()
+	base = base.resolve()
+
+	if target.parts[:len(base.parts)] == base.parts:
+		return target.relative_to(base)
+	else:
+		return target
 
 def format_duration(seconds: float) -> str:
 	# Round to 1 decimal place for consistency
@@ -102,9 +112,9 @@ def remove_readonly(func, path, _):
 	os.chmod(path, stat.S_IWRITE)  # Change file permissions to writable
 	func(path)                     # Retry the original removal function
 
-def run(cmd: list[str], dry_run: bool = False, cwd: str | None = None)-> subprocess.CompletedProcess | None:
-	print(f"RUN: {' '.join(cmd)} (cwd={cwd or os.getcwd()})")
-	return subprocess.CompletedProcess(cmd, returncode=0) if dry_run else subprocess.run(cmd, cwd=cwd, check=True)
+def run(cmd: list[str], cwd: str | None = None)-> subprocess.CompletedProcess | None:
+	print(f"RUN: {' '.join(cmd)}")
+	return subprocess.CompletedProcess(cmd, returncode=0) if config.dry_run else subprocess.run(cmd, cwd=cwd, check=True)
 
 def make_options(combo: tuple[bool,...])-> list[str]:
 	result = []
@@ -139,8 +149,6 @@ def make_setjobs()->list[str]:
 	return []
 
 def folder_remake(path: str):
-	if config.dry_run:
-		return
 	# Remove the folder if it exists
 	if os.path.exists(path):
 		shutil.rmtree(path, onerror=remove_readonly)
@@ -167,29 +175,30 @@ def skip_suffix(suffix: str, filters: list[str]) -> bool:
 def configuring(build_dir: str, options: list[str]):
 		print("Configuration the project:")
 		params = ["cmake"]
-		params += ["-S", str(config.path_to_source)]
-		params += ["-B", str(build_dir)]
+		params += ["-S", str(make_relative_if_subpath(config.path_to_source))]
+		params += ["-B", str(make_relative_if_subpath(build_dir))]
 		params += [f"-DCMAKE_BUILD_TYPE={config.build_config}"]
-		params += [f"-DVI_TM_OUTPUT_PATH={str(config.path_to_result)}"]
+		params += [f"-DVI_TM_OUTPUT_PATH={str(make_relative_if_subpath(config.path_to_result))}"]
 		params += options
 		for val in config.cmake_defines:
 			params += [f"-D{val}"]
-		run(params, config.dry_run)
+		run(params)
 		print("Configuration the project - done\n")
 
 def build(build_dir: str):
 		print("Build the project:")
 		params = ["cmake"]
-		params += ["--build", str(build_dir)]
+		params += ["--build", str(make_relative_if_subpath(build_dir))]
 		params += ["--config", config.build_config]
 		params += make_setjobs() #must be last
-		run(params, config.dry_run)
+		run(params)
 		print("Build the project - done\n")
 
 def testing(build_dir: str):
 		print("Test the project:")
-		params = ["ctest", "--test-dir"]
-		params += [str(build_dir), "--output-on-failure"]
+		params = ["ctest"]
+		params += ["--test-dir", str(make_relative_if_subpath(build_dir))]
+		params += ["--output-on-failure"]
 		match get_cmake_property("CMAKE_CXX_COMPILER_ID"):
 			case "GNU" | "Clang":
 				None
@@ -199,8 +208,8 @@ def testing(build_dir: str):
 				print("Warning: Unknown compiler, skipping tests.")
 
 		# Run the tests; the script will terminate upon the first error.
-		run(params, config.dry_run)
-		print("Test the project - done")
+		run(params)
+		print("Test the project - done\n")
 
 def work(options: list[str]):
 		start = datetime.datetime.now()
@@ -209,12 +218,13 @@ def work(options: list[str]):
 		if config.list_only:
 			print(f"{name}")
 		else:
-			print(f"[START] {name}: {start.strftime('%H:%M:%S')}")
+			print("*" * 70)
+			print(f"[START] {config.build_count}/{config.total} {name}: {start.strftime('%H:%M:%S')}")
 
-			build_dir = (config.path_to_build / "_build")
 #			build_dir = (config.path_to_build / ("_build_" + suffix))
-			print(f"build_dir: \'{build_dir}\'")
-
+#			print(f"build_dir: \'{make_relative_if_subpath(build_dir)}\'")
+			build_dir = (config.path_to_build / "_build")
+			print()
 			if not config.dry_run and os.path.exists(build_dir) and os.path.isdir(build_dir):
 				shutil.rmtree(build_dir, onerror=remove_readonly)
 
@@ -225,11 +235,12 @@ def work(options: list[str]):
 			if not config.dry_run:
 				shutil.rmtree(build_dir, onerror=remove_readonly)
 
-			print(f"[FINISH] {config.build_count}: {name} ["
+			print(f"[FINISH] {config.build_count}/{config.total}: {name} ["
 				f"Elapsed: {format_duration((datetime.datetime.now() - start).total_seconds())} "
 				f"(all: {format_duration((datetime.datetime.now() - START_ALL_TIME).total_seconds())})"
-				"]\n")
-			print("*" * 60)
+				"]")
+			print("*" * 70)
+			print()
 # ---------------- CLI ----------------
 
 def parse_args() -> Config:
@@ -287,12 +298,24 @@ def main():
 	global config
 	config = parse_args()
 
-	print(f"[START ALL]: {START_ALL_TIME.strftime('%H:%M:%S')}")
+	for combo in itertools.product([False, True], repeat=len(OPTIONS)):
+		options = make_options(combo)
+		suffix = make_suffix(options)
+		if skip_suffix(suffix, config.suffix_filters):
+			continue
+		config.total += 1
+
+	print(f"[START ALL] {config.total} combinations: {START_ALL_TIME.strftime('%H:%M:%S')}")
 	print(f"Agrs: {sys.argv}")
+	print(f"CWD = {os.getcwd()}")
+	print(f"Source directory: \'{make_relative_if_subpath(config.path_to_source)}\'")
+	print(f"Build directory: \'{make_relative_if_subpath(config.path_to_build)}\'")
+	print(f"Output directory: \'{make_relative_if_subpath(config.path_to_result)}\'")
 	print()
 
-	folder_remake(config.path_to_build)
-	folder_remake(config.path_to_result)
+	if not config.dry_run:
+		folder_remake(config.path_to_build)
+		folder_remake(config.path_to_result)
 
 	# Iterate over all possible True/False combinations for each option
 	for combo in itertools.product([False, True], repeat=len(OPTIONS)):
