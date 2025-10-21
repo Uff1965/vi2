@@ -22,11 +22,12 @@
 #	define VI_TIMING_VI_TIMING_C_H
 #	pragma once
 
-#if __has_include("vi_timing_version.h")
+#if !defined(__has_include)
+#	error "Wow! How exotic. Define the following macros manually."
+#	define VI_TM_VERSION_MAJOR 0
+#	define VI_TM_VERSION_MINOR 1
+#elif !defined(VI_TM_VERSION_MAJOR) && __has_include("vi_timing_version.h")
 #	include "vi_timing_version.h" // Include the generated version data.
-#else
-#	define VI_TM_VERSION_MAJOR 0;
-#	define VI_TM_VERSION_MINOR 1;
 #endif
 
 #include <stdint.h> // uint64_t
@@ -35,9 +36,8 @@
 //*******************************************************************************************************************
 // Library configuration options:
 
-// Set VI_TM_DEBUG to TRUE to enable debug-mode assertions and diagnostics.
+// Set VI_TM_DEBUG to FALSE to link with the release version of the library.
 // Note: This may impact runtime performance.
-// Library rebuild required
 #if !defined(VI_TM_DEBUG) && !defined(NDEBUG)
 #	define VI_TM_DEBUG 1 // Enable debug mode.
 #endif
@@ -76,10 +76,10 @@
 
 // Set the VI_TM_STAT_USE_RMSE macro to FALSE to switch off filtering in measurements.
 // Library rebuild required
-#if VI_TM_STAT_USE_FILTER && !VI_TM_STAT_USE_RMSE
-#	error "The filter is only available when RMSE is enabled."
-#elif !defined(VI_TM_STAT_USE_FILTER) && VI_TM_STAT_USE_RMSE
+#if !defined(VI_TM_STAT_USE_FILTER) && VI_TM_STAT_USE_RMSE
 #	define VI_TM_STAT_USE_FILTER 1
+#elif VI_TM_STAT_USE_FILTER && !VI_TM_STAT_USE_RMSE
+#	error "The filter is only available when RMSE is enabled."
 #endif
 
 // Uncomment the next line to store minimum and maximum measurement values. Library rebuild required
@@ -553,8 +553,13 @@ typedef enum vi_tmStatus_e
 #	define VI_TM_FLAGS_SUFFIX ""
 #endif
 
-#if VI_TM_VERSION_MAJOR || VI_TM_VERSION_MINOR
-#	define VI_TM_VERSION_SUFFIX "-" VI_STRINGIZE(VI_TM_VERSION_MAJOR) "." VI_STRINGIZE(VI_TM_VERSION_MINOR)
+#ifdef VI_TM_VERSION_MAJOR
+#	ifdef VI_TM_VERSION_MINOR
+#		define VI_TM_VERSION_SUFFIX "-" VI_STRINGIZE(VI_TM_VERSION_MAJOR) "." VI_STRINGIZE(VI_TM_VERSION_MINOR)
+#	else
+#		define VI_TM_VERSION (VI_TM_VERSION_MAJOR * 1000U * 10000U)
+#		define VI_TM_VERSION_SUFFIX "-" VI_STRINGIZE(VI_TM_VERSION_MAJOR)
+#	endif
 #else
 #	define VI_TM_VERSION_SUFFIX ""
 #endif
