@@ -108,9 +108,9 @@ def get_cmake_property(key: str) -> str:
 			return line[key_len + 1:].strip(' \'"').strip()
 	raise KeyError(f"CMake property '{key}' not found")
 
-def remove_readonly(func, path, _):
-	os.chmod(path, stat.S_IWRITE)  # Change file permissions to writable
-	func(path)                     # Retry the original removal function
+def remove_readonly(func, path: str, exc_info) -> None:
+    pathlib.Path(path).chmod(stat.S_IWRITE)
+    func(path)
 
 def run(cmd: list[str], cwd: str | None = None)-> subprocess.CompletedProcess | None:
 	print(f"RUN: {' '.join(cmd)}")
@@ -148,12 +148,12 @@ def make_setjobs()->list[str]:
 			return ["--", f"/m:{jobs}"]
 	return []
 
-def folder_remake(path: str):
+def folder_remake(path: pathlib.Path):
 	# Remove the folder if it exists
-	if os.path.exists(path):
+	if path.exists():
 		shutil.rmtree(path, onerror=remove_readonly)
 	# Create a fresh empty folder
-	os.makedirs(path)
+	path.mkdir(parents=True, exist_ok=True)
 
 def skip_suffix(suffix: str, filters: list[str]) -> bool:
 	# Check dependency: VI_TM_STAT_USE_FILTER requires VI_TM_STAT_USE_RMSE
@@ -225,7 +225,7 @@ def work(options: list[str]):
 #			print(f"build_dir: \'{make_relative_if_subpath(build_dir)}\'")
 			build_dir = (config.path_to_build / "_build")
 			print()
-			if not config.dry_run and os.path.exists(build_dir) and os.path.isdir(build_dir):
+			if not config.dry_run and build_dir.exists() and build_dir.isdir():
 				shutil.rmtree(build_dir, onerror=remove_readonly)
 
 			configuring(build_dir, options)
@@ -307,7 +307,7 @@ def main():
 
 	print(f"[START ALL] {config.total} combinations: {START_ALL_TIME.strftime('%H:%M:%S')}")
 	print(f"Agrs: {sys.argv}")
-	print(f"CWD = {os.getcwd()}")
+	print(f"CWD = {pathlib.Path.cwd()}")
 	print(f"Source directory: \'{make_relative_if_subpath(config.path_to_source)}\'")
 	print(f"Build directory: \'{make_relative_if_subpath(config.path_to_build)}\'")
 	print(f"Output directory: \'{make_relative_if_subpath(config.path_to_result)}\'")
