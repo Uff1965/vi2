@@ -173,7 +173,7 @@ def skip_suffix(suffix: str, filters: list[str]) -> bool:
 	return not any(f and set(f) <= suffix_set for f in filters)
 
 def configuring(build_dir: str, options: list[str]):
-		print("Configuration the project:")
+		print(f"Configuration the project {config.build_count}/{config.total}:")
 		params = ["cmake"]
 		params += ["-S", str(make_relative_if_subpath(config.path_to_source))]
 		params += ["-B", str(make_relative_if_subpath(build_dir))]
@@ -186,7 +186,7 @@ def configuring(build_dir: str, options: list[str]):
 		print("Configuration the project - done\n")
 
 def build(build_dir: str):
-		print("Build the project:")
+		print(f"Build the project {config.build_count}/{config.total}:")
 		params = ["cmake"]
 		params += ["--build", str(make_relative_if_subpath(build_dir))]
 		params += ["--config", config.build_config]
@@ -195,7 +195,7 @@ def build(build_dir: str):
 		print("Build the project - done\n")
 
 def testing(build_dir: str):
-		print("Test the project:")
+		print(f"Test the project {config.build_count}/{config.total}:")
 		params = ["ctest"]
 		params += ["--test-dir", str(make_relative_if_subpath(build_dir))]
 		params += ["--output-on-failure"]
