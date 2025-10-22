@@ -293,7 +293,7 @@ namespace vi_tm
 		}(__VA_ARGS__)
 
 	// This macro is used to create a probe_t object with the function name as the measurement name.
-#	define VI_TM_FUNC VI_TM(VI_FUNCNAME)
+#	define VI_TM_FUNC VI_TM_S(VI_FUNCNAME, 1U)
 	// Generates a report for the global journal.
 #	define VI_TM_REPORT(...) vi_tmReport(VI_TM_HGLOBAL, __VA_ARGS__)
 	// Resets the data of the specified measure entry in global journal. The handle remains valid.
