@@ -25,13 +25,13 @@ namespace
 		}();
 }
 
-TEST(Multithreaded, vi_tmJournalGetMeas)
+TEST(Multithreaded, vi_tmRegistryGetMeas)
 {
 	auto action = []
 		{	auto threadFunc = [](int delay)
 			{	std::this_thread::sleep_for(std::chrono::milliseconds{ delay });
 				for (auto i = 0U; i < LOOP_COUNT; ++i)
-				{	auto const meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
+				{	auto const meas = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
 					vi_tmMeasurementAdd(meas, DUR, CNT);
 				}
 			};
@@ -46,7 +46,7 @@ TEST(Multithreaded, vi_tmJournalGetMeas)
 	ASSERT_NO_THROW(action());
 
 	{	vi_tmStats_t stats;
-		auto meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
+		auto meas = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, THREADFUNCLOOP_NAME);
 		vi_tmMeasurementGet(meas, nullptr, &stats);
 		ASSERT_EQ(vi_tmStatsIsValid(&stats), 0);
 		EXPECT_EQ(stats.calls_, numThreads * LOOP_COUNT);
@@ -68,7 +68,7 @@ TEST(Multithreaded, vi_tmJournalGetMeas)
 }
 
 TEST(Multithreaded, vi_tmMeasurementAdd)
-{	static auto const meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME);
+{	static auto const meas = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, THREADFUNC_NAME);
 	auto action = []
 		{	auto threadFunc = [](int delay)
 			{	std::this_thread::sleep_for(std::chrono::milliseconds{ delay });

@@ -69,20 +69,20 @@ static void BM_vi_tmGetTicks(benchmark::State& state) {
 }
 BENCHMARK(BM_vi_tmGetTicks);
 
-static void BM_vi_tmJournalGetMeas(benchmark::State &state)
+static void BM_vi_tmRegistryGetMeas(benchmark::State &state)
 {	VI_TM_RESET("xxxx");
 	for (auto _ : state)
-	{	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+	{	auto m = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "xxxx");
 		benchmark::DoNotOptimize(m);
 		benchmark::ClobberMemory();
 	}
 }
-BENCHMARK(BM_vi_tmJournalGetMeas);
+BENCHMARK(BM_vi_tmRegistryGetMeas);
 
 static void BM_vi_tmMeasurementAdd(benchmark::State &state)
 {	VI_TM_RESET("xxxx");
 	static std::size_t n = 0;
-	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+	auto m = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "xxxx");
 	for (auto _ : state)
 	{	vi_tmMeasurementAdd(m, arr[n++ % arr.size()], 1);
 		benchmark::ClobberMemory();
@@ -92,7 +92,7 @@ BENCHMARK(BM_vi_tmMeasurementAdd);
 
 static void BM_probe_make_paused(benchmark::State &state)
 {	VI_TM_RESET("xxxx");
-	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+	auto m = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "xxxx");
 	for (auto _ : state)
 	{	auto probe = vi_tm::probe_t::make_paused(m);
 		benchmark::ClobberMemory();
@@ -102,7 +102,7 @@ BENCHMARK(BM_probe_make_paused);
 
 static void BM_probe_resume_pause(benchmark::State &state)
 {	VI_TM_RESET("xxxx");
-	auto m = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+	auto m = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "xxxx");
 	auto probe = vi_tm::probe_t::make_paused(m);
 	for (auto _ : state)
 	{	
@@ -152,7 +152,7 @@ static void BM_vi_tm(benchmark::State &state)
 	static std::size_t n = 0;
 	for (auto _ : state)
 	{
-		const auto meas_ = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+		const auto meas_ = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "xxxx");
 		const auto start = vi_tmGetTicks();
 		const auto finish = vi_tmGetTicks();
 		benchmark::DoNotOptimize(finish - start);
@@ -177,7 +177,7 @@ static void BM_vi_tm_S(benchmark::State &state)
 
 	for (auto _ : state)
 	{
-		static const auto meas_ = vi_tmJournalGetMeas(VI_TM_HGLOBAL, "xxxx");
+		static const auto meas_ = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "xxxx");
 		const auto start = vi_tmGetTicks();
 		const auto finish = vi_tmGetTicks();
 		benchmark::DoNotOptimize(finish - start);

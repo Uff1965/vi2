@@ -165,7 +165,7 @@ namespace
 
 	using storage_t = std::unordered_map<std::string, meterage_t>;
 	using jrn_finalizer_ctx_t = void*;
-	using jrn_finalizer_fn_t = int(*)(vi_tmMeasurementsJournal_t*, jrn_finalizer_ctx_t);
+	using jrn_finalizer_fn_t = int(*)(vi_tmRegistry_t*, jrn_finalizer_ctx_t);
 	using jrn_finalizer_t = std::pair<jrn_finalizer_fn_t, jrn_finalizer_ctx_t>;
 }
 
@@ -178,7 +178,7 @@ static_assert
 		"'vi_tmMeasurement_t' should simply be a synonym for 'storage_t::value_type'."
 	);
 
-struct vi_tmMeasurementsJournal_t
+struct vi_tmRegistry_t
 {
 private:
 	static constexpr auto MAX_LOAD_FACTOR = 0.7F;
@@ -187,15 +187,15 @@ protected:
 	storage_t storage_;
 	VI_TM_THREADSAFE_ONLY(mutable adaptive_mutex_t storage_guard_);
 public:
-	vi_tmMeasurementsJournal_t(const vi_tmMeasurementsJournal_t &) = delete;
-	vi_tmMeasurementsJournal_t& operator=(const vi_tmMeasurementsJournal_t &) = delete;
-	vi_tmMeasurementsJournal_t();
-	~vi_tmMeasurementsJournal_t() = default;
+	vi_tmRegistry_t(const vi_tmRegistry_t &) = delete;
+	vi_tmRegistry_t& operator=(const vi_tmRegistry_t &) = delete;
+	vi_tmRegistry_t();
+	~vi_tmRegistry_t() = default;
 	auto& try_emplace(const char *name); // Get a reference to the measurement by name, creating it if it does not exist.
-	int for_each_measurement(vi_tmMeasEnumCb_t fn, void *ctx); // Calls the function fn for each measurement in the journal, while this function returns 0. Returns the return code of the function fn if it returned a nonzero value, or 0 if all measurements were processed.
+	int for_each_measurement(vi_tmMeasEnumCb_t fn, void *ctx); // Calls the function fn for each measurement in the registry, while this function returns 0. Returns the return code of the function fn if it returned a nonzero value, or 0 if all measurements were processed.
 };
 
-vi_tmMeasurementsJournal_t::vi_tmMeasurementsJournal_t()
+vi_tmRegistry_t::vi_tmRegistry_t()
 {	storage_.max_load_factor(MAX_LOAD_FACTOR);
 	storage_.reserve(DEFAULT_STORAGE_CAPACITY);
 }
@@ -220,14 +220,14 @@ inline vi_tmStats_t meterage_t::get() const noexcept
 	return stats_;
 }
 
-inline auto& vi_tmMeasurementsJournal_t::try_emplace(const char *name)
+inline auto& vi_tmRegistry_t::try_emplace(const char *name)
 {	assert(name);
 	VI_TM_THREADSAFE_ONLY(std::lock_guard lock{ storage_guard_ });
 	auto [iterator, _] = storage_.try_emplace(name);
 	return *iterator;
 }
 
-int vi_tmMeasurementsJournal_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void *ctx)
+int vi_tmRegistry_t::for_each_measurement(vi_tmMeasEnumCb_t fn, void *ctx)
 {	VI_TM_THREADSAFE_ONLY(std::lock_guard lock{ storage_guard_ });
 	assert(fn);
 	for (auto &it : storage_)
@@ -429,9 +429,9 @@ void VI_TM_CALL vi_tmStatsMerge(vi_tmStats_t* VI_RESTRICT dst, const vi_tmStats_
 	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(dst));
 }
 
-VI_TM_HJOUR VI_TM_CALL vi_tmJournalCreate()
+VI_TM_HJOUR VI_TM_CALL vi_tmRegistryCreate()
 {	try
-	{	return new vi_tmMeasurementsJournal_t;
+	{	return new vi_tmRegistry_t;
 	}
 	catch (const std::bad_alloc &)
 	{	assert(false);
@@ -439,20 +439,20 @@ VI_TM_HJOUR VI_TM_CALL vi_tmJournalCreate()
 	}
 }
 
-void VI_TM_CALL vi_tmJournalClose(VI_TM_HJOUR journal)
-{	delete journal;
+void VI_TM_CALL vi_tmRegistryClose(VI_TM_HJOUR registry)
+{	delete registry;
 }
 
-void VI_TM_CALL vi_tmJournalReset(VI_TM_HJOUR journal) noexcept
-{	vi_tmJournalEnumerateMeas(journal, [](VI_TM_HMEAS m, void *) { vi_tmMeasurementReset(m); return 0; }, nullptr);
+void VI_TM_CALL vi_tmRegistryReset(VI_TM_HJOUR registry) noexcept
+{	vi_tmRegistryEnumerateMeas(registry, [](VI_TM_HMEAS m, void *) { vi_tmMeasurementReset(m); return 0; }, nullptr);
 }
 
-VI_TM_RESULT VI_TM_CALL vi_tmJournalEnumerateMeas(VI_TM_HJOUR journal, vi_tmMeasEnumCb_t fn, void *ctx)
-{	return misc::from_handle(journal)->for_each_measurement(fn, ctx);
+VI_TM_RESULT VI_TM_CALL vi_tmRegistryEnumerateMeas(VI_TM_HJOUR registry, vi_tmMeasEnumCb_t fn, void *ctx)
+{	return misc::from_handle(registry)->for_each_measurement(fn, ctx);
 }
 
-VI_TM_HMEAS VI_TM_CALL vi_tmJournalGetMeas(VI_TM_HJOUR journal, const char *name)
-{	return static_cast<VI_TM_HMEAS>(&misc::from_handle(journal)->try_emplace(name));
+VI_TM_HMEAS VI_TM_CALL vi_tmRegistryGetMeas(VI_TM_HJOUR registry, const char *name)
+{	return static_cast<VI_TM_HMEAS>(&misc::from_handle(registry)->try_emplace(name));
 }
 
 void VI_TM_CALL vi_tmMeasurementAdd(VI_TM_HMEAS meas, VI_TM_TDIFF tick_diff, VI_TM_SIZE cnt) noexcept

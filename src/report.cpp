@@ -178,12 +178,12 @@ namespace
 		std::string item_column(vi_tmReportFlags_e clmn) const;
 	};
 
-	std::vector<metering_t> get_meterings(VI_TM_HJOUR journal_handle, unsigned flags)
+	std::vector<metering_t> get_meterings(VI_TM_HJOUR registry_handle, unsigned flags)
 	{	std::vector<metering_t> result;
 		auto data = std::tie(result, flags);
 		using data_t = decltype(data);
-		vi_tmJournalEnumerateMeas
-		(	journal_handle,
+		vi_tmRegistryEnumerateMeas
+		(	registry_handle,
 			[](VI_TM_HMEAS h, void *callback_data)
 			{	const char *name;
 				vi_tmStats_t meas;
@@ -504,15 +504,15 @@ int formatter_t::print_metering(const metering_t &i, const F &fn) const
 	return fn(str.str().c_str());
 }
 
-VI_TM_RESULT VI_TM_CALL vi_tmReport(VI_TM_HJOUR journal_handle, VI_TM_FLAGS flags, vi_tmReportCb_t fn, void *ctx)
+VI_TM_RESULT VI_TM_CALL vi_tmReport(VI_TM_HJOUR registry_handle, VI_TM_FLAGS flags, vi_tmReportCb_t fn, void *ctx)
 {	assert(!ctx || !!fn);
 	if (nullptr == fn)
-	{	// Simulate the use of the journal to inhibit automatic report generation.
-		vi_tmJournalEnumerateMeas(journal_handle, +[](VI_TM_HMEAS, void *) { return 1; }, nullptr);
+	{	// Simulate the use of the registry to inhibit automatic report generation.
+		vi_tmRegistryEnumerateMeas(registry_handle, +[](VI_TM_HMEAS, void *) { return 1; }, nullptr);
 		return 0;
 	}
 
-	auto metering_entries = get_meterings(journal_handle, flags);
+	auto metering_entries = get_meterings(registry_handle, flags);
 	std::sort(metering_entries.begin(), metering_entries.end(), comparator_t{ flags });
 	const formatter_t formatter{ metering_entries, flags };
 	const auto prn = [fn, ctx](const char *str) { return fn(str, ctx); };

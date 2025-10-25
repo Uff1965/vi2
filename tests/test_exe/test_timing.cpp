@@ -16,7 +16,7 @@ namespace
 #	define FMA(x, y, z) ((x) * (y) + (z))
 #endif
 
-	using unique_journal_t = std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmJournalClose)>;
+	using unique_registryl_t = std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmRegistryClose)>;
 
 	using fp_limits_t = std::numeric_limits<VI_TM_FP>;
 	constexpr auto fp_ZERO = static_cast<VI_TM_FP>(0);
@@ -131,8 +131,8 @@ namespace
 
 	TEST(main, vi_tmMeasurementStats)
 	{
-		const unique_journal_t journal{ vi_tmJournalCreate(), vi_tmJournalClose };
-		const auto hmeas = vi_tmJournalGetMeas(journal.get(), NAME);
+		const unique_registryl_t registry{ vi_tmRegistryCreate(), vi_tmRegistryClose };
+		const auto hmeas = vi_tmRegistryGetMeas(registry.get(), NAME);
 
 		{
 			static constexpr auto samples_simple =
@@ -194,8 +194,8 @@ namespace
 	};
 
 	TEST(main, RMSE)
-	{	unique_journal_t journal{ vi_tmJournalCreate(), vi_tmJournalClose }; // Journal for measurements, automatically closed on destruction.
-		const auto hmeas = vi_tmJournalGetMeas(journal.get(), NAME); // Create a measurement 'NAME'.
+	{	unique_registryl_t registry{ vi_tmRegistryCreate(), vi_tmRegistryClose }; // Registry for measurements, automatically closed on destruction.
+		const auto hmeas = vi_tmRegistryGetMeas(registry.get(), NAME); // Create a measurement 'NAME'.
 		for (auto x : SAMPLES_SIMPLE) // Add simple samples one at a time.
 		{	vi_tmMeasurementAdd(hmeas, x);
 		}
@@ -216,8 +216,8 @@ namespace
 	};
 
 	TEST(main, Merge)
-	{	unique_journal_t journal{ vi_tmJournalCreate(), vi_tmJournalClose }; // Journal for measurements, automatically closed on destruction.
-		const auto hmeas = vi_tmJournalGetMeas(journal.get(), NAME); // Create a measurement 'NAME'.
+	{	unique_registryl_t registry{ vi_tmRegistryCreate(), vi_tmRegistryClose }; // Registry for measurements, automatically closed on destruction.
+		const auto hmeas = vi_tmRegistryGetMeas(registry.get(), NAME); // Create a measurement 'NAME'.
 
 		for (auto x : SAMPLES_SIMPLE) // Add simple samples one at a time.
 		{	vi_tmMeasurementAdd(hmeas, x);

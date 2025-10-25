@@ -238,7 +238,7 @@ namespace vi_tm
 	}
 } // namespace vi_tm
 
-// Initializes the global journal and sets up the report callback.
+// Initializes the global registry and sets up the report callback.
 #	define VI_TM_INIT(...) vi_tm::init_t vi_tm__UNIC_ID {__VA_ARGS__}
 
 // VI_[N]DEBUG_ONLY macro: Expands to its argument only in debug builds, otherwise expands to nothing.
@@ -259,12 +259,12 @@ namespace vi_tm
 	/// </param>
 	/// <remarks>
 	/// The macro defines a unique probe object whose underlying measurement handle
-	/// is obtained from the global journal. The handle is looked up by name and
+	/// is obtained from the global registry. The handle is looked up by name and
 	/// used to construct a RAII-style `vi_tm::probe_t` that starts immediately.
 	/// </remarks>
 #	define VI_TM(...) \
 		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
-		{	const auto meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, name); \
+		{	const auto meas = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, name); \
 			return vi_tm::probe_t::make_running(meas, cnt); \
 		}(__VA_ARGS__)
 
@@ -282,7 +282,7 @@ namespace vi_tm
 	/// </remarks>
 #	define VI_TM_S(...) \
 		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
-		{	static const auto meas = vi_tmJournalGetMeas(VI_TM_HGLOBAL, name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
+		{	static const auto meas = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
 			VI_TM_DEBUG_ONLY \
 			(	const char* registered_name = nullptr; \
 				vi_tmMeasurementGet(meas, &registered_name, nullptr); \
@@ -294,10 +294,10 @@ namespace vi_tm
 
 	// This macro is used to create a probe_t object with the function name as the measurement name.
 #	define VI_TM_FUNC VI_TM_S(VI_FUNCNAME, 1U)
-	// Generates a report for the global journal.
+	// Generates a report for the global registry.
 #	define VI_TM_REPORT(...) vi_tmReport(VI_TM_HGLOBAL, __VA_ARGS__)
-	// Resets the data of the specified measure entry in global journal. The handle remains valid.
-#	define VI_TM_RESET(name) vi_tmMeasurementReset(vi_tmJournalGetMeas(VI_TM_HGLOBAL, (name)))
+	// Resets the data of the specified measure entry in global registry. The handle remains valid.
+#	define VI_TM_RESET(name) vi_tmMeasurementReset(vi_tmRegistryGetMeas(VI_TM_HGLOBAL, (name)))
 	// Full version string of the library (Example: "0.1.0.2506151515R static").
 #	define VI_TM_FULLVERSION static_cast<const char*>(vi_tmStaticInfo(vi_tmInfoVersion))
 #endif // #ifdef __cplusplus

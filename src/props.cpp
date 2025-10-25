@@ -43,7 +43,7 @@ namespace
 	using time_point_t = std::invoke_result_t<decltype(now)>;
 
 	constexpr auto CACHE_WARMUP = 6U;
-	constexpr char SERVICE_NAME[] = "Bla-bla-bla-bla"; // A service item name for the journal (SSO size).
+	constexpr char SERVICE_NAME[] = "Bla-bla-bla-bla"; // A service item name for the registry (SSO size).
 	constexpr std::array SANDBOX_NAMES
 	{	"foo", "bar", "baz", "qux", "quux",
 		"corge", "grault", "garply", "waldo", "fred",
@@ -68,15 +68,15 @@ namespace
 		return result;
 	}
 
-	auto create_journal()
-	{	std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmJournalClose)> result
-		{	vi_tmJournalCreate(), &vi_tmJournalClose
+	auto create_registry()
+	{	std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmRegistryClose)> result
+		{	vi_tmRegistryCreate(), &vi_tmRegistryClose
 		};
 
 		if (auto j = result.get(); verify(!!j))
-		{	(void)vi_tmJournalGetMeas(j, SERVICE_NAME);
+		{	(void)vi_tmRegistryGetMeas(j, SERVICE_NAME);
 			for (auto n : SANDBOX_NAMES)
-			{	(void)vi_tmJournalGetMeas(j, n);
+			{	(void)vi_tmRegistryGetMeas(j, n);
 			}
 		}
 		return result;
@@ -142,10 +142,10 @@ namespace
 		return (full - base) / static_cast<double>(EXTRA);
 	}
 
-	void body_duration(VI_TM_HJOUR journal, const char* name)
+	void body_duration(VI_TM_HJOUR registry, const char* name)
 	{	const auto start = vi_tmGetTicks();
 		const auto finish = vi_tmGetTicks();
-		const auto h = vi_tmJournalGetMeas(journal, name);
+		const auto h = vi_tmRegistryGetMeas(registry, name);
 		vi_tmMeasurementAdd(h, 1000 + finish - start, 1U);
 	};
 
@@ -196,8 +196,8 @@ namespace
 
 	auto meas_duration_with_caching()
 	{	double result{};
-		if (const auto journal = create_journal(); verify(!!journal))
-		{	if (const auto m = vi_tmJournalGetMeas(journal.get(), SERVICE_NAME); verify(!!m))
+		if (const auto registry = create_registry(); verify(!!registry))
+		{	if (const auto m = vi_tmRegistryGetMeas(registry.get(), SERVICE_NAME); verify(!!m))
 			{	result = calc_diff_ticks(body_measuring_with_caching, m);
 			}
 		}
@@ -205,8 +205,8 @@ namespace
 	}
 
 	auto meas_duration()
-	{	auto journal = create_journal();
-		return (verify(!!journal)) ? calc_diff_ticks(body_duration, journal.get(), SERVICE_NAME) : 0.0;
+	{	auto registry = create_registry();
+		return (verify(!!registry)) ? calc_diff_ticks(body_duration, registry.get(), SERVICE_NAME) : 0.0;
 	}
 } // namespace
 

@@ -11,10 +11,10 @@
 
 namespace
 {
-	using unique_journal_t = std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmJournalClose)>;
+	using unique_registryl_t = std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmRegistryClose)>;
 	
-	unique_journal_t make_journal()
-	{	unique_journal_t result{vi_tmJournalCreate(), vi_tmJournalClose};
+	unique_registryl_t make_registry()
+	{	unique_registryl_t result{vi_tmRegistryCreate(), vi_tmRegistryClose};
 		return result;
 	}
 
@@ -26,8 +26,8 @@ namespace
 TEST(OutlierFiltering, BasicFiltering)
 {
 #if VI_TM_STAT_USE_RMSE && VI_TM_STAT_USE_FILTER
-	auto journal = make_journal();
-	auto const meas = vi_tmJournalGetMeas(journal.get(), "basic_filter_test");
+	auto registry = make_registry();
+	auto const meas = vi_tmRegistryGetMeas(registry.get(), "basic_filter_test");
 	
 	// Add normal values (around 1000 ticks)
 	static constexpr VI_TM_TDIFF normal_values[] = {
@@ -65,8 +65,8 @@ TEST(OutlierFiltering, BasicFiltering)
 TEST(OutlierFiltering, SigmaClippingThreshold)
 {
 #if VI_TM_STAT_USE_RMSE && VI_TM_STAT_USE_FILTER
-	auto journal = make_journal();
-	auto meas = vi_tmJournalGetMeas(journal.get(), "sigma_clipping_test");
+	auto registry = make_registry();
+	auto meas = vi_tmRegistryGetMeas(registry.get(), "sigma_clipping_test");
 	
 	// Create a dataset with known standard deviation
 	static constexpr VI_TM_TDIFF base_values[] = {
@@ -103,8 +103,8 @@ TEST(OutlierFiltering, SigmaClippingThreshold)
 TEST(OutlierFiltering, MinimumValuePreference)
 {
 #if VI_TM_STAT_USE_RMSE && VI_TM_STAT_USE_FILTER
-	auto journal = make_journal();
-	const auto meas = vi_tmJournalGetMeas(journal.get(), "min_value_preference_test");
+	auto registry = make_registry();
+	const auto meas = vi_tmRegistryGetMeas(registry.get(), "min_value_preference_test");
 	
 	// Add several normal values
 	static constexpr VI_TM_TDIFF normal_values[] = {1000U, 1005U, 995U, 1002U, 998U};
@@ -129,8 +129,8 @@ TEST(OutlierFiltering, MinimumValuePreference)
 TEST(OutlierFiltering, InsufficientDataProtection)
 {
 #if VI_TM_STAT_USE_RMSE && VI_TM_STAT_USE_FILTER
-	auto journal = make_journal();
-	const auto meas = vi_tmJournalGetMeas(journal.get(), "insufficient_data_test");
+	auto registry = make_registry();
+	const auto meas = vi_tmRegistryGetMeas(registry.get(), "insufficient_data_test");
 	
 	// Add only one value
 	vi_tmMeasurementAdd(meas, 1'000U, 1U);
@@ -151,8 +151,8 @@ TEST(OutlierFiltering, InsufficientDataProtection)
 TEST(OutlierFiltering, ZeroInitialMeasurements)
 {
 #if VI_TM_STAT_USE_RMSE && VI_TM_STAT_USE_FILTER
-	auto journal = make_journal();
-	auto meas = vi_tmJournalGetMeas(journal.get(), "zero_initial_test");
+	auto registry = make_registry();
+	auto meas = vi_tmRegistryGetMeas(registry.get(), "zero_initial_test");
 	
 	// Add two zero measurements
 	vi_tmMeasurementAdd(meas, 0U, 1U);
@@ -178,8 +178,8 @@ TEST(OutlierFiltering, ZeroInitialMeasurements)
 //TEST(OutlierFiltering, ResolutionThreshold)
 //{
 //#if VI_TM_STAT_USE_RMSE && VI_TM_STAT_USE_FILTER
-//	auto journal = make_journal();
-//	const auto meas = vi_tmJournalGetMeas(journal.get(), "resolution_threshold_test");
+//	auto registry = make_registry();
+//	const auto meas = vi_tmRegistryGetMeas(registry.get(), "resolution_threshold_test");
 //	
 //	// Add several normal values
 //	static constexpr VI_TM_TDIFF normal_values[] = {0U, 1U, 0U, 0U, 1U};
@@ -204,8 +204,8 @@ TEST(OutlierFiltering, ZeroInitialMeasurements)
 TEST(OutlierFiltering, GradualOutlierIntroduction)
 {
 #if VI_TM_STAT_USE_RMSE && VI_TM_STAT_USE_FILTER
-	auto journal = make_journal();
-	auto meas = vi_tmJournalGetMeas(journal.get(), "gradual_outlier_test");
+	auto registry = make_registry();
+	auto meas = vi_tmRegistryGetMeas(registry.get(), "gradual_outlier_test");
 	
 	// Create a baseline with normal values
 	static constexpr VI_TM_TDIFF base_values[] = {
@@ -244,8 +244,8 @@ TEST(OutlierFiltering, GradualOutlierIntroduction)
 TEST(OutlierFiltering, FilteringDisabled)
 {
 #if !VI_TM_STAT_USE_FILTER
-	auto journal = make_journal();
-	auto meas = vi_tmJournalGetMeas(journal.get(), "no_filter_test");
+	auto registry = make_registry();
+	auto meas = vi_tmRegistryGetMeas(registry.get(), "no_filter_test");
 	
 	// Add normal values
 	static constexpr VI_TM_TDIFF normal_values[] = {1000U, 1005U, 995U, 1002U, 998U};
@@ -272,8 +272,8 @@ TEST(OutlierFiltering, FilteringDisabled)
 TEST(OutlierFiltering, BatchMeasurementsWithOutliers)
 {
 #if VI_TM_STAT_USE_RMSE && VI_TM_STAT_USE_FILTER
-	auto journal = make_journal();
-	auto meas = vi_tmJournalGetMeas(journal.get(), "batch_outlier_test");
+	auto registry = make_registry();
+	auto meas = vi_tmRegistryGetMeas(registry.get(), "batch_outlier_test");
 	
 	// Add normal values one by one
 	static constexpr VI_TM_TDIFF normal_values[] = {1000U, 1005U, 995U, 1002U, 998U};

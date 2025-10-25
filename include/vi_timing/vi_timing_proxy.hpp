@@ -19,7 +19,7 @@
 #		define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b ) // Concatenate two tokens
 #		define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, VI_ID ) // Unique identifier macro
 
-		// Fallback macros for global journal timing functions.
+		// Fallback macros for global registry timing functions.
 #		define VI_TM_INIT(...) static const int VI_UNIC_ID(vi_tm__) = 0
 #		define VI_TM(...) const int VI_UNIC_ID(vi_tm__) = 0
 #		define VI_TM_S(...) const int VI_UNIC_ID(vi_tm__) = 0

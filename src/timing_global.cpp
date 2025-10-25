@@ -34,15 +34,15 @@
 namespace
 {
 	using finalizer_t = std::function<int(VI_TM_HJOUR h)>;
-	int finalizer_default (VI_TM_HJOUR journal)
+	int finalizer_default (VI_TM_HJOUR registry)
 	{	verify(0 <= vi_tmReportCb("Timing report:\n"));
-		return vi_tmReport(journal, vi_tmReportDefault, vi_tmReportCb);
+		return vi_tmReport(registry, vi_tmReportDefault, vi_tmReportCb);
 	};
 
 	class timing_global_t
 	{	mutable std::mutex mtx_;
 		std::atomic<std::size_t> initialization_cnt_{ 0 };
-		VI_TM_HJOUR const journal_{ vi_tmJournalCreate() };
+		VI_TM_HJOUR const registry_{ vi_tmRegistryCreate() };
 		finalizer_t finalizer_{ finalizer_default };
 		static std::unique_ptr<timing_global_t> global_instance_; // Global timing instance - early initialization, late destruction. See implementation for platform-specific initialization details.
 
@@ -54,7 +54,7 @@ namespace
 		~timing_global_t();
 		VI_TM_RESULT init(std::string title, VI_TM_FLAGS report_flags);
 		VI_TM_RESULT finit();
-		VI_TM_HJOUR handle() const noexcept { return journal_; }
+		VI_TM_HJOUR handle() const noexcept { return registry_; }
 		finalizer_t set_finalizer(finalizer_t fn) noexcept;
 	};
 }
@@ -65,12 +65,12 @@ timing_global_t::~timing_global_t()
 	// This destructor will be called from DllMain. assert() may lead to program termination.
 	assert(0 == initialization_cnt_ && "Every vi_tmInit call must have a corresponding vi_tmShutdown call.");
 #endif
-	if (verify(journal_))
+	if (verify(registry_))
 	{	if (finalizer_)
-		{	verify(finalizer_(journal_) >= 0);
+		{	verify(finalizer_(registry_) >= 0);
 		}
 		
-		vi_tmJournalClose(journal_);
+		vi_tmRegistryClose(registry_);
 	}
 }
 
@@ -100,12 +100,12 @@ VI_TM_RESULT timing_global_t::finit()
 	{	result = VI_EXIT_FAILURE;
 	}
 	else if (0 == --initialization_cnt_)
-	{	if (verify(!!journal_))
-		{	if (finalizer_ && !verify(finalizer_(journal_) >= 0))
+	{	if (verify(!!registry_))
+		{	if (finalizer_ && !verify(finalizer_(registry_) >= 0))
 			{	result = VI_EXIT_FAILURE;
 			}
 			finalizer_ = nullptr;
-			vi_tmJournalReset(journal_);
+			vi_tmRegistryReset(registry_);
 		}
 		else
 		{	result = VI_EXIT_FAILURE;
@@ -129,13 +129,13 @@ timing_global_t* timing_global_t::global_instance(bool called_from_init)
 	return global;
 }
 
-vi_tmMeasurementsJournal_t* misc::from_handle(VI_TM_HJOUR h)
+vi_tmRegistry_t* misc::from_handle(VI_TM_HJOUR h)
 {	if (VI_TM_HGLOBAL == h)
-	{	static vi_tmMeasurementsJournal_t* const global_journal = []
+	{	static vi_tmRegistry_t* const global_registry = []
 			{	timing_global_t* const instance = timing_global_t::global_instance();
 				return verify(instance) ? instance->handle() : nullptr;
 			}();
-		return global_journal;
+		return global_registry;
 	}
 	assert(h);
 	return h;

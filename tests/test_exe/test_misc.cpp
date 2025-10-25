@@ -7,13 +7,13 @@
 #include <cassert>
 #include <cerrno>
 
-TEST_F(ViTimingJournalFixture, measurement)
+TEST_F(ViTimingRegistryFixture, measurement)
 {   const char name[] = "test_entry";
 	vi_tmStats_t stats{};
 	const char *pname = nullptr;
 
-	const auto meas = vi_tmJournalGetMeas(journal(), name);
-    ASSERT_NE(meas, nullptr) << "vi_tmJournalGetMeas should return a valid descriptor";
+	const auto meas = vi_tmRegistryGetMeas(registry(), name);
+    ASSERT_NE(meas, nullptr) << "vi_tmRegistryGetMeas should return a valid descriptor";
 
 	vi_tmMeasurementGet(meas, &pname, &stats);
 	EXPECT_STREQ(pname, name);
@@ -23,19 +23,19 @@ TEST_F(ViTimingJournalFixture, measurement)
     EXPECT_EQ(stats.sum_, 0) << "Total time should be 0";
 #endif
 
-	const auto tmp = vi_tmJournalGetMeas(journal(), name);
-	EXPECT_EQ(meas, tmp) << "The probe address must not change while the journal exists.";
+	const auto tmp = vi_tmRegistryGetMeas(registry(), name);
+	EXPECT_EQ(meas, tmp) << "The probe address must not change while the registry exists.";
 }
 
-TEST_F(ViTimingJournalFixture, Journal)
+TEST_F(ViTimingRegistryFixture, Registry)
 {   const char name[] = "test_entry";
 	constexpr VI_TM_SIZE CNT = 10;
     constexpr VI_TM_SIZE AMT = 100;
     constexpr VI_TM_TDIFF DUR = 1000;
 
     // Add a measurement to check reset
-    VI_TM_HMEAS meas = vi_tmJournalGetMeas(journal(), name);
-    ASSERT_NE(meas, nullptr) << "vi_tmJournalGetMeas should return a valid descriptor";
+    VI_TM_HMEAS meas = vi_tmRegistryGetMeas(registry(), name);
+    ASSERT_NE(meas, nullptr) << "vi_tmRegistryGetMeas should return a valid descriptor";
 
     // Add a CNT measurement
     for (unsigned n = 0; n < CNT; ++n)
@@ -51,19 +51,19 @@ TEST_F(ViTimingJournalFixture, Journal)
     EXPECT_EQ(stats.sum_, CNT * DUR) << "Total time should be " << CNT * DUR;
 #endif
 
-    // Reset the journal
-    vi_tmJournalReset(journal());
+    // Reset the registry
+    vi_tmRegistryReset(registry());
 
     // After reset, the measurement handle should remain valid
     vi_tmMeasurementGet(meas, nullptr, &stats);
     // Check that the number of calls is reset
-    EXPECT_EQ(stats.calls_, 0) << "After journal reset, statistics should be reset";
+    EXPECT_EQ(stats.calls_, 0) << "After registry reset, statistics should be reset";
 #if VI_TM_STAT_USE_RAW
 	EXPECT_EQ(stats.cnt_, 0) << "Count of measured events should be 0";
     EXPECT_EQ(stats.sum_, 0) << "Total time should be 0";
 #endif
 
-	const auto tmp = vi_tmJournalGetMeas(journal(), name);
+	const auto tmp = vi_tmRegistryGetMeas(registry(), name);
 	EXPECT_EQ(meas, tmp);
 }
 

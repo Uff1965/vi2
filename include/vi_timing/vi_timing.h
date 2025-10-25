@@ -219,7 +219,7 @@ typedef size_t VI_TM_SIZE; // Size type used for counting events, typically size
 typedef uint64_t VI_TM_TICK; // !!! UNSIGNED !!! Represents a tick count (typically from a high-resolution timer). VI_TM_TICK and VI_TM_TDIFF are always unsigned to handle timer wraparound safely.
 typedef VI_TM_TICK VI_TM_TDIFF; // !!! UNSIGNED !!! Represents a difference between two tick counts (duration). Do NOT compare to zero as signed. If a signed value is needed (e.g. for debugging/printing), cast explicitly.
 typedef struct vi_tmMeasurement_t *VI_TM_HMEAS; // Opaque handle to a measurement entry.
-typedef struct vi_tmMeasurementsJournal_t *VI_TM_HJOUR; // Opaque handle to a measurements journal.
+typedef struct vi_tmRegistry_t *VI_TM_HJOUR; // Opaque handle to a measurements registry.
 typedef VI_TM_RESULT (VI_TM_CALL *vi_tmMeasEnumCb_t)(VI_TM_HMEAS meas, void* ctx); // Callback type for enumerating measurements; returning non-zero aborts enumeration.
 typedef VI_TM_RESULT (VI_SYS_CALL *vi_tmReportCb_t)(const char* str, void* ctx); // Callback type for report function. ABI must be compatible with std::fputs!
 
@@ -316,7 +316,7 @@ typedef enum vi_tmStatus_e
 	vi_tmStatusMask		= 0x7F,
 } vi_tmStatus_e;
 
-#define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global journal handle, used for global measurements.
+#define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global registry handle, used for global measurements.
 
 // Main functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 /// <summary>
@@ -356,45 +356,45 @@ VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmInit
 VI_TM_API void VI_TM_CALL vi_tmShutdown();
 
 /// <summary>
-/// Creates a new journal object and returns a handle to it.
+/// Creates a new registry object and returns a handle to it.
 /// </summary>
-/// <returns>A handle to the newly created journal object, or nullptr if memory allocation fails.</returns>
-VI_NODISCARD VI_TM_API VI_TM_HJOUR VI_TM_CALL vi_tmJournalCreate();
+/// <returns>A handle to the newly created registry object, or nullptr if memory allocation fails.</returns>
+VI_NODISCARD VI_TM_API VI_TM_HJOUR VI_TM_CALL vi_tmRegistryCreate();
 
 /// <summary>
-/// Resets but does not delete all entries in the journal. All entry handles remain valid.
+/// Resets but does not delete all entries in the registry. All entry handles remain valid.
 /// </summary>
-/// <param name="j">The handle to the journal to reset.</param>
+/// <param name="j">The handle to the registry to reset.</param>
 /// <returns>This function does not return a value.</returns>
-VI_TM_API void VI_TM_CALL vi_tmJournalReset(VI_TM_HJOUR j) VI_NOEXCEPT;
+VI_TM_API void VI_TM_CALL vi_tmRegistryReset(VI_TM_HJOUR j) VI_NOEXCEPT;
 
 /// <summary>
-/// Closes and deletes a journal handle. All descriptors associated with the journal become invalid.
+/// Closes and deletes a registry handle. All descriptors associated with the registry become invalid.
 /// </summary>
-/// <param name="j">The handle to the journal to be closed and deleted.</param>
+/// <param name="j">The handle to the registry to be closed and deleted.</param>
 /// <returns>This function does not return a value.</returns>
-VI_TM_API void VI_TM_CALL vi_tmJournalClose(VI_TM_HJOUR j);
+VI_TM_API void VI_TM_CALL vi_tmRegistryClose(VI_TM_HJOUR j);
 	
 /// <summary>
 /// Retrieves a handle to the measurement associated with the given name, creating it if it does not exist.
-/// Handle does not need to be released; it will remain valid as long as the journal exists.
+/// Handle does not need to be released; it will remain valid as long as the registry exists.
 /// </summary>
-/// <param name="j">The handle to the journal containing the measurement.</param>
+/// <param name="j">The handle to the registry containing the measurement.</param>
 /// <param name="name">The name of the measurement entry to retrieve.</param>
-/// <returns>A handle to the specified measurement entry within the journal.</returns>
-VI_NODISCARD VI_TM_API VI_TM_HMEAS VI_TM_CALL vi_tmJournalGetMeas(
+/// <returns>A handle to the specified measurement entry within the registry.</returns>
+VI_NODISCARD VI_TM_API VI_TM_HMEAS VI_TM_CALL vi_tmRegistryGetMeas(
 	VI_TM_HJOUR j,
 	const char *name
 );
 
 /// <summary>
-/// Invokes a callback function for each measurement entry in the journal, allowing early interruption.
+/// Invokes a callback function for each measurement entry in the registry, allowing early interruption.
 /// </summary>
-/// <param name="j">The handle to the journal containing the measurements.</param>
+/// <param name="j">The handle to the registry containing the measurements.</param>
 /// <param name="fn">A callback function to be called for each measurement. It receives a handle to the measurement and the user-provided data pointer.</param>
 /// <param name="ctx">A pointer to user-defined data that is passed to the callback function.</param>
 /// <returns>Returns 0 if all measurements were processed. If the callback returns a non-zero value, iteration stops and that value is returned.</returns>
-VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmJournalEnumerateMeas(
+VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmRegistryEnumerateMeas(
 	VI_TM_HJOUR j,
 	vi_tmMeasEnumCb_t fn,
 	void* ctx
@@ -485,7 +485,7 @@ VI_NODISCARD VI_TM_API const void* VI_TM_CALL vi_tmStaticInfo(VI_TM_FLAGS info);
 // Auxiliary functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
 /// <summary>
-/// Report callback function. Generates and prints a timing report for the global journal.
+/// Report callback function. Generates and prints a timing report for the global registry.
 /// </summary>
 /// <param name="title">The title to display at the top of the report. Defaults to "Timing report:\n".</param>
 /// <param name="flags">Flags controlling report formatting and content. Defaults to showing resolution, duration, and sorting by name.</param>
@@ -504,9 +504,9 @@ VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter
 VI_TM_API VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEFAULT(NULL));
 
 /// <summary>
-/// Generates a report for the specified journal handle, using a callback function to output the report data.
+/// Generates a report for the specified registry handle, using a callback function to output the report data.
 /// </summary>
-/// <param name="j">The handle to the journal whose data will be reported.</param>
+/// <param name="j">The handle to the registry whose data will be reported.</param>
 /// <param name="flags">Flags that control the formatting and content of the report.</param>
 /// <param name="cb">A callback function used to output each line of the report. If nullptr, defaults to writing to a FILE* stream.</param>
 /// <param name="ctx">A pointer to user data passed to the callback function. If fn is nullptr and ctx is nullptr, defaults to stdout.</param>
