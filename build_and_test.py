@@ -58,7 +58,7 @@ def make_relative_if_subpath(target: pathlib.Path, base: pathlib.Path = pathlib.
 	base = base.resolve()
 	return target.relative_to(base) if target.parts[:len(base.parts)] == base.parts else target
 
-def folder_remake(path: pathlib.Path) -> None:
+def folder_remake(path: pathlib.Path, create: bool = True) -> None:
 	"""Recreate a folder: remove if exists and create anew."""
 	if not isinstance(path, pathlib.Path):
 		path = pathlib.Path(path)
@@ -66,16 +66,17 @@ def folder_remake(path: pathlib.Path) -> None:
 	if config.dry_run:
 		return
 
-	def _on_rm_error(func, path: str, _exc_info) -> None:
+	def _on_rm_error(func, path: pathlib.Path, _exc_info) -> None:
 		"""Remove read-only attribute from a file and retry the operation."""
-		pathlib.Path(path).chmod(stat.S_IWRITE)
+		path.chmod(stat.S_IWRITE)
 		func(path)
 
-	if path.exists():
+	if path.exists() and path.is_dir():
 		shutil.rmtree(path, onerror=_on_rm_error)
 
 	# Create a fresh empty folder
-	path.mkdir(parents=True, exist_ok=True)
+	if create:
+		path.mkdir(parents=True, exist_ok=True)
 
 def format_duration(seconds: float) -> str:
 	"""Format duration in a human-readable form"""
@@ -244,15 +245,13 @@ def work(options: list[str]):
 #			print(f"build_dir: \'{make_relative_if_subpath(build_dir)}\'")
 		build_dir = (config.path_to_build / "_build")
 		print()
-		if not config.dry_run and build_dir.exists() and build_dir.isdir():
-			shutil.rmtree(build_dir, onerror=remove_readonly)
+		folder_remake(build_dir, False)
 
 		configuring(build_dir, options)
 		build(build_dir)
 		testing(build_dir)
 
-		if not config.dry_run:
-			shutil.rmtree(build_dir, onerror=remove_readonly)
+		folder_remake(build_dir, False)
 
 		print(f"[FINISH] {config.build_count}/{config.total}: {name} ["
 			f"Elapsed: {format_duration((datetime.datetime.now() - start).total_seconds())} "
