@@ -102,14 +102,14 @@ _lib.vi_tmInit.argtypes = [c_char_p, VI_TM_FLAGS, VI_TM_FLAGS]
 _lib.vi_tmShutdown.restype = None
 _lib.vi_tmShutdown.argtypes = []
 
-_lib.vi_tmJournalCreate.restype = VI_TM_HJOUR
-_lib.vi_tmJournalCreate.argtypes = []
+_lib.vi_tmRegistryCreate.restype = VI_TM_HJOUR
+_lib.vi_tmRegistryCreate.argtypes = []
 
-_lib.vi_tmJournalClose.restype = None
-_lib.vi_tmJournalClose.argtypes = [VI_TM_HJOUR]
+_lib.vi_tmRegistryClose.restype = None
+_lib.vi_tmRegistryClose.argtypes = [VI_TM_HJOUR]
 
-_lib.vi_tmJournalGetMeas.restype = VI_TM_HMEAS
-_lib.vi_tmJournalGetMeas.argtypes = [VI_TM_HJOUR, c_char_p]
+_lib.vi_tmRegistryGetMeas.restype = VI_TM_HMEAS
+_lib.vi_tmRegistryGetMeas.argtypes = [VI_TM_HJOUR, c_char_p]
 
 _lib.vi_tmMeasurementAdd.restype = None
 _lib.vi_tmMeasurementAdd.argtypes = [VI_TM_HMEAS, VI_TM_TDIFF, VI_TM_SIZE]
@@ -126,7 +126,7 @@ _lib.vi_tmStatsReset.argtypes = [POINTER(vi_tmStats_t)]
 _lib.vi_tmReport.restype = VI_TM_RESULT
 _lib.vi_tmReport.argtypes = [VI_TM_HJOUR, VI_TM_FLAGS, ReportCbType, c_void_p]
 
-# Optional convenience: global journal handle macro value used in header: VI_TM_HGLOBAL ((VI_TM_HJOUR)-1)
+# Optional convenience: global registry handle macro value used in header: VI_TM_HGLOBAL ((VI_TM_HJOUR)-1)
 VI_TM_HGLOBAL = c_void_p(~0)  # (void*)-1, same idea
 
 # Python wrapper API
@@ -141,19 +141,19 @@ def shutdown() -> None:
     """Shutdown vi_timing."""
     _lib.vi_tmShutdown()
 
-def journal_create():
-    """Create and return a new journal handle (opaque)."""
-    return _lib.vi_tmJournalCreate()
+def registry_create():
+    """Create and return a new registry handle (opaque)."""
+    return _lib.vi_tmRegistryCreate()
 
-def journal_close(journal):
-    """Close a journal handle returned by journal_create."""
-    _lib.vi_tmJournalClose(journal)
+def registry_close(registry):
+    """Close a registry handle returned by registry_create."""
+    _lib.vi_tmRegistryClose(registry)
 
-def journal_get_meas(journal, name: str):
-    """Get (or create) a measurement handle by name in the journal."""
+def registry_get_meas(registry, name: str):
+    """Get (or create) a measurement handle by name in the registry."""
     if isinstance(name, str):
         name = name.encode("utf-8")
-    return _lib.vi_tmJournalGetMeas(journal, c_char_p(name))
+    return _lib.vi_tmRegistryGetMeas(registry, c_char_p(name))
 
 def measurement_add(meas, duration_ticks: int, count: int = 1):
     """Add measured duration (in ticks) to a measurement handle."""
@@ -180,8 +180,8 @@ def stats_reset(stats=None):
         return stats
 
 # Report wrapper: collect report into Python callable
-def report(journal=VI_TM_HGLOBAL, flags: int = 0):
-    """Generate report for journal. Returns whole report as a str."""
+def report(registry=VI_TM_HGLOBAL, flags: int = 0):
+    """Generate report for registry. Returns whole report as a str."""
     chunks = []
 
     @ReportCbType
@@ -193,7 +193,7 @@ def report(journal=VI_TM_HGLOBAL, flags: int = 0):
                 chunks.append("<decode error>")
         return 0
 
-    _lib.vi_tmReport(journal, VI_TM_FLAGS(flags), _cb, None)
+    _lib.vi_tmReport(registry, VI_TM_FLAGS(flags), _cb, None)
     return "".join(chunks)
 
 # High-level helpers: context manager and decorator for Python timing
@@ -205,15 +205,15 @@ class ViTimer:
             do_work()
     """
 
-    def __init__(self, name: str, count: int = 1, journal=VI_TM_HGLOBAL):
+    def __init__(self, name: str, count: int = 1, registry=VI_TM_HGLOBAL):
         self.name = name
         self.count = count
-        self.journal = journal
+        self.registry = registry
         self._meas = None
         self._start = None
 
     def __enter__(self):
-        self._meas = journal_get_meas(self.journal, self.name)
+        self._meas = registry_get_meas(self.registry, self.name)
         # start using host monotonic clock but translate to library ticks:
         # we capture vi_tmGetTicks at enter and exit and send diff in ticks.
         self._start = int(_lib.vi_tmGetTicks())
@@ -225,7 +225,7 @@ class ViTimer:
         measurement_add(self._meas, dur, self.count)
         return False  # do not suppress exceptions
 
-def profile_function(name: str = None, journal=VI_TM_HGLOBAL):
+def profile_function(name: str = None, registry=VI_TM_HGLOBAL):
     """Decorator that records elapsed time of the wrapped function into a named measurement.
 
     If name is None, the measurement name will be "<module>.<qualname>".
@@ -236,7 +236,7 @@ def profile_function(name: str = None, journal=VI_TM_HGLOBAL):
 
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
-            meas = journal_get_meas(journal, nm)
+            meas = registry_get_meas(registry, nm)
             start = int(_lib.vi_tmGetTicks())
             try:
                 return fn(*args, **kwargs)
@@ -282,14 +282,14 @@ if __name__ == "__main__":
     
     init()
     # demo: profile a few sleep calls
-    jnl = journal_create()
+    jnl = registry_create()
     with ViTimer(f"sleep", 4, jnl):
         for i in range(1, 5):
             with ViTimer(f"sleep-{i}") as _:
                 time.sleep(0.01 * (i))
 
     out = report(jnl)
-    print("Report:\n", out)
+    print("Report local registry:\n", out)
 
-    journal_close(jnl)
+    registry_close(jnl)
     shutdown()
