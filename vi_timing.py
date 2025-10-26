@@ -4,10 +4,11 @@ from ctypes import (
     c_char_p, c_void_p, c_int32, POINTER, CFUNCTYPE, byref, create_string_buffer
 )
 from ctypes.util import find_library
+import functools
 import os
 import sys
-import functools
 import time
+import timeit
 
 # Attempt to find and load the shared library
 def _load_library(name_hint="vi_timing"):
@@ -180,7 +181,7 @@ def stats_reset(stats=None):
         return stats
 
 # Report wrapper: collect report into Python callable
-def report(registry=VI_TM_HGLOBAL, flags: int = 0):
+def vi_tmReport(registry=VI_TM_HGLOBAL, flags: int = 0):
     """Generate report for registry. Returns whole report as a str."""
     chunks = []
 
@@ -276,10 +277,16 @@ def vi_tmInfoUnit() -> float:
         pass
     return 1e9  # guessed ticks per second (nanosecond resolution)
 
+def tick_pair_and_add(meas: VI_TM_HMEAS):
+    start = _lib.vi_tmGetTicks()
+    end = _lib.vi_tmGetTicks()
+    dur = end - start
+    _lib.vi_tmMeasurementAdd(meas, dur, VI_TM_SIZE(1))
+
 # Provide a simple CLI demo entrypoint
 if __name__ == "__main__":
     print(f"vi_timing version: {vi_tmInfoVersion()}\n")
-    
+
     init()
     # demo: profile a few sleep calls
     jnl = registry_create()
@@ -288,8 +295,15 @@ if __name__ == "__main__":
             with ViTimer(f"sleep-{i}") as _:
                 time.sleep(0.01 * (i))
 
-    out = report(jnl)
-    print("Report local registry:\n", out)
+    cnt = 1_000_000
+    meas_it = registry_get_meas(jnl, "for timeit")
+    with ViTimer(f"for timeit total", cnt, jnl):
+        timer = timeit.Timer(functools.partial(tick_pair_and_add, meas_it))
+    print(f"tick_pair_and_add ({cnt}): {timer.timeit(number=cnt)} us\n")
+
+    out = vi_tmReport(jnl)
+    print("Report local registry:\n")
+    print(out)
 
     registry_close(jnl)
     shutdown()
