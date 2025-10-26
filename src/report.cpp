@@ -451,23 +451,28 @@ int formatter_t::print_header(const F &fn) const
 	std::ostringstream str;
 	str <<
 		std::setw(max_len_number_) << TitleNumber << "  " <<
-		std::left << std::setfill(UNDERSCORE) <<
+		std::left << //std::setfill(UNDERSCORE) <<
 		std::setw(width_column(vi_tmSortByName)) << item_column(vi_tmSortByName) << ": " <<
-		std::right << std::setfill(' ') <<
-#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE
-		"" << std::setw(width_column(vi_tmSortBySpeed)) << item_column(vi_tmSortBySpeed) << " " <<
-#endif
-#if VI_TM_STAT_USE_RMSE
-		"+/- " << std::setw(max_len_cv_) << TitleCV << " " <<
-#endif
+		std::right << std::setfill(' ');
+
 #if VI_TM_STAT_USE_RAW
-		"~= " << std::setw(width_column(vi_tmSortByTime)) << item_column(vi_tmSortByTime) << " / " <<
-		std::setw(width_column(vi_tmSortByAmount)) << item_column(vi_tmSortByAmount) << " " <<
+	str << std::setw(width_column(vi_tmSortByTime)) << item_column(vi_tmSortByTime) << " / " <<
+		std::setw(width_column(vi_tmSortByAmount)) << item_column(vi_tmSortByAmount) << " ~= ";
 #endif
+
+#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE
+	str << "" << std::setw(width_column(vi_tmSortBySpeed)) << item_column(vi_tmSortBySpeed) << " ";
+#endif
+
+#if VI_TM_STAT_USE_RMSE
+	str << "+/- " << std::setw(max_len_cv_) << TitleCV << " ";
+#endif
+
 #if VI_TM_STAT_USE_MINMAX
-		"[" << std::setw(max_len_min_) << TitleMin << " - " << std::setw(max_len_max_) << TitleMax << "] " <<
+	str << "[" << std::setw(max_len_min_) << TitleMin << " - " << std::setw(max_len_max_) << TitleMax << "] ";
 #endif
-		"\n";
+
+	str << "\n";
 	const std::size_t len = str.tellp();
 	str << std::setfill('-') << std::setw(len - 1) << "\n";
 	return fn(str.str().c_str());
@@ -483,24 +488,29 @@ int formatter_t::print_metering(const metering_t &i, const F &fn) const
 		(0U == n_ % static_cast<std::size_t>(guideline_interval_))) ? UNDERSCORE : ' ';
 
 	str <<
-		std::setw(max_len_number_) << n_ << ". " << 
+		std::setw(max_len_number_) << n_ << ". " <<
 		std::left << std::setfill(fill_symbol) <<
 		std::setw(width_column(vi_tmSortByName)) << i.name_ << ": " <<
-		std::right << std::setfill(' ') <<
-#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE
-		"" << std::setw(width_column(vi_tmSortBySpeed)) << i.average_txt_ << " " <<
-#endif
-#if VI_TM_STAT_USE_RMSE
-		(i.cv_txt_.empty()? "    ": "+/- ") << std::setw(max_len_cv_) << i.cv_txt_ << " " <<
-#endif
+		std::right << std::setfill(' ');
+
 #if VI_TM_STAT_USE_RAW
-		"~= " << std::setw(width_column(vi_tmSortByTime)) << i.sum_txt_ << " / " <<
-		std::setw(width_column(vi_tmSortByAmount)) << i.cnt_ << " " <<
+	str << std::setw(width_column(vi_tmSortByTime)) << i.sum_txt_ << " / " <<
+		std::setw(width_column(vi_tmSortByAmount)) << i.cnt_ << " ~= ";
 #endif
+
+#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE
+	str << "" << std::setw(width_column(vi_tmSortBySpeed)) << i.average_txt_ << " ";
+#endif
+
+#if VI_TM_STAT_USE_RMSE
+	str << (i.cv_txt_.empty() ? "    " : "+/- ") << std::setw(max_len_cv_) << i.cv_txt_ << " ";
+#endif
+
 #if VI_TM_STAT_USE_MINMAX
-		"[" << std::setw(max_len_min_) << i.min_txt_ << " - " << std::setw(max_len_max_) << i.max_txt_ << "] " <<
+	str << "[" << std::setw(max_len_min_) << i.min_txt_ << " - " << std::setw(max_len_max_) << i.max_txt_ << "] ";
 #endif
-		"\n";
+
+	str << "\n";
 	return fn(str.str().c_str());
 }
 
