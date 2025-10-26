@@ -278,7 +278,10 @@ typedef enum vi_tmReportFlags_e
 	vi_tmSortByName		= 0x01, // sort by measurement name.
 	vi_tmSortBySpeed	= 0x02, // sort by average time per event (speed).
 	vi_tmSortByAmount	= 0x03, // sort by the number of events measured.
-	vi_tmSortMask		= 0x03,
+	vi_tmSortByMin		= 0x04, // fake sort by minimum time (Sorting has not yet been implemented).
+	vi_tmSortByMax		= 0x05, // fake sort by maximum time (Sorting has not yet been implemented).
+	vi_tmSortByCV		= 0x06, // fake sort by coefficient of variation (Sorting has not yet been implemented).
+	vi_tmSortMask		= 0x07,
 
 	vi_tmSortAscending			= 1 << 3, // sort in ascending order.
 
