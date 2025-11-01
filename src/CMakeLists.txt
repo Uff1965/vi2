@@ -133,8 +133,8 @@ elseif (UNIX)
         -fvisibility=hidden # Hide symbols by default, only export those marked with VI_TM_EXPORTS.
         -Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
         -march=native # Switch on all instruction sets supported by the host CPU. Support FMA, AVX, AVX2, etc.
-        $<$<CONFIG:Release>: -O3 -flto=auto -s> # Optimize for speed, strip symbols.
-        $<$<CONFIG:Release>: -g -gsplit-dwarf> # Enables debugging and moves it to a separate file.
+#        $<$<CONFIG:Release>: -O3 -flto=auto -s> # Optimize for speed, strip symbols.
+        $<$<CONFIG:Release>: -O3 -g -gsplit-dwarf> # Optimize for speed, enables debugging and moves it to a separate file.
     )
 
     target_link_options(${PROJECT_NAME}
