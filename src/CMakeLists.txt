@@ -139,14 +139,16 @@ elseif (UNIX)
 
     target_link_options(${PROJECT_NAME}
     PRIVATE
-        "$<$<CONFIG:Release>:-flto=auto>"
+#        "$<$<CONFIG:Release>:-flto=auto>"
     )
 
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND dwp -e $<TARGET_FILE:${PROJECT_NAME}> -o $<TARGET_FILE:${PROJECT_NAME}>.dwp
-        COMMENT "Creating a combined DWARF file (.dwp) for ${PROJECT_NAME}"
-        VERBATIM
-    )
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND dwp -e $<TARGET_FILE:${PROJECT_NAME}> -o $<TARGET_FILE:${PROJECT_NAME}>.dwp
+            COMMENT "Creating a combined DWARF file (.dwp) for ${PROJECT_NAME}"
+            VERBATIM
+        )
+    endif()
 endif()
 
 #install:
