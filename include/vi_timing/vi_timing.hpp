@@ -142,14 +142,14 @@ namespace vi_tm
 
 		/// Create a running probe (started immediately).
 		[[nodiscard]] static probe_t make_running(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
-		{	assert(!!m && cnt != 0 && cnt <= static_cast<std::uintmax_t>(-std::numeric_limits<signed_tm_size_t>::min()));
+		{	assert(!!m && cnt != 0 && cnt <= static_cast<VI_TM_SIZE>(std::numeric_limits<signed_tm_size_t>::max()));
 			// cnt must fit into signed_tm_size_t; caller is responsible for sane values.
 			return probe_t{ m, cnt };
 		}
 
 		/// Create a paused probe (not started yet).
 		[[nodiscard]] static probe_t make_paused(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
-		{	assert(!!m && cnt != 0 && cnt < static_cast<std::uintmax_t>(-std::numeric_limits<signed_tm_size_t>::min()));
+		{	assert(!!m && cnt != 0 && cnt < static_cast<VI_TM_SIZE>(std::numeric_limits<signed_tm_size_t>::max()));
 			// cnt must fit into signed_tm_size_t; caller is responsible for sane values.
 			return probe_t{ paused_tag{}, m, cnt };
 		}
