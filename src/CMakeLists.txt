@@ -133,22 +133,13 @@ elseif (UNIX)
         -fvisibility=hidden # Hide symbols by default, only export those marked with VI_TM_EXPORTS.
         -Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
         -march=native # Switch on all instruction sets supported by the host CPU. Support FMA, AVX, AVX2, etc.
-#        $<$<CONFIG:Release>: -O3 -flto=auto -s> # Optimize for speed, strip symbols.
-        $<$<CONFIG:Release>: -O3 -g -gsplit-dwarf> # Optimize for speed, enables debugging and moves it to a separate file.
+        $<$<CONFIG:Release>: -O3 -flto=auto -s> # Optimize for speed, strip symbols.
     )
 
-#    target_link_options(${PROJECT_NAME}
-#    PRIVATE
-#        "$<$<CONFIG:Release>:-flto=auto>"
-#    )
-
-#    if(CMAKE_BUILD_TYPE STREQUAL "Release")
-#        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-#            COMMAND dwp -e $<TARGET_FILE:${PROJECT_NAME}> -o $<TARGET_FILE:${PROJECT_NAME}>.dwp
-#            COMMENT "Creating a combined DWARF file (.dwp) for ${PROJECT_NAME}"
-#            VERBATIM
-#        )
-#    endif()
+    target_link_options(${PROJECT_NAME}
+    PRIVATE
+        "$<$<CONFIG:Release>:-flto=auto>"
+    )
 endif()
 
 #install:
