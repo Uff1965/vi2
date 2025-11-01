@@ -50,6 +50,7 @@
 #	endif
 
 #	include <cassert>
+#	include <cstdint>
 #	include <cstring>
 #	include <limits>
 #	include <string>
