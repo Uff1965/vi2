@@ -48,9 +48,10 @@
 #	if __cplusplus < 201703L && (!defined(_MSVC_LANG) || _MSVC_LANG < 201703L)
 #		error "vi_timing requires C++17 or later."
 #	endif
-#
+
 #	include <cassert>
 #	include <cstring>
+#	include <limits>
 #	include <string>
 #	include <type_traits>
 #	include <utility>
