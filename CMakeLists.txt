@@ -66,24 +66,27 @@ add_compile_options(
 #)
 
 include("cmake/GenerateVersion.cmake") # Include the script to generate version information.
-vi_get_version_from_git(VI_GIT)
 
 message(STATUS "")
-message(STATUS "VI_GIT_DESCRIBE: ${VI_GIT_DESCRIBE}")
+
+vi_get_version_from_git(VI_GIT)
+message(STATUS "GIT:")
+message(STATUS "\tVI_GIT_DESCRIBE: ${VI_GIT_DESCRIBE}")
 message(STATUS "\tVI_GIT_VERSION_NUMBER: ${VI_GIT_VERSION_NUMBER}")
 message(STATUS "\tVI_GIT_VERSION_NUMBER_MAJOR: ${VI_GIT_VERSION_NUMBER_MAJOR}")
 message(STATUS "\tVI_GIT_VERSION_NUMBER_MINOR: ${VI_GIT_VERSION_NUMBER_MINOR}")
 message(STATUS "\tVI_GIT_VERSION_NUMBER_PATCH: ${VI_GIT_VERSION_NUMBER_PATCH}")
 message(STATUS "\tVI_GIT_VERSION_LABEL: ${VI_GIT_VERSION_LABEL}")
+
 if(VI_GIT_VERSION_NUMBER_MAJOR OR VI_GIT_VERSION_NUMBER_MINOR)
     set(VI_TM_VER_SUFFIX "-${VI_GIT_VERSION_NUMBER_MAJOR}.${VI_GIT_VERSION_NUMBER_MINOR}")
 endif()
-message(STATUS "\tVI_TM_VER_SUFFIX: ${VI_TM_VER_SUFFIX}")
+message(STATUS "VI_TM_VER_SUFFIX: ${VI_TM_VER_SUFFIX}")
 
 include("cmake/make_suffix.cmake")
 vi_make_name_suffix(VI_TM_NAME_SUFFIX)
 set(VI_TM_NAME_SUFFIX "${VI_TM_NAME_SUFFIX}")
-message(STATUS "\tVI_TM_NAME_SUFFIX: ${VI_TM_NAME_SUFFIX}")
+message(STATUS "VI_TM_NAME_SUFFIX: ${VI_TM_NAME_SUFFIX}")
 
 cmake_path(
   ABSOLUTE_PATH 
