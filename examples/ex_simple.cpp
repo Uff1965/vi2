@@ -6,7 +6,7 @@ unsigned fib(unsigned n)
 {	return n < 2 ? n : (fib(n - 1) + fib(n - 2));
 };
 
-constexpr int CNT = 100;
+constexpr int CNT = 3;
 volatile unsigned N = 30;
 
 VI_TM("Global scope");
