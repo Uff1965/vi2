@@ -40,7 +40,6 @@ list(APPEND SOURCE_FILES
     "timing.cpp"
     "timing_global.cpp"
     "version.cpp"
-    "vi_timing_py.c"
 )
 
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
