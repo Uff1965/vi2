@@ -8,9 +8,9 @@ import os
 import sys
 import timeit
 from ctypes import (
-	string_at, c_void_p, c_char_p, c_int32, c_uint32, c_uint64, 
+	string_at, c_void_p, c_char_p, c_int32, c_uint32, c_uint64, c_size_t, 
 #    Structure, c_double,
-#    c_size_t, c_int32, POINTER, CFUNCTYPE, byref, create_string_buffer
+#    c_int32, POINTER, CFUNCTYPE, byref, create_string_buffer
 )
 
 ###############################################################################
@@ -46,43 +46,89 @@ print(f"Loading vi_timing module from: {module_path}\n")
 
 load_module(module_path)
 import vi_timing
-vi_timing_dll = ctypes.CDLL(module_path)
+lib = ctypes.CDLL(module_path)
 
 ###############################################################################
-vi_timing_dll.vi_tmStaticInfo.argtypes = [c_uint32]
-vi_timing_dll.vi_tmStaticInfo.restype = c_void_p
-def vi_tmStaticInfo() -> str:
-	return string_at(vi_timing_dll.vi_tmStaticInfo(c_uint32(2))).decode("utf-8")
+VI_TM_RESULT = c_int32
+VI_TM_FLAGS = c_uint32
+VI_TM_SIZE = c_size_t
+VI_TM_TICK = c_uint64
+VI_TM_TDIFF = VI_TM_TICK
+VI_TM_HMEAS = c_void_p
+VI_TM_HJOUR = c_void_p
 
-vi_timing_dll.vi_tmDummy.argtypes = []
-vi_timing_dll.vi_tmDummy.restype = None
-def vi_tmDummy():
-	vi_timing_dll.vi_tmDummy()
+lib.vi_Dummy.argtypes = []
+lib.vi_Dummy.restype = None
 
-vi_timing_dll.vi_tmSleep.argtypes = [c_uint32]
-vi_timing_dll.vi_tmSleep.restype = None
-def vi_tmSleep(ms: c_uint32):
-	vi_timing_dll.vi_tmSleep(ms)
+lib.vi_Sleep.argtypes = [c_uint32]
+lib.vi_Sleep.restype = None
+
+lib.vi_tmStaticInfo.argtypes = [VI_TM_FLAGS]
+lib.vi_tmStaticInfo.restype = c_void_p
+
+lib.vi_tmGetTicks.argtypes = []
+lib.vi_tmGetTicks.restype = VI_TM_TICK
+
+lib.vi_tmRegistryCreate.argtypes = []
+lib.vi_tmRegistryCreate.restype = VI_TM_HJOUR
+
+lib.vi_tmRegistryClose.argtypes = [VI_TM_HJOUR]
+lib.vi_tmRegistryClose.restype = None
+
+lib.vi_tmMeasurementAdd.argtypes = [VI_TM_HMEAS, VI_TM_TDIFF, VI_TM_SIZE]
+lib.vi_tmMeasurementAdd.restype = None
+
+lib.vi_tmRegistryGetMeas.restype = VI_TM_HMEAS
+lib.vi_tmRegistryGetMeas.argtypes = [VI_TM_HJOUR, c_char_p]
+
+lib.vi_tmReport.restype = VI_TM_RESULT
+lib.vi_tmReport.argtypes = [VI_TM_HJOUR, VI_TM_FLAGS, c_void_p, c_void_p]
 
 ###############################################################################
 # Provide a simple CLI demo entrypoint
 if __name__ == "__main__":
 	print(f"vi_timing.version: \t{vi_timing.version()}")
-	print(f"vi_tmStaticInfo: \t{vi_tmStaticInfo()}")
+	print(f"lib::vi_tmStaticInfo: \t{string_at(lib.vi_tmStaticInfo(c_uint32(2))).decode("utf-8")}")
 
 	print("\nTiming")
 	print(f"vi_timing.version: \t{timeit.timeit(vi_timing.version, number=1_000)*1_000:.2g} us")
-	print(f"vi_timing_dll.vi_tmStaticInfo: \t{timeit.timeit(lambda: string_at(vi_timing_dll.vi_tmStaticInfo(c_uint32(2))).decode("utf-8"), number=1_000)*1_000:.2g} us")
-	print(f"vi_tmStaticInfo: \t{timeit.timeit(vi_tmStaticInfo, number=1_000)*1_000:.2g} us")
+	print(f"lib::vi_tmStaticInfo: \t{timeit.timeit(lambda: string_at(lib.vi_tmStaticInfo(c_uint32(2))).decode("utf-8"), number=1_000)*1_000:.2g} us")
 	print("")
 	print(f"vi_timing.dummy: \t{timeit.timeit(vi_timing.dummy, number=1_000)*1_000:.2g} us")
-	print(f"vi_timing_dll.vi_tmDummy: \t{timeit.timeit(vi_timing_dll.vi_tmDummy, number=1_000)*1_000:.2g} us")
-	print(f"vi_tmDummy: \t\t{timeit.timeit(vi_tmDummy, number=1_000)*1_000:.2g} us")
+	print(f"lib::vi_Dummy: \t{timeit.timeit(lib.vi_Dummy, number=1_000)*1_000:.2g} us")
 	print("")
 	print(f"vi_timing.sleep: \t{timeit.timeit(lambda: vi_timing.sleep(30), number=100)*10:.2g} ms")
-	print(f"vi_timing_dll.vi_tmSleep: \t{timeit.timeit(lambda: vi_timing_dll.vi_tmSleep(30), number=100)*10:.2g} ms")
-	print(f"vi_tmSleep: \t\t{timeit.timeit(lambda: vi_tmSleep(30), number=100)*10:.2g} ms")
+	print(f"lib::vi_Sleep: \t{timeit.timeit(lambda: lib.vi_Sleep(30), number=100)*10:.2g} ms")
 	print("")
+
+	reg_mod = vi_timing.registry_create()
+	mes_mod = vi_timing.create_measurement(reg_mod, "mod")
+
+	for n in range(1_000):
+		s = vi_timing.get_ticks()
+		f = vi_timing.get_ticks()
+		vi_timing.add_measurement(mes_mod, f - s)
+
+	# Call report without callback
+	vi_timing.report(reg_mod)
+	vi_timing.registry_close(reg_mod)
+
+	print("")
+
+	reg_lib = lib.vi_tmRegistryCreate()
+	mes_lib = lib.vi_tmRegistryGetMeas(reg_lib, "lib".encode("utf-8"))
+
+	for n in range(1_000):
+		s = lib.vi_tmGetTicks()
+		f = lib.vi_tmGetTicks()
+		lib.vi_tmMeasurementAdd(mes_lib, f - s, 1)
+
+	func_ptr = lib.vi_tmReportCb
+	func_ptr_addr = ctypes.cast(func_ptr, ctypes.c_void_p).value
+
+	# Call report with callback pointer
+	lib.vi_tmReport(reg_lib, 320, func_ptr_addr, None)
+	lib.vi_tmRegistryClose(reg_lib)
 
 	vi_timing.dummy()
 	vi_timing.sleep(30)

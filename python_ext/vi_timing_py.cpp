@@ -16,18 +16,13 @@
 extern "C"
 {
 	API_EXPORT
-	void vi_tmDummy()
+	void vi_Dummy()
 	{	/**/
 	}
 
 	API_EXPORT
-	void vi_tmSleep(uint32_t milliseconds)
+	void vi_Sleep(uint32_t milliseconds)
 	{	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
-	}
-
-	API_EXPORT
-	const char *vi_tmVersion()
-	{	return static_cast<const char*>(vi_tmStaticInfo(vi_tmInfoVersion));
 	}
 } // extern "C"
 
@@ -35,7 +30,7 @@ namespace
 {
 	PyObject* vi_timing_dummy(PyObject* Py_UNUSED(self), PyObject* noargs)
 	{	assert(nullptr == noargs);
-		::vi_tmDummy();
+		::vi_Dummy();
 		Py_RETURN_NONE;
 	}
 
@@ -44,7 +39,7 @@ namespace
 		{	PyErr_SetString(PyExc_TypeError, "Argument must be an integer");
 		}
 		else if (const auto milliseconds = PyLong_AsUnsignedLong(arg); !PyErr_Occurred())
-		{	::vi_tmSleep(milliseconds);
+		{	::vi_Sleep(milliseconds);
 			Py_RETURN_NONE;
 		}
 
@@ -54,7 +49,7 @@ namespace
 
 	PyObject* vi_timing_version(PyObject *Py_UNUSED(self), PyObject* noargs)
 	{	assert(nullptr == noargs);
-		auto str = ::vi_tmVersion();
+		auto str = static_cast<const char*>(vi_tmStaticInfo(vi_tmInfoVersion));
 		return PyUnicode_FromString(str);
 	}
 
@@ -124,8 +119,8 @@ namespace
 	{	static const char *kwlist[] = { "meas", "dur", "cnt", NULL };
 		PyObject *pobj;
 		Py_ssize_t dur_ss;
-		Py_ssize_t cnt_ss;
-		if (PyArg_ParseTupleAndKeywords(args, kwargs, "Onn", kwlist, &pobj, &dur_ss, &cnt_ss))
+		Py_ssize_t cnt_ss = 1;
+		if (PyArg_ParseTupleAndKeywords(args, kwargs, "On|n", kwlist, &pobj, &dur_ss, &cnt_ss))
 		{
 			if (dur_ss < 0)
 			{	PyErr_SetString(PyExc_ValueError, "dur must be non-negative");
@@ -144,6 +139,23 @@ namespace
 		return NULL;
 	}
 
+	PyObject *vi_timing_report(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
+	{	static const char *kwlist[] = { "jour", "flags", "cb", "ctx", NULL };
+		PyObject *p_jour, *p_cb = Py_None, *p_ctx = Py_None;
+		int flags = vi_tmReportDefault;
+		if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|iOO", kwlist, &p_jour, &flags, &p_cb, &p_ctx))
+		{	if (auto jour = static_cast<VI_TM_HJOUR>(PyLong_AsVoidPtr(p_jour)); !PyErr_Occurred())
+			{	const auto result = vi_tmReport(jour, static_cast<VI_TM_FLAGS>(flags), vi_tmReportCb, nullptr);
+				if (VI_SUCCESS(result))
+				{	return PyLong_FromLongLong(result);
+				}
+				PyErr_SetString(PyExc_RuntimeError, "Failed to generate report");
+			}
+		}
+		assert(false);
+		return NULL;
+	}
+
 	PyMethodDef vi_timing_methods[] =
 	{
 		{"dummy", vi_timing_dummy, METH_NOARGS, "Dummy function"},
@@ -156,6 +168,7 @@ namespace
 		{"registry_close", vi_timing_registry_close, METH_O, "Close a registry"},
 		{"create_measurement", reinterpret_cast<PyCFunction>(vi_timing_registry_get_meas), METH_VARARGS | METH_KEYWORDS, "Create a measurement"},
 		{"add_measurement", reinterpret_cast<PyCFunction>(vi_timing_add_measurement), METH_VARARGS | METH_KEYWORDS, "Add a measurement"},
+		{"report", reinterpret_cast<PyCFunction>(vi_timing_report), METH_VARARGS | METH_KEYWORDS, "Generate a report for a registry"},
 		{nullptr, nullptr, 0, nullptr}
 	};
 
