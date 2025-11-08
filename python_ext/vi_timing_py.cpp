@@ -41,7 +41,7 @@ namespace
 		int report_flags;
 		int flags;
 		if (PyArg_ParseTupleAndKeywords(args, kwargs, "sii", kwlist, &title, &report_flags, &flags))
-		{	if (long result = vi_tmInit(title, report_flags, flags); VI_SUCCESS(result))
+		{	if (long result = vi_tmInit(title, report_flags, flags); VI_SUCCEEDED(result))
 			{	return PyLong_FromLong(result);
 			}
 			PyErr_SetString(PyExc_RuntimeError, "Failed to initialize timing library");
@@ -129,7 +129,7 @@ namespace
 		if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|iOO", kwlist, &p_jour, &flags, &p_cb, &p_ctx))
 		{	if (auto jour = static_cast<VI_TM_HJOUR>(PyLong_AsVoidPtr(p_jour)); !PyErr_Occurred())
 			{	const auto result = vi_tmReport(jour, static_cast<VI_TM_FLAGS>(flags), vi_tmReportCb, nullptr);
-				if (VI_SUCCESS(result))
+				if (VI_SUCCEEDED(result))
 				{	return PyLong_FromLongLong(result);
 				}
 				PyErr_SetString(PyExc_RuntimeError, "Failed to generate report");

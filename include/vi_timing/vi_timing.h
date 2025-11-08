@@ -149,8 +149,8 @@
 // Auxiliary macros: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
 #define VI_EXIT_SUCCESS (0) // Use zero as success code.
-#define VI_SUCCESS( v ) (v >= 0)
-#define VI_FAILURE( v ) (v < 0)
+#define VI_SUCCEEDED( v ) (v >= 0)
+#define VI_FAILED( v ) (v < 0)
 
 // Compiler feature abstraction layer
 // Normalizes compiler-specific keywords and pragmas for:
