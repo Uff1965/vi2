@@ -16,7 +16,7 @@
 extern "C"
 {
 	API_EXPORT
-	void vi_Dummy()
+	void vi_Dummy() noexcept
 	{	/**/
 	}
 
@@ -32,19 +32,6 @@ namespace
 	{	assert(nullptr == noargs);
 		::vi_Dummy();
 		Py_RETURN_NONE;
-	}
-
-	PyObject* vi_timing_sleep(PyObject* Py_UNUSED(self), PyObject *arg)
-	{	if (!PyLong_Check(arg))
-		{	PyErr_SetString(PyExc_TypeError, "Argument must be an integer");
-		}
-		else if (const auto milliseconds = PyLong_AsUnsignedLong(arg); !PyErr_Occurred())
-		{	::vi_Sleep(milliseconds);
-			Py_RETURN_NONE;
-		}
-
-		assert(false);
-		return NULL;
 	}
 
 	PyObject* vi_timing_version(PyObject *Py_UNUSED(self), PyObject* noargs)
@@ -98,7 +85,8 @@ namespace
 		PyObject* pobj;
 		char* name;
 		if (PyArg_ParseTupleAndKeywords(args, kwargs, "Os", kwlist, &pobj, &name))
-		{	if (auto jour = static_cast<VI_TM_HJOUR>(PyLong_AsVoidPtr(pobj)); !PyErr_Occurred())
+		{	auto jour = static_cast<VI_TM_HJOUR>(PyLong_AsVoidPtr(pobj));
+			if ( !PyErr_Occurred())
 			{	if (auto meas = vi_tmRegistryGetMeas(jour, name))
 				{	return PyLong_FromVoidPtr(meas);
 				}
@@ -159,7 +147,6 @@ namespace
 	PyMethodDef vi_timing_methods[] =
 	{
 		{"dummy", vi_timing_dummy, METH_NOARGS, "Dummy function"},
-		{"sleep", vi_timing_sleep, METH_O, "Sleep for a number of milliseconds"},
 		{"version", vi_timing_version, METH_NOARGS, "Get the version string of the timing library" },
 		{"init", reinterpret_cast<PyCFunction>(vi_timing_init), METH_VARARGS | METH_KEYWORDS, "Initialize the timing library"},
 		{"shutdown", vi_timing_shutdown, METH_NOARGS, "Shutdown the timing library"},

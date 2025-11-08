@@ -7,6 +7,7 @@ import importlib.util
 import os
 import sys
 import timeit
+from contextlib import contextmanager
 from ctypes import (
 	string_at, c_void_p, c_char_p, c_int32, c_uint32, c_uint64, c_size_t, 
 #    Structure, c_double,
@@ -56,6 +57,8 @@ VI_TM_TICK = c_uint64
 VI_TM_TDIFF = VI_TM_TICK
 VI_TM_HMEAS = c_void_p
 VI_TM_HJOUR = c_void_p
+#VI_TM_HGLOBAL = ctypes.cast(VI_TM_HJOUR(-1 & 0xFFFFFFFFFFFFFFFF), VI_TM_HJOUR)
+VI_TM_HGLOBAL = c_void_p(-1 & 0xFFFFFFFFFFFFFFFF).value
 
 lib.vi_Dummy.argtypes = []
 lib.vi_Dummy.restype = None
@@ -90,45 +93,64 @@ if __name__ == "__main__":
 	print(f"vi_timing.version: \t{vi_timing.version()}")
 	print(f"lib::vi_tmStaticInfo: \t{string_at(lib.vi_tmStaticInfo(c_uint32(2))).decode("utf-8")}")
 
-	print("\nTiming")
-	print(f"vi_timing.version: \t{timeit.timeit(vi_timing.version, number=1_000)*1_000:.2g} us")
-	print(f"lib::vi_tmStaticInfo: \t{timeit.timeit(lambda: string_at(lib.vi_tmStaticInfo(c_uint32(2))).decode("utf-8"), number=1_000)*1_000:.2g} us")
+	global_mod = vi_timing.create_measurement(VI_TM_HGLOBAL, "global_mod")
+	global_lib = lib.vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "global_lib".encode("utf-8"))
+
+	global_s_mod = vi_timing.get_ticks()
+	global_s_lib = lib.vi_tmGetTicks()
+
+	@contextmanager
+	def reg_mod():
+		reg_mod = vi_timing.registry_create()
+		yield reg_mod
+		vi_timing.report(reg_mod)
+		vi_timing.registry_close(reg_mod)
+
+	print("\nTimes when using the C-extension:")
+	print(f"\ttimeit.timeit(vi_timing.dummy): \t{timeit.timeit(vi_timing.dummy, number=1_000)*1_000:.2g} us")
+	with reg_mod() as reg_mod:
+		empty = vi_timing.create_measurement(reg_mod, "empty")
+		def measure():
+			s = vi_timing.get_ticks()
+			f = vi_timing.get_ticks()
+			vi_timing.add_measurement(empty, f - s)
+		print(f"\tmeasure empty:\t{timeit.timeit(measure, number=1_000_000):.2g} us")
+		dummy = vi_timing.create_measurement(reg_mod, "dummy")
+		def measure():
+			s = vi_timing.get_ticks()
+			vi_timing.dummy()
+			f = vi_timing.get_ticks()
+			vi_timing.add_measurement(dummy, f - s)
+		print(f"\tmeasure dummy:\t{timeit.timeit(measure, number=1_000_000):.2g} us")
+
+	@contextmanager
+	def reg_lib():
+		reg_lib = lib.vi_tmRegistryCreate()
+		yield reg_lib
+		callback_addr = ctypes.cast(lib.vi_tmReportCb, ctypes.c_void_p).value
+		lib.vi_tmReport(reg_lib, 320, callback_addr, None)
+		lib.vi_tmRegistryClose(reg_lib)
+
+	print("\nTimes when using exported functions via ctypes:")
+	print(f"\ttimeit.timeit(lib.vi_Dummy): \t{timeit.timeit(lib.vi_Dummy, number=1_000)*1_000:.2g} us")
+	with reg_lib() as reg_lib:
+		empty = lib.vi_tmRegistryGetMeas(reg_lib, "empty".encode("utf-8"))
+		def measure():
+			s = lib.vi_tmGetTicks()
+			f = lib.vi_tmGetTicks()
+			lib.vi_tmMeasurementAdd(empty, f - s, 1)
+		print(f"\tmeasure empty:\t{timeit.timeit(measure, number=1_000_000):.2g} us")
+		dummy = lib.vi_tmRegistryGetMeas(reg_lib, "dummy".encode("utf-8"))
+		def measure():
+			s = lib.vi_tmGetTicks()
+			lib.vi_Dummy();
+			f = lib.vi_tmGetTicks()
+			lib.vi_tmMeasurementAdd(dummy, f - s, 1)
+		print(f"\tmeasure dummy:\t{timeit.timeit(measure, number=1_000_000):.2g} us")
+
+	global_f_mod = vi_timing.get_ticks()
+	global_f_lib = lib.vi_tmGetTicks()
+	vi_timing.add_measurement(global_mod, global_f_mod - global_s_mod)
+	lib.vi_tmMeasurementAdd(global_lib, global_f_lib - global_s_lib, 1)
+
 	print("")
-	print(f"vi_timing.dummy: \t{timeit.timeit(vi_timing.dummy, number=1_000)*1_000:.2g} us")
-	print(f"lib::vi_Dummy: \t{timeit.timeit(lib.vi_Dummy, number=1_000)*1_000:.2g} us")
-	print("")
-	print(f"vi_timing.sleep: \t{timeit.timeit(lambda: vi_timing.sleep(30), number=100)*10:.2g} ms")
-	print(f"lib::vi_Sleep: \t{timeit.timeit(lambda: lib.vi_Sleep(30), number=100)*10:.2g} ms")
-	print("")
-
-	reg_mod = vi_timing.registry_create()
-	mes_mod = vi_timing.create_measurement(reg_mod, "mod")
-
-	for n in range(1_000):
-		s = vi_timing.get_ticks()
-		f = vi_timing.get_ticks()
-		vi_timing.add_measurement(mes_mod, f - s)
-
-	# Call report without callback
-	vi_timing.report(reg_mod)
-	vi_timing.registry_close(reg_mod)
-
-	print("")
-
-	reg_lib = lib.vi_tmRegistryCreate()
-	mes_lib = lib.vi_tmRegistryGetMeas(reg_lib, "lib".encode("utf-8"))
-
-	for n in range(1_000):
-		s = lib.vi_tmGetTicks()
-		f = lib.vi_tmGetTicks()
-		lib.vi_tmMeasurementAdd(mes_lib, f - s, 1)
-
-	func_ptr = lib.vi_tmReportCb
-	func_ptr_addr = ctypes.cast(func_ptr, ctypes.c_void_p).value
-
-	# Call report with callback pointer
-	lib.vi_tmReport(reg_lib, 320, func_ptr_addr, None)
-	lib.vi_tmRegistryClose(reg_lib)
-
-	vi_timing.dummy()
-	vi_timing.sleep(30)
