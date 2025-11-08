@@ -63,9 +63,6 @@ VI_TM_HGLOBAL = c_void_p(-1 & 0xFFFFFFFFFFFFFFFF).value
 lib.vi_Dummy.argtypes = []
 lib.vi_Dummy.restype = None
 
-lib.vi_Sleep.argtypes = [c_uint32]
-lib.vi_Sleep.restype = None
-
 lib.vi_tmStaticInfo.argtypes = [VI_TM_FLAGS]
 lib.vi_tmStaticInfo.restype = c_void_p
 

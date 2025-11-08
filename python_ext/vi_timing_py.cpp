@@ -19,11 +19,6 @@ extern "C"
 	void vi_Dummy() noexcept
 	{	/**/
 	}
-
-	API_EXPORT
-	void vi_Sleep(uint32_t milliseconds)
-	{	std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
-	}
 } // extern "C"
 
 namespace
