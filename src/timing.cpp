@@ -440,7 +440,9 @@ VI_TM_HJOUR VI_TM_CALL vi_tmRegistryCreate()
 }
 
 void VI_TM_CALL vi_tmRegistryClose(VI_TM_HJOUR registry)
-{	delete registry;
+{	if (verify(!!registry && VI_TM_HGLOBAL != registry))
+	{	delete registry;
+	}
 }
 
 void VI_TM_CALL vi_tmRegistryReset(VI_TM_HJOUR registry) noexcept
