@@ -27,7 +27,7 @@ if(NOT Python3_EXTENSION_SUFFIX OR Python3_EXTENSION_SUFFIX STREQUAL "")
 endif()
 message(STATUS "\tPython3_EXTENSION_SUFFIX: ${Python3_EXTENSION_SUFFIX}\n")
 
-add_library(${PROJECT_NAME} MODULE "vi_timing_py.cpp" "vi_timing.py")
+add_library(${PROJECT_NAME} MODULE "vi_timing_py.cpp" "vi_timing_ext.def" "vi_timing.py")
 set_source_files_properties(vi_timing.py PROPERTIES HEADER_FILE_ONLY TRUE)
 
 target_link_libraries(${PROJECT_NAME}

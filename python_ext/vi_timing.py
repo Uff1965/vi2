@@ -151,3 +151,5 @@ if __name__ == "__main__":
 	lib.vi_tmMeasurementAdd(global_lib, global_f_lib - global_s_lib, 1)
 
 	print("")
+
+	input("Press Enter, for close...")
