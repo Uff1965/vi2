@@ -199,7 +199,7 @@ namespace
 		std::string item_column(vi_tmReportFlags_e clmn) const;
 	};
 
-	std::vector<metering_t> get_meterings(VI_TM_HJOUR registry_handle, unsigned flags)
+	std::vector<metering_t> get_meterings(VI_TM_HREG registry_handle, unsigned flags)
 	{	std::vector<metering_t> result;
 		auto data = std::tie(result, flags);
 		using data_t = decltype(data);
@@ -575,7 +575,7 @@ int formatter_t::print_metering(const metering_t &i, const F &fn) const
 	return fn(str.str().c_str());
 }
 
-VI_TM_RESULT VI_TM_CALL vi_tmReport(VI_TM_HJOUR registry_handle, VI_TM_FLAGS flags, vi_tmReportCb_t fn, void *ctx)
+VI_TM_RESULT VI_TM_CALL vi_tmReport(VI_TM_HREG registry_handle, VI_TM_FLAGS flags, vi_tmReportCb_t fn, void *ctx)
 {	assert(!ctx || !!fn);
 	if (nullptr == fn)
 	{	// Simulate the use of the registry to inhibit automatic report generation.

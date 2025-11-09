@@ -57,7 +57,7 @@ namespace
 			"\tGit commit date and time: " << static_cast<const char *>(vi_tmStaticInfo(vi_tmInfoGitDateTime)) << ".\n";
 		endl(stream);
 
-		const auto unit = *static_cast<const double *>(vi_tmStaticInfo(vi_tmInfoUnit));
+		const auto unit = *static_cast<const double *>(vi_tmStaticInfo(vi_tmInfoSecPerUnit));
 		const auto duration = *static_cast<const double *>(vi_tmStaticInfo(vi_tmInfoDuration));
 		const auto overhead = *static_cast<const double *>(vi_tmStaticInfo(vi_tmInfoOverhead));
 		const auto resolution = *static_cast<const double *>(vi_tmStaticInfo(vi_tmInfoResolution));

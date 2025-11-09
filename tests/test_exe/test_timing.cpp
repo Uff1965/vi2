@@ -16,7 +16,7 @@ namespace
 #	define FMA(x, y, z) ((x) * (y) + (z))
 #endif
 
-	using unique_registryl_t = std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmRegistryClose)>;
+	using unique_registryl_t = std::unique_ptr<std::remove_pointer_t<VI_TM_HREG>, decltype(&vi_tmRegistryClose)>;
 
 	using fp_limits_t = std::numeric_limits<VI_TM_FP>;
 	constexpr auto fp_ZERO = static_cast<VI_TM_FP>(0);

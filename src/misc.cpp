@@ -466,7 +466,7 @@ const void* VI_TM_CALL vi_tmStaticInfo(VI_TM_FLAGS info)
 			return &overhead;
 		}
 
-		case vi_tmInfoUnit: // Returns a pointer to the seconds per tick (double).
+		case vi_tmInfoSecPerUnit: // Returns a pointer to the seconds per tick (double).
 		{	static const double unit = properties_t::props().seconds_per_tick_.count();
 			return &unit;
 		}

@@ -8,7 +8,7 @@
 #include <memory>
 
 class ViTimingRegistryFixture : public ::testing::Test
-{   using unique_registryl_t = std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmRegistryClose)>;
+{   using unique_registryl_t = std::unique_ptr<std::remove_pointer_t<VI_TM_HREG>, decltype(&vi_tmRegistryClose)>;
 	unique_registryl_t registry_{ nullptr, vi_tmRegistryClose };
 protected:
 	void SetUp() override

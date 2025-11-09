@@ -429,7 +429,7 @@ void VI_TM_CALL vi_tmStatsMerge(vi_tmStats_t* VI_RESTRICT dst, const vi_tmStats_
 	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(dst));
 }
 
-VI_TM_HJOUR VI_TM_CALL vi_tmRegistryCreate()
+VI_TM_HREG VI_TM_CALL vi_tmRegistryCreate()
 {	try
 	{	return new vi_tmRegistry_t;
 	}
@@ -439,21 +439,21 @@ VI_TM_HJOUR VI_TM_CALL vi_tmRegistryCreate()
 	}
 }
 
-void VI_TM_CALL vi_tmRegistryClose(VI_TM_HJOUR registry)
+void VI_TM_CALL vi_tmRegistryClose(VI_TM_HREG registry)
 {	if (verify(!!registry && VI_TM_HGLOBAL != registry))
 	{	delete registry;
 	}
 }
 
-void VI_TM_CALL vi_tmRegistryReset(VI_TM_HJOUR registry) noexcept
+void VI_TM_CALL vi_tmRegistryReset(VI_TM_HREG registry) noexcept
 {	vi_tmRegistryEnumerateMeas(registry, [](VI_TM_HMEAS m, void *) { vi_tmMeasurementReset(m); return 0; }, nullptr);
 }
 
-VI_TM_RESULT VI_TM_CALL vi_tmRegistryEnumerateMeas(VI_TM_HJOUR registry, vi_tmMeasEnumCb_t fn, void *ctx)
+VI_TM_RESULT VI_TM_CALL vi_tmRegistryEnumerateMeas(VI_TM_HREG registry, vi_tmMeasEnumCb_t fn, void *ctx)
 {	return misc::from_handle(registry)->for_each_measurement(fn, ctx);
 }
 
-VI_TM_HMEAS VI_TM_CALL vi_tmRegistryGetMeas(VI_TM_HJOUR registry, const char *name)
+VI_TM_HMEAS VI_TM_CALL vi_tmRegistryGetMeas(VI_TM_HREG registry, const char *name)
 {	return static_cast<VI_TM_HMEAS>(&misc::from_handle(registry)->try_emplace(name));
 }
 

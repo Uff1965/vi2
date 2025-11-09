@@ -29,12 +29,6 @@ namespace
 		Py_RETURN_NONE;
 	}
 
-	PyObject* vi_timing_version(PyObject *Py_UNUSED(self), PyObject* noargs)
-	{	assert(nullptr == noargs);
-		auto str = static_cast<const char*>(vi_tmStaticInfo(vi_tmInfoVersion));
-		return PyUnicode_FromString(str);
-	}
-
 	PyObject* vi_timing_init(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
 	{	static constexpr const char * kwlist[] = { "title", "report_flags", "flags", nullptr };
 		const char *title;
@@ -58,7 +52,7 @@ namespace
 
 	PyObject* vi_timing_registry_create(PyObject* Py_UNUSED(self), PyObject* noargs)
 	{	assert(nullptr == noargs);
-		if (VI_TM_HJOUR jour = vi_tmRegistryCreate())
+		if (VI_TM_HREG jour = vi_tmRegistryCreate())
 		{	return PyLong_FromVoidPtr(jour);
 		}
 		PyErr_SetString(PyExc_RuntimeError, "Failed to create registry");
@@ -67,7 +61,7 @@ namespace
 	}
 
 	PyObject* vi_timing_registry_close(PyObject* Py_UNUSED(self), PyObject* arg)
-	{	if (auto jour = static_cast<VI_TM_HJOUR>(PyLong_AsVoidPtr(arg)); !PyErr_Occurred())
+	{	if (auto jour = static_cast<VI_TM_HREG>(PyLong_AsVoidPtr(arg)); !PyErr_Occurred())
 		{	vi_tmRegistryClose(jour);
 			Py_RETURN_NONE;
 		}
@@ -80,7 +74,7 @@ namespace
 		PyObject* pobj;
 		char* name;
 		if (PyArg_ParseTupleAndKeywords(args, kwargs, "Os", kwlist, &pobj, &name))
-		{	auto jour = static_cast<VI_TM_HJOUR>(PyLong_AsVoidPtr(pobj));
+		{	auto jour = static_cast<VI_TM_HREG>(PyLong_AsVoidPtr(pobj));
 			if ( !PyErr_Occurred())
 			{	if (auto meas = vi_tmRegistryGetMeas(jour, name))
 				{	return PyLong_FromVoidPtr(meas);
@@ -127,7 +121,7 @@ namespace
 		PyObject *p_jour, *p_cb = Py_None, *p_ctx = Py_None;
 		int flags = vi_tmReportDefault;
 		if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|iOO", kwlist, &p_jour, &flags, &p_cb, &p_ctx))
-		{	if (auto jour = static_cast<VI_TM_HJOUR>(PyLong_AsVoidPtr(p_jour)); !PyErr_Occurred())
+		{	if (auto jour = static_cast<VI_TM_HREG>(PyLong_AsVoidPtr(p_jour)); !PyErr_Occurred())
 			{	const auto result = vi_tmReport(jour, static_cast<VI_TM_FLAGS>(flags), vi_tmReportCb, nullptr);
 				if (VI_SUCCEEDED(result))
 				{	return PyLong_FromLongLong(result);
@@ -142,7 +136,6 @@ namespace
 	PyMethodDef vi_timing_methods[] =
 	{
 		{"dummy", vi_timing_dummy, METH_NOARGS, "Dummy function"},
-		{"version", vi_timing_version, METH_NOARGS, "Get the version string of the timing library" },
 		{"init", reinterpret_cast<PyCFunction>(vi_timing_init), METH_VARARGS | METH_KEYWORDS, "Initialize the timing library"},
 		{"shutdown", vi_timing_shutdown, METH_NOARGS, "Shutdown the timing library"},
 		{"get_ticks", vi_timing_get_ticks, METH_NOARGS, "Get the current time in ticks"},

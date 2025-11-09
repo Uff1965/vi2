@@ -223,7 +223,7 @@ typedef size_t VI_TM_SIZE; // Size type used for counting events, typically size
 typedef uint64_t VI_TM_TICK; // !!! UNSIGNED !!! Represents a tick count (typically from a high-resolution timer). VI_TM_TICK and VI_TM_TDIFF are always unsigned to handle timer wraparound safely.
 typedef VI_TM_TICK VI_TM_TDIFF; // !!! UNSIGNED !!! Represents a difference between two tick counts (duration). Do NOT compare to zero as signed. If a signed value is needed (e.g. for debugging/printing), cast explicitly.
 typedef struct vi_tmMeasurement_t *VI_TM_HMEAS; // Opaque handle to a measurement entry.
-typedef struct vi_tmRegistry_t *VI_TM_HJOUR; // Opaque handle to a measurements registry.
+typedef struct vi_tmRegistry_t *VI_TM_HREG; // Opaque handle to a measurements registry.
 typedef VI_TM_RESULT (VI_TM_CALL *vi_tmMeasEnumCb_t)(VI_TM_HMEAS meas, void* ctx); // Callback type for enumerating measurements; returning non-zero aborts enumeration.
 typedef VI_TM_RESULT (VI_SYS_CALL *vi_tmReportCb_t)(const char* str, void* ctx); // Callback type for report function. ABI must be compatible with std::fputs!
 
@@ -260,16 +260,16 @@ VI_TM_API extern const VI_TM_FP VI_TM_FP_NEGATIVE_INF;
 // The return type for each enum value is indicated in the comment.
 typedef enum vi_tmInfo_e
 {	vi_tmInfoVer,          // const unsigned*: Version number of the library.
-	vi_tmInfoBuildNumber,  // const unsigned*: Build number of the library.
 	vi_tmInfoVersion,      // const char*: Full version string of the library.
+	vi_tmInfoBuildNumber,  // const unsigned*: Build number of the library.
 	vi_tmInfoResolution,   // const double*: Clock resolution in ticks.
 	vi_tmInfoDuration,     // const double*: Measure duration with cache in ticks.
-	vi_tmInfoDurationEx,  // const double*: Measure duration in ticks.
+	vi_tmInfoDurationEx,   // const double*: Measure duration in ticks.
 	vi_tmInfoOverhead,     // const double*: Clock overhead in ticks.
-	vi_tmInfoUnit,         // const double*: Seconds per tick (time unit).
-	vi_tmInfoGitDescribe, // const char*: Git describe string, e.g., "v0.10.0-3-g96b37d4-dirty".
-	vi_tmInfoGitCommit,   // const char*: Git commit hash, e.g., "96b37d49d235140e86f6f6c246bc7f166ab773aa".
-	vi_tmInfoGitDateTime, // const char*: Git commit date and time, e.g., "2025-07-26 13:56:02 +0300".
+	vi_tmInfoSecPerUnit,   // const double*: Seconds per tick (time unit).
+	vi_tmInfoGitDescribe,  // const char*: Git describe string, e.g., "v0.10.0-3-g96b37d4-dirty".
+	vi_tmInfoGitCommit,    // const char*: Git commit hash, e.g., "96b37d49d235140e86f6f6c246bc7f166ab773aa".
+	vi_tmInfoGitDateTime,  // const char*: Git commit date and time, e.g., "2025-07-26 13:56:02 +0300".
 	vi_tmInfoFlags,        // const unsigned*: Flags for controlling the library behavior.
 	vi_tmInfoCount_,       // Number of information types.
 } vi_tmInfo_e;
@@ -285,7 +285,7 @@ typedef enum vi_tmReportFlags_e
 	vi_tmSortByMin		= 0x04, // fake sort by minimum time (Sorting has not yet been implemented).
 	vi_tmSortByMax		= 0x05, // fake sort by maximum time (Sorting has not yet been implemented).
 	vi_tmSortByCV		= 0x06, // fake sort by coefficient of variation (Sorting has not yet been implemented).
-	vi_tmSortMask		= 0x07,
+	vi_tmSortMask		= 0x07, // 0b0111
 
 	vi_tmSortAscending			= 1 << 3, // sort in ascending order.
 
@@ -295,20 +295,20 @@ typedef enum vi_tmReportFlags_e
 	vi_tmShowDurationEx			= 1 << 7, // show the duration, including overhead costs, in seconds.
 	vi_tmShowResolution			= 1 << 8, // show the clock resolution in seconds.
 	vi_tmShowAux				= 1 << 9, // show auxiliary information such as overhead.
-	vi_tmShowMask				= 0x03F0, // Mask for all show flags.
+	vi_tmShowMask				= 0x03F0, // 0b0011'1111'0000
 
 	vi_tmHideHeader				= 1 << 10, // If set, the report will not show the header with column names.
 	vi_tmDoNotSubtractOverhead	= 1 << 11, // If set, the overhead is not subtracted from the measured time in report.
 	vi_tmDoNotReport			= 1 << 12, // If set, no report will be generated.
 
-	vi_tmReportFlagsMask		= 0x1FFF,
+	vi_tmReportFlagsMask		= 0x1FFF, // 0b0001'1111'1111'1111
 	vi_tmReportDefault			= vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByTime,
 } vi_tmReportFlags_e;
 
 typedef enum vi_tmInitFlags_e
 {	vi_tmInitWarmup			= 1 << 0,
 	vi_tmInitThreadYield	= 1 << 1,
-	vi_tmInitFlagsMask		= 0x03,
+	vi_tmInitFlagsMask		= 0x03, // 0b0011
 } vi_tmInitFlags_e;
 
 typedef enum vi_tmStatus_e
@@ -320,10 +320,10 @@ typedef enum vi_tmStatus_e
 	vi_tmStatUseRMSE	= 1 << 4,
 	vi_tmStatUseFilter	= 1 << 5,
 	vi_tmStatUseMinMax	= 1 << 6,
-	vi_tmStatusMask		= 0x7F,
+	vi_tmStatusMask		= 0x7F, // 0b0111'1111
 } vi_tmStatus_e;
 
-#define VI_TM_HGLOBAL ((VI_TM_HJOUR)-1) // Global registry handle, used for global measurements.
+#define VI_TM_HGLOBAL ((VI_TM_HREG)-1) // Global registry handle, used for global measurements.
 
 // Main functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 /// <summary>
@@ -366,21 +366,21 @@ VI_TM_API void VI_TM_CALL vi_tmShutdown();
 /// Creates a new registry object and returns a handle to it.
 /// </summary>
 /// <returns>A handle to the newly created registry object, or nullptr if memory allocation fails.</returns>
-VI_NODISCARD VI_TM_API VI_TM_HJOUR VI_TM_CALL vi_tmRegistryCreate();
+VI_NODISCARD VI_TM_API VI_TM_HREG VI_TM_CALL vi_tmRegistryCreate();
 
 /// <summary>
 /// Resets but does not delete all entries in the registry. All entry handles remain valid.
 /// </summary>
 /// <param name="j">The handle to the registry to reset.</param>
 /// <returns>This function does not return a value.</returns>
-VI_TM_API void VI_TM_CALL vi_tmRegistryReset(VI_TM_HJOUR j) VI_NOEXCEPT;
+VI_TM_API void VI_TM_CALL vi_tmRegistryReset(VI_TM_HREG j) VI_NOEXCEPT;
 
 /// <summary>
 /// Closes and deletes a registry handle. All descriptors associated with the registry become invalid.
 /// </summary>
 /// <param name="j">The handle to the registry to be closed and deleted.</param>
 /// <returns>This function does not return a value.</returns>
-VI_TM_API void VI_TM_CALL vi_tmRegistryClose(VI_TM_HJOUR j);
+VI_TM_API void VI_TM_CALL vi_tmRegistryClose(VI_TM_HREG j);
 	
 /// <summary>
 /// Retrieves a handle to the measurement associated with the given name, creating it if it does not exist.
@@ -390,7 +390,7 @@ VI_TM_API void VI_TM_CALL vi_tmRegistryClose(VI_TM_HJOUR j);
 /// <param name="name">The name of the measurement entry to retrieve.</param>
 /// <returns>A handle to the specified measurement entry within the registry.</returns>
 VI_NODISCARD VI_TM_API VI_TM_HMEAS VI_TM_CALL vi_tmRegistryGetMeas(
-	VI_TM_HJOUR j,
+	VI_TM_HREG j,
 	const char *name
 );
 
@@ -402,7 +402,7 @@ VI_NODISCARD VI_TM_API VI_TM_HMEAS VI_TM_CALL vi_tmRegistryGetMeas(
 /// <param name="ctx">A pointer to user-defined data that is passed to the callback function.</param>
 /// <returns>Returns 0 if all measurements were processed. If the callback returns a non-zero value, iteration stops and that value is returned.</returns>
 VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmRegistryEnumerateMeas(
-	VI_TM_HJOUR j,
+	VI_TM_HREG j,
 	vi_tmMeasEnumCb_t fn,
 	void* ctx
 );
@@ -519,7 +519,7 @@ VI_TM_API VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored 
 /// <param name="ctx">A pointer to user data passed to the callback function. If fn is nullptr and ctx is nullptr, defaults to stdout.</param>
 /// <returns>The total number of characters written by the report, or a negative value if an error occurs.</returns>
 VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmReport(
-	VI_TM_HJOUR j,
+	VI_TM_HREG j,
 	VI_TM_FLAGS flags VI_DEFAULT(vi_tmReportDefault),
 	vi_tmReportCb_t cb VI_DEFAULT(vi_tmReportCb),
 	void* ctx VI_DEFAULT(nullptr)
