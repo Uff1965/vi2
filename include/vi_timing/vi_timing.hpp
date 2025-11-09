@@ -227,7 +227,7 @@ namespace vi_tm
 			if (active())
 			{	return vi_tmGetTicks() - start_;
 			}
-			assert(false);
+// GTEST conflict			assert(false);
 			return VI_TM_TDIFF{ 0 };
 		}
 	}; // class probe_t
