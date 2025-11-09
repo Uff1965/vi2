@@ -148,6 +148,10 @@
 
 // Auxiliary macros: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
+#define VI_EXIT_SUCCESS (0) // Use zero as success code.
+#define VI_SUCCEEDED( v ) ((v) >= 0)
+#define VI_FAILED( v ) ((v) < 0)
+
 // Compiler feature abstraction layer
 // Normalizes compiler-specific keywords and pragmas for:
 //   - Function name introspection (VI_FUNCNAME)
@@ -504,7 +508,7 @@ VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter
 /// <param name="str">The string to output.</param>
 /// <param name="ignored"> A pointer to user-defined data, which is ignored in this default implementation.</param>
 /// <returns>On success, returns a non-negative value.</returns>
-VI_TM_API VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEFAULT(NULL));
+VI_TM_API VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored VI_DEFAULT(nullptr));
 
 /// <summary>
 /// Generates a report for the specified registry handle, using a callback function to output the report data.
@@ -518,7 +522,7 @@ VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmReport(
 	VI_TM_HJOUR j,
 	VI_TM_FLAGS flags VI_DEFAULT(vi_tmReportDefault),
 	vi_tmReportCb_t cb VI_DEFAULT(vi_tmReportCb),
-	void* ctx VI_DEFAULT(NULL)
+	void* ctx VI_DEFAULT(nullptr)
 );
 // Auxiliary functions: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
