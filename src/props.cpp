@@ -69,7 +69,7 @@ namespace
 	}
 
 	auto create_registry()
-	{	std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmRegistryClose)> result
+	{	std::unique_ptr<std::remove_pointer_t<VI_TM_HREG>, decltype(&vi_tmRegistryClose)> result
 		{	vi_tmRegistryCreate(), &vi_tmRegistryClose
 		};
 
@@ -142,7 +142,7 @@ namespace
 		return (full - base) / static_cast<double>(EXTRA);
 	}
 
-	void body_duration(VI_TM_HJOUR registry, const char* name)
+	void body_duration(VI_TM_HREG registry, const char* name)
 	{	const auto start = vi_tmGetTicks();
 		const auto finish = vi_tmGetTicks();
 		const auto h = vi_tmRegistryGetMeas(registry, name);

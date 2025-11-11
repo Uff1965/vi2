@@ -138,18 +138,24 @@ namespace vi_tm
 		probe_t(const probe_t &) = delete;
 		probe_t& operator=(const probe_t &) = delete;
 
+		// === State checks ===
+
+		[[nodiscard]] bool idle() const noexcept { return cnt_ == 0; }
+		[[nodiscard]] bool active() const noexcept { return cnt_ > 0; }
+		[[nodiscard]] bool paused() const noexcept { return cnt_ < 0; }
+
 		// === Factory methods ===
 
 		/// Create a running probe (started immediately).
 		[[nodiscard]] static probe_t make_running(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
-		{	assert(!!m && cnt != 0 && cnt <= static_cast<VI_TM_SIZE>(std::numeric_limits<signed_tm_size_t>::max()));
+		{	assert(!!m && !!cnt && cnt <= static_cast<VI_TM_SIZE>(std::numeric_limits<signed_tm_size_t>::max()));
 			// cnt must fit into signed_tm_size_t; caller is responsible for sane values.
 			return probe_t{ m, cnt };
 		}
 
 		/// Create a paused probe (not started yet).
 		[[nodiscard]] static probe_t make_paused(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
-		{	assert(!!m && cnt != 0 && cnt < static_cast<VI_TM_SIZE>(std::numeric_limits<signed_tm_size_t>::max()));
+		{	assert(!!m && !!cnt && cnt < static_cast<VI_TM_SIZE>(std::numeric_limits<signed_tm_size_t>::max()));
 			// cnt must fit into signed_tm_size_t; caller is responsible for sane values.
 			return probe_t{ paused_tag{}, m, cnt };
 		}
@@ -183,9 +189,9 @@ namespace vi_tm
 
 		/// Pause a running probe (accumulate elapsed time).
 		void pause() noexcept
-		{	const auto t = vi_tmGetTicks();
+		{	const auto t = vi_tmGetTicks(); // Read ticks first to avoid introducing measurement overhead in conditional branch
 			assert(active());
-			if (cnt_ > 0)
+			if(active())
 			{	start_ = t - start_;
 				cnt_ = -cnt_;
 			}
@@ -194,7 +200,7 @@ namespace vi_tm
 		/// Resume a paused probe (continue from accumulated time).
 		void resume() noexcept
 		{	assert(paused());
-			if (cnt_ < 0)
+			if (paused())
 			{	cnt_ = -cnt_;
 				start_ = vi_tmGetTicks() - start_;
 			}
@@ -202,12 +208,12 @@ namespace vi_tm
 
 		/// Stop probe and record measurement.
 		void stop() noexcept
-		{	assert(!cnt_ || !!meas_);
-			if (cnt_ > 0)
-			{	const auto t = vi_tmGetTicks(); // Read ticks first to avoid introducing measurement overhead in conditional branch
-				vi_tmMeasurementAdd(meas_, t - start_, cnt_);
+		{	const auto t = vi_tmGetTicks(); // Read ticks first to avoid introducing measurement overhead in conditional branch
+			assert(idle() || !!meas_);
+			if (active())
+			{	vi_tmMeasurementAdd(meas_, t - start_, cnt_);
 			}
-			else if (cnt_ < 0)
+			else if (paused())
 			{	vi_tmMeasurementAdd(meas_, start_, -cnt_);
 			}
 			cnt_ = 0; // Set idle state.
@@ -215,20 +221,15 @@ namespace vi_tm
 
 		/// Obtaining the current accumulated time (for debugging/monitoring)
 		[[nodiscard]] VI_TM_TDIFF elapsed() const noexcept
-		{	if (cnt_ > 0)
-			{	return vi_tmGetTicks() - start_;
-			}
-			else if (cnt_ < 0)
+		{	if (paused()) // The measurement will probably be paused before the 'function'elapsed()' is called.
 			{	return start_;
 			}
+			if (active())
+			{	return vi_tmGetTicks() - start_;
+			}
+// GTEST conflict			assert(false);
 			return VI_TM_TDIFF{ 0 };
 		}
-
-		// === State checks ===
-
-		[[nodiscard]] bool idle() const noexcept { return cnt_ == 0; }
-		[[nodiscard]] bool active() const noexcept { return cnt_ > 0; }
-		[[nodiscard]] bool paused() const noexcept { return cnt_ < 0; }
 	}; // class probe_t
 
 	inline std::string to_string(double val, unsigned char sig = 2U, unsigned char dec = 1U)

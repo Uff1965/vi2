@@ -11,7 +11,7 @@
 
 namespace
 {
-	using unique_registryl_t = std::unique_ptr<std::remove_pointer_t<VI_TM_HJOUR>, decltype(&vi_tmRegistryClose)>;
+	using unique_registryl_t = std::unique_ptr<std::remove_pointer_t<VI_TM_HREG>, decltype(&vi_tmRegistryClose)>;
 	
 	unique_registryl_t make_registry()
 	{	unique_registryl_t result{vi_tmRegistryCreate(), vi_tmRegistryClose};

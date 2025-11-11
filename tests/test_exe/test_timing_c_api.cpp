@@ -96,7 +96,7 @@ TEST(ViTimingInitShutdown, InitShutdownSucceeds) {
 TEST(ViTimingJournal, CreateResetCloseAndGlobal) {
 	ViTmInitGuard guard;
 	// Create journal
-	VI_TM_HJOUR j = vi_tmJournalCreate();
+	VI_TM_HREG j = vi_tmJournalCreate();
 	ASSERT_NE(j, nullptr);
 	// Create measurement handle in journal
 	const auto meas_name = make_name("test_meas");
@@ -181,7 +181,7 @@ TEST(ViTimingMeasurementResetMerge, MeasurementResetAndMerge) {
 
 TEST(ViTimingJournalEnumerate, EnumerateMeasurements) {
 	ViTmInitGuard guard;
-	VI_TM_HJOUR j = vi_tmJournalCreate();
+	VI_TM_HREG j = vi_tmJournalCreate();
 	ASSERT_NE(j, nullptr);
 
 	const std::string n1 = make_name("enum1");

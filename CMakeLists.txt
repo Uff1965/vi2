@@ -13,6 +13,7 @@ option(VI_TM_STAT_USE_MINMAX "To store minimum and maximum measurement values." 
 option(VI_TM_ENABLE_TESTS "Build unit tests" ON)
 option(VI_TM_ENABLE_BENCHMARK "Build benchmark" ON)
 option(VI_TM_ENABLE_EXAMPLES "Build examples" ON)
+option(VI_TM_ENABLE_PYTHON "Build python_ext" OFF)
 
 if(NOT VI_TM_STAT_USE_RMSE)
     set(VI_TM_STAT_USE_FILTER OFF CACHE BOOL "Disabled because VI_TM_STAT_USE_RMSE is disabled." FORCE)
@@ -138,4 +139,8 @@ endif()
 
 if (VI_TM_ENABLE_EXAMPLES)
     add_subdirectory(examples)
+endif()
+
+if(VI_TM_ENABLE_PYTHON)
+	add_subdirectory(python_ext)
 endif()

@@ -33,8 +33,8 @@
 
 namespace
 {
-	using finalizer_t = std::function<int(VI_TM_HJOUR h)>;
-	int finalizer_default (VI_TM_HJOUR registry)
+	using finalizer_t = std::function<int(VI_TM_HREG h)>;
+	int finalizer_default (VI_TM_HREG registry)
 	{	verify(0 <= vi_tmReportCb("Timing report:\n"));
 		return vi_tmReport(registry, vi_tmReportDefault, vi_tmReportCb);
 	};
@@ -42,7 +42,7 @@ namespace
 	class timing_global_t
 	{	mutable std::mutex mtx_;
 		std::atomic<std::size_t> initialization_cnt_{ 0 };
-		VI_TM_HJOUR const registry_{ vi_tmRegistryCreate() };
+		VI_TM_HREG const registry_{ vi_tmRegistryCreate() };
 		finalizer_t finalizer_{ finalizer_default };
 		static std::unique_ptr<timing_global_t> global_instance_; // Global timing instance - early initialization, late destruction. See implementation for platform-specific initialization details.
 
@@ -54,7 +54,7 @@ namespace
 		~timing_global_t();
 		VI_TM_RESULT init(std::string title, VI_TM_FLAGS report_flags);
 		VI_TM_RESULT finit();
-		VI_TM_HJOUR handle() const noexcept { return registry_; }
+		VI_TM_HREG handle() const noexcept { return registry_; }
 		finalizer_t set_finalizer(finalizer_t fn) noexcept;
 	};
 }
@@ -82,7 +82,7 @@ VI_TM_RESULT timing_global_t::init(std::string title, VI_TM_FLAGS flags)
 	{	finalizer_ = nullptr;
 	}
 	else
-	{	finalizer_ = [t = std::move(title), flags](VI_TM_HJOUR h)
+	{	finalizer_ = [t = std::move(title), flags](VI_TM_HREG h)
 			{	return ((!t.empty() && vi_tmReportCb(t.c_str()) < 0) || vi_tmReport(h, flags) < 0) ?
 					VI_EXIT_FAILURE :
 					VI_EXIT_SUCCESS;
@@ -129,7 +129,7 @@ timing_global_t* timing_global_t::global_instance(bool called_from_init)
 	return global;
 }
 
-vi_tmRegistry_t* misc::from_handle(VI_TM_HJOUR h)
+vi_tmRegistry_t* misc::from_handle(VI_TM_HREG h)
 {	if (VI_TM_HGLOBAL == h)
 	{	static vi_tmRegistry_t* const global_registry = []
 			{	timing_global_t* const instance = timing_global_t::global_instance();
@@ -173,7 +173,7 @@ finalizer_t timing_global_t::set_finalizer(finalizer_t fn) noexcept
 VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter(const char *title, VI_TM_FLAGS flags)
 {	if (auto const global = timing_global_t::global_instance())
 	{	std::string&& t = title ? title : "";
-		auto fn = [t = std::move(t), flags](VI_TM_HJOUR jnl)
+		auto fn = [t = std::move(t), flags](VI_TM_HREG jnl)
 			{	VI_TM_RESULT result = VI_EXIT_SUCCESS;
 				if (!t.empty() && vi_tmReportCb(t.c_str()) < 0)
 				{	result = VI_EXIT_FAILURE;

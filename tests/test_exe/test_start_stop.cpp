@@ -7,7 +7,7 @@
 
 using namespace std::chrono_literals;
 
-vi_tm::probe_t foo(VI_TM_HJOUR registry)
+vi_tm::probe_t foo(VI_TM_HREG registry)
 {	return vi_tm::probe_t::make_running(vi_tmRegistryGetMeas(registry, "start_stop_ext"));
 }
 
