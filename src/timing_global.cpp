@@ -210,10 +210,7 @@ VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter(const char *title, VI_TM_FLAGS fl
  */
 #if !VI_TM_SHARED
 #	ifdef _MSC_VER
-#		ifdef _DLL
-#			pragma warning(suppress: 4073)
-#			pragma init_seg(lib)
-#		else
+#		if defined(_DEBUG) && !defined(_DLL)
 // When statically linking the CRT (/MT), locale and standard stream objects
 // are destroyed before functions from the .CRT$XIL (init_seg(lib)) section
 // are executed. This leads to accesses to already destroyed locales and
@@ -221,6 +218,9 @@ VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter(const char *title, VI_TM_FLAGS fl
 //#			pragma warning(suppress: 4073)
 //#			pragma init_seg(lib)
 #			pragma message(__FILE__ "(" VI_STRINGIZE(__LINE__) "): warning: with static CRT linking (/MT), the time for global object deinitialization may be lost.")
+#		else
+#			pragma warning(suppress: 4073)
+#			pragma init_seg(lib)
 #		endif
 #		define VI_HIINITPRIORITY
 #	else
