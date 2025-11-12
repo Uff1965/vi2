@@ -111,14 +111,14 @@ if __name__ == "__main__":
 			s = vi_timing.get_ticks()
 			f = vi_timing.get_ticks()
 			vi_timing.add_measurement(empty, f - s)
-		print(f"\tmeasure empty:\t{timeit.timeit(measure, number=1_000_000):.2g} us")
+		print(f"\tmeasure empty:\t{timeit.timeit(measure, number=100_000)*10:.2g} us")
 		dummy = vi_timing.create_measurement(reg_mod, "dummy")
 		def measure():
 			s = vi_timing.get_ticks()
 			vi_timing.dummy()
 			f = vi_timing.get_ticks()
 			vi_timing.add_measurement(dummy, f - s)
-		print(f"\tmeasure dummy:\t{timeit.timeit(measure, number=1_000_000):.2g} us")
+		print(f"\tmeasure dummy:\t{timeit.timeit(measure, number=100_000)*10:.2g} us")
 
 	@contextmanager
 	def reg_lib():
@@ -136,14 +136,14 @@ if __name__ == "__main__":
 			s = vi_lib.vi_tmGetTicks()
 			f = vi_lib.vi_tmGetTicks()
 			vi_lib.vi_tmMeasurementAdd(empty, f - s, 1)
-		print(f"\tmeasure empty:\t{timeit.timeit(measure, number=1_000_000):.2g} us")
+		print(f"\tmeasure empty:\t{timeit.timeit(measure, number=100_000)*10:.2g} us")
 		dummy = vi_lib.vi_tmRegistryGetMeas(reg_lib, "dummy".encode("utf-8"))
 		def measure():
 			s = vi_lib.vi_tmGetTicks()
 			vi_lib.vi_Dummy();
 			f = vi_lib.vi_tmGetTicks()
 			vi_lib.vi_tmMeasurementAdd(dummy, f - s, 1)
-		print(f"\tmeasure dummy:\t{timeit.timeit(measure, number=1_000_000):.2g} us")
+		print(f"\tmeasure dummy:\t{timeit.timeit(measure, number=100_000)*10:.2g} us")
 
 	global_f_mod = vi_timing.get_ticks()
 	global_f_lib = vi_lib.vi_tmGetTicks()

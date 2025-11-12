@@ -122,7 +122,10 @@ namespace
 		int flags = vi_tmReportDefault;
 		if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|iOO", kwlist, &p_jour, &flags, &p_cb, &p_ctx))
 		{	if (auto jour = static_cast<VI_TM_HREG>(PyLong_AsVoidPtr(p_jour)); !PyErr_Occurred())
-			{	const auto result = vi_tmReport(jour, static_cast<VI_TM_FLAGS>(flags), vi_tmReportCb, nullptr);
+			{	vi_tmReportCb_t cb = vi_tmReportCb;
+				void *ctx = nullptr;
+				// TODO: p_cb->cb; p_ctx->ctx;
+				const auto result = vi_tmReport(jour, static_cast<VI_TM_FLAGS>(flags), cb, ctx);
 				if (VI_SUCCEEDED(result))
 				{	return PyLong_FromLongLong(result);
 				}

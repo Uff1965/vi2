@@ -117,7 +117,7 @@ VI_TM_RESULT timing_global_t::finit()
 timing_global_t* timing_global_t::global_instance(bool called_from_init)
 {	bool first = false;
 	static auto const global = [](bool &ref_novel)
-		{	assert(!global_instance_);
+		{	assert(!global_instance_ && !ref_novel);
 			ref_novel = true;
 			global_instance_.reset(new(std::nothrow) timing_global_t);
 			return global_instance_.get();
@@ -208,12 +208,26 @@ VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter(const char *title, VI_TM_FLAGS fl
  * 
  * IMPORTANT: Order is explicit and link-order independent.
  */
-#ifdef _MSC_VER
-#	pragma warning(suppress: 4073)
-#	pragma init_seg(lib)
-#	define VI_HIINITPRIORITY
+#if !VI_TM_SHARED
+#	ifdef _MSC_VER
+#		ifdef _DLL
+#			pragma warning(suppress: 4073)
+#			pragma init_seg(lib)
+#		else
+// When statically linking the CRT (/MT), locale and standard stream objects
+// are destroyed before functions from the .CRT$XIL (init_seg(lib)) section
+// are executed. This leads to accesses to already destroyed locales and
+// causes a crash at program termination.
+//#			pragma warning(suppress: 4073)
+//#			pragma init_seg(lib)
+#			pragma message(__FILE__ "(" VI_STRINGIZE(__LINE__) "): warning: with static CRT linking (/MT), the time for global object deinitialization may be lost.")
+#		endif
+#		define VI_HIINITPRIORITY
+#	else
+#		define VI_HIINITPRIORITY [[gnu::init_priority(200)]]
+#	endif
 #else
-#	define VI_HIINITPRIORITY [[gnu::init_priority(200)]]
+#	define VI_HIINITPRIORITY
 #endif
 
 VI_HIINITPRIORITY std::unique_ptr<timing_global_t> timing_global_t::global_instance_;

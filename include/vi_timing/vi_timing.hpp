@@ -59,7 +59,7 @@
 
 namespace vi_tm
 {
-	class init_t
+	class [[nodiscard]] init_t
 	{
 		std::string title_ = "Timing report:\n";
 		VI_TM_FLAGS report_flags_ = vi_tmReportDefault;
@@ -111,7 +111,7 @@ namespace vi_tm
 
 	// probe_t class: A RAII-style class for measuring code execution time.
 	// Unlike the API, this class is not thread-safe!!!
-	class probe_t
+	class [[nodiscard]] probe_t
 	{	using signed_tm_size_t = std::make_signed_t<VI_TM_SIZE>; // Signed type with the same size as VI_TM_SIZE
 		struct paused_tag {}; // Tag type for paused constructor
 
@@ -232,7 +232,7 @@ namespace vi_tm
 		}
 	}; // class probe_t
 
-	inline std::string to_string(double val, unsigned char sig = 2U, unsigned char dec = 1U)
+	inline [[nodiscard]] std::string to_string(double val, unsigned char sig = 2U, unsigned char dec = 1U)
 	{	std::string result;
 		result.resize(sig + (9 + 1 + 1), '\0'); // "-00S.Se-308"
 		const auto len = vi_tmF2A(result.data(), result.size(), val, sig, dec);
