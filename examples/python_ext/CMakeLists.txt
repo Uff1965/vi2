@@ -1,4 +1,4 @@
-# File: "vi2/python_ext/CMakeLists.txt"
+# File: "vi2/examples/python_ext/CMakeLists.txt"
 cmake_minimum_required(VERSION 3.22)
 project(test_python_ext LANGUAGES CXX)
 
