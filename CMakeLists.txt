@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 # Options:
-option(BUILD_SHARED_LIBS "Build shared libraries instead of static ones" OFF)
+option(BUILD_SHARED_LIBS "Build shared libraries instead of static ones" ON)
 option(VI_TM_THREADSAFE "Enable thread safety." ON)
 
 option(VI_TM_STAT_USE_RAW "Using RAW statistics collection (cnt, sum)." ON)
@@ -11,7 +11,7 @@ option(VI_TM_STAT_USE_FILTER "Using filtering in measurements (need VI_TM_STAT_U
 option(VI_TM_STAT_USE_MINMAX "To store minimum and maximum measurement values." OFF)
 
 option(VI_TM_ENABLE_TESTS "Build unit tests" ON)
-option(VI_TM_ENABLE_BENCHMARK "Build benchmark" ON)
+option(VI_TM_ENABLE_BENCHMARK "Build benchmark" OFF)
 option(VI_TM_ENABLE_EXAMPLES "Build examples" ON)
 option(VI_TM_ENABLE_PYTHON "Build python_ext" OFF)
 
@@ -34,6 +34,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)  # for shared lib on GCC/Clang
 
 find_program(CCACHE_EXECUTABLE ccache)
 if(CCACHE_EXECUTABLE)
