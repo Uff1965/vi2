@@ -4,7 +4,7 @@ project(test_python_ext LANGUAGES CXX)
 
 # Find Python3 and determine extension suffix!
 message("")
-find_package(Python3 3.14 COMPONENTS Interpreter Development REQUIRED)
+find_package(Python3 3.11 COMPONENTS Interpreter Development REQUIRED)
 message(STATUS "Python3 found version: ${Python3_VERSION}")
 if(NOT Python3_EXTENSION_SUFFIX OR Python3_EXTENSION_SUFFIX STREQUAL "")
     execute_process(

@@ -34,7 +34,7 @@ namespace
 		const char *title;
 		int report_flags;
 		int flags;
-		if (PyArg_ParseTupleAndKeywords(args, kwargs, "sii", kwlist, &title, &report_flags, &flags))
+		if (PyArg_ParseTupleAndKeywords(args, kwargs, "sii", const_cast<char**>(kwlist), &title, &report_flags, &flags))
 		{	if (long result = vi_tmInit(title, report_flags, flags); VI_SUCCEEDED(result))
 			{	return PyLong_FromLong(result);
 			}
@@ -73,7 +73,7 @@ namespace
 	{	static constexpr const char* kwlist[] = {"jour", "name", NULL};
 		PyObject* pobj;
 		char* name;
-		if (PyArg_ParseTupleAndKeywords(args, kwargs, "Os", kwlist, &pobj, &name))
+		if (PyArg_ParseTupleAndKeywords(args, kwargs, "Os", const_cast<char**>(kwlist), &pobj, &name))
 		{	auto jour = static_cast<VI_TM_HREG>(PyLong_AsVoidPtr(pobj));
 			if ( !PyErr_Occurred())
 			{	if (auto meas = vi_tmRegistryGetMeas(jour, name))
@@ -93,11 +93,11 @@ namespace
 	}
 
 	PyObject* vi_timing_add_measurement(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
-	{	static const char *kwlist[] = { "meas", "dur", "cnt", NULL };
+	{	static constexpr const char *kwlist[] = { "meas", "dur", "cnt", NULL };
 		PyObject *pobj;
 		Py_ssize_t dur_ss;
 		Py_ssize_t cnt_ss = 1;
-		if (PyArg_ParseTupleAndKeywords(args, kwargs, "On|n", kwlist, &pobj, &dur_ss, &cnt_ss))
+		if (PyArg_ParseTupleAndKeywords(args, kwargs, "On|n", const_cast<char**>(kwlist), &pobj, &dur_ss, &cnt_ss))
 		{
 			if (dur_ss < 0)
 			{	PyErr_SetString(PyExc_ValueError, "dur must be non-negative");
@@ -117,10 +117,10 @@ namespace
 	}
 
 	PyObject *vi_timing_report(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
-	{	static const char *kwlist[] = { "jour", "flags", "cb", "ctx", NULL };
+	{	static constexpr const char *kwlist[] = { "jour", "flags", "cb", "ctx", NULL };
 		PyObject *p_jour, *p_cb = Py_None, *p_ctx = Py_None;
 		int flags = vi_tmReportDefault;
-		if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|iOO", kwlist, &p_jour, &flags, &p_cb, &p_ctx))
+		if (PyArg_ParseTupleAndKeywords(args, kwargs, "O|iOO", const_cast<char**>(kwlist), &p_jour, &flags, &p_cb, &p_ctx))
 		{	if (auto jour = static_cast<VI_TM_HREG>(PyLong_AsVoidPtr(p_jour)); !PyErr_Occurred())
 			{	vi_tmReportCb_t cb = vi_tmReportCb;
 				void *ctx = nullptr;
