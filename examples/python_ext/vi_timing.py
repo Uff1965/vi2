@@ -161,4 +161,5 @@ if __name__ == "__main__":
 	print(f"\ttimeit.timeit(vi_lib.vi_tmGetTicks): \t{timeit.timeit(vi_lib.vi_tmGetTicks, number=1_000_000):.2g} us [{-useconds_per_unit * (vi_lib.vi_tmGetTicks() - vi_lib.vi_tmGetTicks()):.2g} us]")
 	print(f"\ttimeit.timeit(time.perf_counter): \t{timeit.timeit(time.perf_counter, number=1_000_000):.2g} us [{ -1e6 * (time.perf_counter() - time.perf_counter()):.2g} us]")
 
-	input("Press Enter, for close...")
+	if sys.stdin.isatty() and os.getenv("VI_TM_NO_PAUSE") != "1":
+		input("Press Enter, for close...")

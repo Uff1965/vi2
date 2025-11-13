@@ -96,3 +96,17 @@ elseif(UNIX)
         "$<$<CONFIG:Release>:-flto=auto>"
     )
 endif()
+
+add_test(
+    NAME ${PROJECT_NAME}
+    COMMAND  ${Python3_EXECUTABLE}
+        "${CMAKE_CURRENT_SOURCE_DIR}/vi_timing.py"
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+)
+set_tests_properties(${PROJECT_NAME}
+PROPERTIES
+    DISABLED $<NOT:$<CONFIG:Release>>
+    TIMEOUT 10
+    ENVIRONMENT "VI_TM_NO_PAUSE=1"
+    PASS_REGULAR_EXPRESSION "2\\. global_(mod|lib):[^\\n]*$"
+)
