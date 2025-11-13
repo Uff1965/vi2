@@ -216,6 +216,7 @@ def testing(build_dir: str):
 	"""Test the CMake project."""
 	print(f"Test the project {config.build_count}/{config.total}:")
 	params = ["ctest"]
+	params += ["-C", config.build_config]
 	params += ["--test-dir", str(make_relative_if_subpath(build_dir))]
 	params += ["--output-on-failure"]
 	match get_cmake_property("CMAKE_CXX_COMPILER_ID"):
