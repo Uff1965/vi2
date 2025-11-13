@@ -88,7 +88,7 @@ vi_lib.vi_tmReport.argtypes = [VI_TM_HJOUR, VI_TM_FLAGS, c_void_p, c_void_p]
 ###############################################################################
 # Provide a simple CLI demo entrypoint
 if __name__ == "__main__":
-	print(f"vi_lib::vi_tmStaticInfo: \t{string_at(vi_lib.vi_tmStaticInfo(c_uint32(1))).decode("utf-8")}")
+	print(f"vi_lib::vi_tmStaticInfo: \t{string_at(vi_lib.vi_tmStaticInfo(c_uint32(1))).decode('utf-8')}")
 
 	global_mod = vi_timing.create_measurement(VI_TM_HGLOBAL, "global_mod")
 	global_lib = vi_lib.vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "global_lib".encode("utf-8"))
