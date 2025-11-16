@@ -81,13 +81,14 @@ namespace
 } // namespace
 
 #if VI_TM_ENABLE_BENCHMARK
+#	define BM_DNO benchmark::DoNotOptimize(tmp); benchmark::ClobberMemory()
+
 #	define BM_FN(name)\
 	static void BM_ ## name(benchmark::State &state)\
 	{	std::size_t n = 0;\
 		for (auto _ : state)\
 		{	auto tmp = name(buff, std::size(buff), arr[n % std::size(arr)]);\
-			benchmark::DoNotOptimize(tmp);\
-			benchmark::ClobberMemory();\
+			BM_DNO;\
 			++n;\
 		}\
 	}\
@@ -102,6 +103,8 @@ namespace bm
 	BM_FN(std_to_chars);
 	BM_FN(dummy);
 }
+#else
+#	define BM_DNO
 #endif
 
 int main(int argc, char** argv)
@@ -137,8 +140,7 @@ int main(int argc, char** argv)
 			VI_TM((fn.name_ + "_agr").c_str(), SIZE);
 			for (auto n = SIZE; n--; )
 			{	auto tmp = fn.func_(buff, std::size(buff), arr[n % std::size(arr)]);
-				benchmark::DoNotOptimize(tmp);
-				benchmark::ClobberMemory();
+				BM_DNO;
 			}
 		}
 		std::cout << " done." << std::endl;
@@ -152,8 +154,7 @@ int main(int argc, char** argv)
 				for (auto const &fn : fncs)
 				{	VI_TM(fn.name_.c_str());
 					auto tmp = fn.func_(buff, std::size(buff), arr[n % std::size(arr)]);
-					benchmark::DoNotOptimize(tmp);
-					benchmark::ClobberMemory();
+					BM_DNO;
 				}
 			} while (std::next_permutation(std::begin(fncs), std::end(fncs)));
 		}
