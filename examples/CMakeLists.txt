@@ -1,2 +1,5 @@
 add_subdirectory(simple)
-add_subdirectory(python_ext)
+add_subdirectory(format_bm)
+if(VI_TM_SHARED)
+	add_subdirectory(python_ext)
+endif()

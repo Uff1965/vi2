@@ -86,7 +86,7 @@ if (VI_TM_ENABLE_BENCHMARK)
 
     target_compile_definitions(${PROJECT_NAME}
     PRIVATE
-        VI_HAS_GBENCHMARK=1
+        VI_TM_ENABLE_BENCHMARK=1
     )
 endif()
 

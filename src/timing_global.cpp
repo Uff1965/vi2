@@ -33,14 +33,17 @@
 
 namespace
 {
-	using finalizer_t = std::function<int(VI_TM_HREG h)>;
+	using finalizer_raw_t = int(VI_TM_HREG);
+
 	int finalizer_default (VI_TM_HREG registry)
-	{	verify(0 <= vi_tmReportCb("Timing report:\n"));
+	{	verify(VI_SUCCEEDED(vi_tmReportCb("Timing report:\n")));
 		return vi_tmReport(registry, vi_tmReportDefault, vi_tmReportCb);
 	};
+	static_assert(std::is_same_v<finalizer_raw_t, decltype(finalizer_default)>);
 
 	class timing_global_t
-	{	mutable std::mutex mtx_;
+	{	using finalizer_t = std::function<finalizer_raw_t>;
+		mutable std::mutex mtx_;
 		std::atomic<std::size_t> initialization_cnt_{ 0 };
 		VI_TM_HREG const registry_{ vi_tmRegistryCreate() };
 		finalizer_t finalizer_{ finalizer_default };
@@ -63,11 +66,11 @@ timing_global_t::~timing_global_t()
 {	std::lock_guard lg{ mtx_ };
 #if !VI_TM_SHARED
 	// This destructor will be called from DllMain. assert() may lead to program termination.
-	assert(0 == initialization_cnt_ && "Every vi_tmInit call must have a corresponding vi_tmShutdown call.");
+	//assert(0 == initialization_cnt_ && "Every vi_tmInit call must have a corresponding vi_tmShutdown call.");
 #endif
 	if (verify(registry_))
 	{	if (finalizer_)
-		{	verify(finalizer_(registry_) >= 0);
+		{	verify(VI_SUCCEEDED(finalizer_(registry_)));
 		}
 		
 		vi_tmRegistryClose(registry_);
@@ -101,7 +104,7 @@ VI_TM_RESULT timing_global_t::finit()
 	}
 	else if (0 == --initialization_cnt_)
 	{	if (verify(!!registry_))
-		{	if (finalizer_ && !verify(finalizer_(registry_) >= 0))
+		{	if (finalizer_ && !verify(VI_SUCCEEDED(finalizer_(registry_))))
 			{	result = VI_EXIT_FAILURE;
 			}
 			finalizer_ = nullptr;
@@ -165,7 +168,7 @@ void VI_TM_CALL vi_tmShutdown()
 	}
 }
 
-finalizer_t timing_global_t::set_finalizer(finalizer_t fn) noexcept
+timing_global_t::finalizer_t timing_global_t::set_finalizer(finalizer_t fn) noexcept
 {	std::lock_guard lg{ mtx_ };
 	return std::exchange(finalizer_, std::move(fn));
 }

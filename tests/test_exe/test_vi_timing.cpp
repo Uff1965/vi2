@@ -5,7 +5,7 @@
 #	include <gtest/gtest.h>
 #endif
 
-#ifdef VI_HAS_GBENCHMARK
+#ifdef VI_TM_ENABLE_BENCHMARK
 #	include <benchmark/benchmark.h>
 #endif
 
@@ -135,7 +135,7 @@ int main(int argc, char** argv)
 	}
 #endif
 
-#ifdef VI_HAS_GBENCHMARK
+#ifdef VI_TM_ENABLE_BENCHMARK
 	::benchmark::Initialize(&argc, argv);
 	if (::benchmark::ReportUnrecognizedArguments(argc, argv))
 	{	return 1;
