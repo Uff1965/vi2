@@ -11,7 +11,6 @@
 #include <format>
 #include <iomanip>
 #include <iostream>
-#include <limits>
 #include <random>
 #include <sstream>
 #include <string>
@@ -81,34 +80,34 @@ namespace
 } // namespace
 
 #if VI_TM_ENABLE_BENCHMARK
-#	define BM_DNO benchmark::DoNotOptimize(tmp); benchmark::ClobberMemory()
+#	define BM_DNO(n) benchmark::DoNotOptimize(n); benchmark::ClobberMemory()
 
 #	define BM_FN(name)\
 	static void BM_ ## name(benchmark::State &state)\
 	{	std::size_t n = 0;\
 		for (auto _ : state)\
 		{	auto tmp = name(buff, std::size(buff), arr[n % std::size(arr)]);\
-			BM_DNO;\
+			BM_DNO(tmp);\
 			++n;\
 		}\
 	}\
 	BENCHMARK(BM_ ## name)
 
-namespace bm
-{
 	BM_FN(std_ostringstream);
 	BM_FN(std_to_string);
 	BM_FN(std_snprintf);
 	BM_FN(std_format);
 	BM_FN(std_to_chars);
 	BM_FN(dummy);
-}
 #else
-#	define BM_DNO
+#	define BM_DNO(n)
 #endif
 
 int main(int argc, char** argv)
-{
+{	vi_tmInit("Timing report:\n", vi_tmShowResolution | vi_tmShowDuration | vi_tmSortBySpeed);
+	vi_CurrentThreadAffinityFixate();
+	vi_WarmUp(1);
+
 	fill_random_doubles(arr, std::size(arr));
 
 #if VI_TM_ENABLE_BENCHMARK
@@ -130,8 +129,6 @@ int main(int argc, char** argv)
 		{ "to_string", std_to_string },
 	};
 	
-	vi_tmInit("Timing report:\n", vi_tmShowResolution | vi_tmShowDuration | vi_tmSortBySpeed);
-
 	{	VI_TM("Amortized Time");
 		std::cout << "Amortized Time...";
 		for (auto const &fn : fncs)
@@ -140,7 +137,7 @@ int main(int argc, char** argv)
 			VI_TM((fn.name_ + "_agr").c_str(), SIZE);
 			for (auto n = SIZE; n--; )
 			{	auto tmp = fn.func_(buff, std::size(buff), arr[n % std::size(arr)]);
-				BM_DNO;
+				BM_DNO(tmp);
 			}
 		}
 		std::cout << " done." << std::endl;
@@ -154,10 +151,12 @@ int main(int argc, char** argv)
 				for (auto const &fn : fncs)
 				{	VI_TM(fn.name_.c_str());
 					auto tmp = fn.func_(buff, std::size(buff), arr[n % std::size(arr)]);
-					BM_DNO;
+					BM_DNO(tmp);
 				}
 			} while (std::next_permutation(std::begin(fncs), std::end(fncs)));
 		}
 		std::cout << " done." << std::endl;
 	}
+
+	vi_CurrentThreadAffinityRestore();
 }
