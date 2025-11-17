@@ -104,7 +104,7 @@ namespace
 #endif
 
 int main(int argc, char** argv)
-{	vi_tmInit("Timing report:\n", vi_tmShowResolution | vi_tmShowDuration | vi_tmSortBySpeed);
+{	vi_tmInit("Timing report:\n", vi_tmShowResolution | vi_tmShowDuration | vi_tmShowOverhead | vi_tmSortBySpeed);
 	vi_CurrentThreadAffinityFixate();
 	vi_WarmUp(1);
 
