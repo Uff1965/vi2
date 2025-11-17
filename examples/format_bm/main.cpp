@@ -104,11 +104,13 @@ namespace
 #endif
 
 int main(int argc, char** argv)
-{	vi_tmInit("Timing report:\n", vi_tmShowResolution | vi_tmShowDuration | vi_tmShowOverhead | vi_tmSortBySpeed);
+{	std::cout << "Prepare..." << std::flush;
+	vi_tmInit("Timing report:\n", vi_tmShowResolution | vi_tmShowDuration | vi_tmShowOverhead | vi_tmSortBySpeed);
 	vi_CurrentThreadAffinityFixate();
 	vi_WarmUp(1);
 
 	fill_random_doubles(arr, std::size(arr));
+	std::cout << " done.\n" << std::endl;
 
 #if VI_TM_ENABLE_BENCHMARK
 	std::cout << "Benchmark:" << std::endl;
@@ -117,7 +119,7 @@ int main(int argc, char** argv)
 	{	return 1;
 	}
 	::benchmark::RunSpecifiedBenchmarks();
-	std::cout << "Benchmark - done." << std::endl;
+	std::cout << "Benchmark - done.\n" << std::endl;
 #endif
 
 	func_desc_t fncs[] = {
@@ -140,7 +142,7 @@ int main(int argc, char** argv)
 				BM_DNO(tmp);
 			}
 		}
-		std::cout << " done." << std::endl;
+		std::cout << " done.\n" << std::endl;
 	}
 
 	{	VI_TM("Per-Operation Mean");
@@ -155,7 +157,7 @@ int main(int argc, char** argv)
 				}
 			} while (std::next_permutation(std::begin(fncs), std::end(fncs)));
 		}
-		std::cout << " done." << std::endl;
+		std::cout << " done.\n" << std::endl;
 	}
 
 	vi_CurrentThreadAffinityRestore();
