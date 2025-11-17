@@ -72,7 +72,7 @@ namespace
 #ifdef NDEBUG
 	constexpr auto CNT = 1'000U;
 #else
-	constexpr auto CNT = 100U;
+	constexpr auto CNT = 200U;
 #endif
 	double arr[CNT];
 	char buff[64];
@@ -111,7 +111,7 @@ int main(int argc, char** argv)
 	fill_random_doubles(arr, std::size(arr));
 
 #if VI_TM_ENABLE_BENCHMARK
-	std::cout << "Benchmark:\n";
+	std::cout << "Benchmark:" << std::endl;
 	::benchmark::Initialize(&argc, argv);
 	if (::benchmark::ReportUnrecognizedArguments(argc, argv))
 	{	return 1;
@@ -130,7 +130,7 @@ int main(int argc, char** argv)
 	};
 	
 	{	VI_TM("Amortized Time");
-		std::cout << "Amortized Time...";
+		std::cout << "Amortized Time..." << std::flush;
 		for (auto const &fn : fncs)
 		{	vi_ThreadYield();
 			constexpr auto SIZE = 720 * std::size(arr);
@@ -144,7 +144,7 @@ int main(int argc, char** argv)
 	}
 
 	{	VI_TM("Per-Operation Mean");
-		std::cout << "Per-Operation Mean...";
+		std::cout << "Per-Operation Mean..." << std::flush;
 		for (auto n = std::size(arr); n--; )
 		{	do
 			{	vi_ThreadYield();
