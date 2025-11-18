@@ -332,7 +332,7 @@ void VI_TM_CALL vi_tmStatsReset(vi_tmStats_t *meas) noexcept
 	meas->flt_avg_ = fp_ZERO;
 	meas->flt_ss_ = fp_ZERO;
 #endif
-	assert(VI_SUCCESS == vi_tmStatsIsValid(meas));
+	assert(VI_SUCCEEDED(vi_tmStatsIsValid(meas)));
 }
 
 void VI_TM_CALL vi_tmStatsAdd(vi_tmStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cnt) noexcept
@@ -340,7 +340,7 @@ void VI_TM_CALL vi_tmStatsAdd(vi_tmStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cn
 	if (!verify(!!meas) || 0U == cnt)
 	{	return;
 	}
-	assert(VI_SUCCESS == vi_tmStatsIsValid(meas));
+	assert(VI_SUCCEEDED(vi_tmStatsIsValid(meas)));
 
 #if VI_TM_STAT_USE_RMSE || VI_TM_STAT_USE_MINMAX
 	const auto f_cnt = static_cast<VI_TM_FP>(cnt);
@@ -392,7 +392,7 @@ void VI_TM_CALL vi_tmStatsAdd(vi_tmStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cn
 		}
 #endif
 	}
-	assert(VI_SUCCESS == vi_tmStatsIsValid(meas));
+	assert(VI_SUCCEEDED(vi_tmStatsIsValid(meas)));
 }
 
 void VI_TM_CALL vi_tmStatsMerge(vi_tmStats_t* VI_RESTRICT dst, const vi_tmStats_t* VI_RESTRICT src) noexcept
@@ -400,8 +400,8 @@ void VI_TM_CALL vi_tmStatsMerge(vi_tmStats_t* VI_RESTRICT dst, const vi_tmStats_
 	{	return;
 	}
 
-	assert(VI_SUCCESS == vi_tmStatsIsValid(dst));
-	assert(VI_SUCCESS == vi_tmStatsIsValid(src));
+	assert(VI_SUCCEEDED(vi_tmStatsIsValid(dst)));
+	assert(VI_SUCCEEDED(vi_tmStatsIsValid(src)));
 
 	dst->calls_ += src->calls_;
 #if VI_TM_STAT_USE_RAW
@@ -426,7 +426,7 @@ void VI_TM_CALL vi_tmStatsMerge(vi_tmStats_t* VI_RESTRICT dst, const vi_tmStats_
 		dst->flt_calls_ += src->flt_calls_;
 	}
 #endif
-	assert(VI_SUCCESS == vi_tmStatsIsValid(dst));
+	assert(VI_SUCCEEDED(vi_tmStatsIsValid(dst)));
 }
 
 VI_TM_HREG VI_TM_CALL vi_tmRegistryCreate()

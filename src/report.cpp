@@ -292,7 +292,7 @@ namespace
 metering_t::metering_t(const char *name, const vi_tmStats_t &meas, unsigned flags) noexcept
 :	name_{ name }
 {	
-	if (!verify(VI_SUCCESS == vi_tmStatsIsValid(&meas)) || 0 == meas.calls_)
+	if (!verify(VI_SUCCEEDED(vi_tmStatsIsValid(&meas))) || 0 == meas.calls_)
 	{	return; // If the measurement is invalid or has no calls, we do not create a metering_t.
 	}
 
@@ -543,9 +543,7 @@ int formatter_t::print_footer(const F &fn) const
 {	if (flags_ & vi_tmHideHeader)
 	{	return 0;
 	}
-	std::size_t cnt = 0;
-	cnt += max_len_number_ + 2;
-	cnt += width_column(vi_tmSortByName) + 2;
+	std::size_t cnt = (max_len_number_ + 2) + (width_column(vi_tmSortByName) + 2);
 #if VI_TM_STAT_USE_RAW
 	cnt += width_column(vi_tmSortByTime) + 3 + width_column(vi_tmSortByAmount) + 4;
 #endif

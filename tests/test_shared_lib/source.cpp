@@ -22,8 +22,6 @@
 
 #include <vi_timing/vi_timing.hpp>
 
-//VI_TM_INIT();
-
 VI_TM("GLOBAL lib/source.cpp");
 
 void test_shared_lib_func(void)
