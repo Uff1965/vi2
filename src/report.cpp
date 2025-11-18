@@ -193,6 +193,8 @@ namespace
 		template<typename F>
 		int print_header( const F &fn) const;
 		template<typename F>
+		int print_footer( const F &fn) const;
+		template<typename F>
 		int print_metering(const metering_t &i, const F &fn) const;
 
 		std::size_t width_column(vi_tmReportFlags_e clmn) const;
@@ -290,7 +292,7 @@ namespace
 metering_t::metering_t(const char *name, const vi_tmStats_t &meas, unsigned flags) noexcept
 :	name_{ name }
 {	
-	if (!verify(VI_EXIT_SUCCESS == vi_tmStatsIsValid(&meas)) || 0 == meas.calls_)
+	if (!verify(VI_SUCCESS == vi_tmStatsIsValid(&meas)) || 0 == meas.calls_)
 	{	return; // If the measurement is invalid or has no calls, we do not create a metering_t.
 	}
 
@@ -537,6 +539,32 @@ int formatter_t::print_header(const F &fn) const
 }
 
 template<typename F>
+int formatter_t::print_footer(const F &fn) const
+{	if (flags_ & vi_tmHideHeader)
+	{	return 0;
+	}
+	std::size_t cnt = 0;
+	cnt += max_len_number_ + 2;
+	cnt += width_column(vi_tmSortByName) + 2;
+#if VI_TM_STAT_USE_RAW
+	cnt += width_column(vi_tmSortByTime) + 3 + width_column(vi_tmSortByAmount) + 4;
+#endif
+#if VI_TM_STAT_USE_RAW || VI_TM_STAT_USE_RMSE
+	cnt += width_column(vi_tmSortBySpeed) + 1;
+#endif
+#if VI_TM_STAT_USE_RMSE
+	cnt += 4 + width_column(vi_tmSortByCV) + 1;
+#endif
+#if VI_TM_STAT_USE_MINMAX
+	cnt += 1 + width_column(vi_tmSortByMin) + 3 + width_column(vi_tmSortByMax) + 2;
+#endif
+
+	std::string str(cnt, '-');
+	str.back() = '\n';
+	return fn(str.c_str());
+}
+
+template<typename F>
 int formatter_t::print_metering(const metering_t &i, const F &fn) const
 {	std::ostringstream str;
 	str.imbue(std::locale(str.getloc(), new misc::space_out));
@@ -575,7 +603,7 @@ int formatter_t::print_metering(const metering_t &i, const F &fn) const
 	return fn(str.str().c_str());
 }
 
-VI_TM_RESULT VI_TM_CALL vi_tmReport(VI_TM_HREG registry_handle, VI_TM_FLAGS flags, vi_tmReportCb_t fn, void *ctx)
+VI_TM_RESULT VI_TM_CALL vi_tmRegistryReport(VI_TM_HREG registry_handle, VI_TM_FLAGS flags, vi_tmReportCb_t fn, void *ctx)
 {	assert(!ctx || !!fn);
 	if (nullptr == fn)
 	{	// Simulate the use of the registry to inhibit automatic report generation.
@@ -593,7 +621,7 @@ VI_TM_RESULT VI_TM_CALL vi_tmReport(VI_TM_HREG registry_handle, VI_TM_FLAGS flag
 	for (const auto &itm : metering_entries)
 	{	result += formatter.print_metering(itm, prn);
 	}
-
+	result += formatter.print_footer(prn);
 	return result;
 }
 
@@ -607,6 +635,6 @@ VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void* ignored)
 	}
 #endif
 	const auto result = fputs(str, stdout); // stdout!!!
-	assert(result >= 0);
+	assert(VI_SUCCEEDED(result));
 	return result;
 }

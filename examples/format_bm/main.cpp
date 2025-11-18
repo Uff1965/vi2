@@ -105,7 +105,11 @@ namespace
 
 int main(int argc, char** argv)
 {	std::cout << "Prepare..." << std::flush;
-	vi_tmInit("Timing report:\n", vi_tmShowResolution | vi_tmShowDuration | vi_tmShowOverhead | vi_tmSortBySpeed);
+	vi_tmInit(
+		"Timing report:\n",
+		vi_tmShowResolution | vi_tmShowUnit | vi_tmShowDuration | vi_tmShowOverhead | vi_tmSortBySpeed,
+		"Success - the test program completed without errors!\n"
+	);
 	vi_CurrentThreadAffinityFixate();
 	vi_WarmUp(1);
 

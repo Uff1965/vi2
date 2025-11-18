@@ -148,7 +148,7 @@
 
 // Auxiliary macros: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
-#define VI_EXIT_SUCCESS (0) // Use zero as success code.
+#define VI_SUCCESS (0) // Use zero as success code.
 #define VI_SUCCEEDED( v ) ((v) >= 0)
 #define VI_FAILED( v ) ((v) < 0)
 
@@ -294,7 +294,7 @@ typedef enum vi_tmReportFlags_e
 	vi_tmShowDuration			= 1 << 6, // show the duration of the measurement in seconds.
 	vi_tmShowDurationEx			= 1 << 7, // show the duration, including overhead costs, in seconds.
 	vi_tmShowResolution			= 1 << 8, // show the clock resolution in seconds.
-	vi_tmShowAux				= 1 << 9, // show auxiliary information such as overhead.
+	vi_tmShowAux				= 1 << 9, // show auxiliary information such as 'Corrected', 'Thread-safe'.
 	vi_tmShowMask				= 0x03F0, // 0b0011'1111'0000
 
 	vi_tmHideHeader				= 1 << 10, // If set, the report will not show the header with column names.
@@ -304,12 +304,6 @@ typedef enum vi_tmReportFlags_e
 	vi_tmReportFlagsMask		= 0x1FFF, // 0b0001'1111'1111'1111
 	vi_tmReportDefault			= vi_tmShowResolution | vi_tmShowDuration | vi_tmSortByTime,
 } vi_tmReportFlags_e;
-
-typedef enum vi_tmInitFlags_e
-{	vi_tmInitWarmup			= 1 << 0,
-	vi_tmInitThreadYield	= 1 << 1,
-	vi_tmInitFlagsMask		= 0x03, // 0b0011
-} vi_tmInitFlags_e;
 
 typedef enum vi_tmStatus_e
 {
@@ -344,23 +338,14 @@ VI_NODISCARD VI_TM_API VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT;
 /// (for example, showing timer resolution, duration, or sorting by name).
 /// Default: vi_tmReportDefault.
 /// </param>
-/// <param name="flags">
-/// Additional flags to configure the library behavior.
-/// Default: 0.
-/// </param>
 /// <returns>
 /// Result code of the initialization (VI_TM_RESULT).
 /// </returns>
 VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmInit
 (	const char* title VI_DEFAULT("Timing report:\n"),
 	VI_TM_FLAGS report_flags VI_DEFAULT(vi_tmReportDefault),
-	VI_TM_FLAGS flags VI_DEFAULT(0)
+	const char* footer VI_DEFAULT(NULL)
 );
-
-/// <summary>
-/// Shuts down the timing system and releases all associated resources.
-/// </summary>
-VI_TM_API void VI_TM_CALL vi_tmShutdown();
 
 /// <summary>
 /// Creates a new registry object and returns a handle to it.
@@ -492,17 +477,6 @@ VI_NODISCARD VI_TM_API const void* VI_TM_CALL vi_tmStaticInfo(VI_TM_FLAGS info);
 // Auxiliary functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 
 /// <summary>
-/// Report callback function. Generates and prints a timing report for the global registry.
-/// </summary>
-/// <param name="title">The title to display at the top of the report. Defaults to "Timing report:\n".</param>
-/// <param name="flags">Flags controlling report formatting and content. Defaults to showing resolution, duration, and sorting by name.</param>
-/// <returns>Returns the total number of characters written, or a negative value if an error occurs.</returns>
-VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter
-(   const char *title VI_DEFAULT("Timing report:\n"),
-	VI_TM_FLAGS flags VI_DEFAULT(vi_tmReportDefault)
-);
-
-/// <summary>
 /// Default report callback function. Writes the given string to the standard output stream (or the debugger in Windows).
 /// </summary>
 /// <param name="str">The string to output.</param>
@@ -518,7 +492,7 @@ VI_TM_API VI_TM_RESULT VI_SYS_CALL vi_tmReportCb(const char *str, void *ignored 
 /// <param name="cb">A callback function used to output each line of the report. If nullptr, defaults to writing to a FILE* stream.</param>
 /// <param name="ctx">A pointer to user data passed to the callback function. If fn is nullptr and ctx is nullptr, defaults to stdout.</param>
 /// <returns>The total number of characters written by the report, or a negative value if an error occurs.</returns>
-VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmReport(
+VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmRegistryReport(
 	VI_TM_HREG j,
 	VI_TM_FLAGS flags VI_DEFAULT(vi_tmReportDefault),
 	vi_tmReportCb_t cb VI_DEFAULT(vi_tmReportCb),

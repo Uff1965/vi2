@@ -25,7 +25,6 @@
 #include "misc.h"
 #include <vi_timing/vi_timing.h>
 
-#include <atomic>
 #include <cassert>
 #include <functional>
 #include <memory>
@@ -33,167 +32,89 @@
 
 namespace
 {
-	using finalizer_raw_t = int(VI_TM_HREG);
+	class global_registry_t final
+	{	using finalizer_t = std::function<int(const global_registry_t&)>;
 
-	int finalizer_default (VI_TM_HREG registry)
-	{	verify(VI_SUCCEEDED(vi_tmReportCb("Timing report:\n")));
-		return vi_tmReport(registry, vi_tmReportDefault, vi_tmReportCb);
-	};
-	static_assert(std::is_same_v<finalizer_raw_t, decltype(finalizer_default)>);
-
-	class timing_global_t
-	{	using finalizer_t = std::function<finalizer_raw_t>;
 		mutable std::mutex mtx_;
-		std::atomic<std::size_t> initialization_cnt_{ 0 };
-		VI_TM_HREG const registry_{ vi_tmRegistryCreate() };
-		finalizer_t finalizer_{ finalizer_default };
-		static std::unique_ptr<timing_global_t> global_instance_; // Global timing instance - early initialization, late destruction. See implementation for platform-specific initialization details.
+		VI_TM_HREG const handle_ = vi_tmRegistryCreate();
+		finalizer_t finalizer_ = make_finalizer("Timing report:\n", "", vi_tmReportDefault);
+		static std::unique_ptr<global_registry_t> instance_owner_; // Global timing instance - early initialization, late destruction. See implementation for platform-specific initialization details.
 
-		timing_global_t() = default;
-		timing_global_t(timing_global_t&) = delete;
-		timing_global_t& operator()(timing_global_t&) = delete;
+		global_registry_t() = default;
+		global_registry_t(const global_registry_t&) = delete;
+		global_registry_t& operator=(const global_registry_t &) = delete;
 	public:
-		static timing_global_t* global_instance(bool from_init = false);
-		~timing_global_t();
-		VI_TM_RESULT init(std::string title, VI_TM_FLAGS report_flags);
-		VI_TM_RESULT finit();
-		VI_TM_HREG handle() const noexcept { return registry_; }
+		~global_registry_t();
+		static global_registry_t* instance();
+		VI_TM_HREG handle() const noexcept { return handle_; }
 		finalizer_t set_finalizer(finalizer_t fn) noexcept;
+		static finalizer_t make_finalizer(std::string title, std::string footer, VI_TM_FLAGS flags);
 	};
 }
 
-timing_global_t::~timing_global_t()
+global_registry_t::~global_registry_t()
 {	std::lock_guard lg{ mtx_ };
-#if !VI_TM_SHARED
-	// This destructor will be called from DllMain. assert() may lead to program termination.
-	//assert(0 == initialization_cnt_ && "Every vi_tmInit call must have a corresponding vi_tmShutdown call.");
-#endif
-	if (verify(registry_))
+	if (verify(handle_))
 	{	if (finalizer_)
-		{	verify(VI_SUCCEEDED(finalizer_(registry_)));
+		{	verify(VI_SUCCEEDED(finalizer_(*this)));
 		}
-		
-		vi_tmRegistryClose(registry_);
+		vi_tmRegistryClose(handle_);
 	}
 }
 
-VI_TM_RESULT timing_global_t::init(std::string title, VI_TM_FLAGS flags)
-{	std::lock_guard lg{mtx_};
-
-	++initialization_cnt_;
-	if(vi_tmDoNotReport & flags)
-	{	finalizer_ = nullptr;
-	}
-	else
-	{	finalizer_ = [t = std::move(title), flags](VI_TM_HREG h)
-			{	return ((!t.empty() && vi_tmReportCb(t.c_str()) < 0) || vi_tmReport(h, flags) < 0) ?
-					VI_EXIT_FAILURE :
-					VI_EXIT_SUCCESS;
-			};
-	}
-	return VI_EXIT_SUCCESS;
+global_registry_t::finalizer_t global_registry_t::make_finalizer(
+	std::string title,
+	std::string footer,
+	VI_TM_FLAGS flags
+)
+{	return [t = std::move(title), f = std::move(footer), flags](const global_registry_t &registry)
+		{	return
+				(t.empty() || VI_SUCCEEDED(vi_tmReportCb(t.c_str()))) &&
+				(flags & vi_tmDoNotReport || VI_SUCCEEDED(vi_tmRegistryReport(registry.handle(), flags))) &&
+				(f.empty() || VI_SUCCEEDED(vi_tmReportCb(f.c_str()))) ?
+				VI_SUCCESS:
+				VI_FAILURE;
+		};
 }
 
-VI_TM_RESULT timing_global_t::finit()
-{	std::lock_guard lg{mtx_};
-
-	auto result = VI_EXIT_SUCCESS;
-
-	if (!verify(initialization_cnt_ > 0))
-	{	result = VI_EXIT_FAILURE;
-	}
-	else if (0 == --initialization_cnt_)
-	{	if (verify(!!registry_))
-		{	if (finalizer_ && !verify(VI_SUCCEEDED(finalizer_(registry_))))
-			{	result = VI_EXIT_FAILURE;
-			}
-			finalizer_ = nullptr;
-			vi_tmRegistryReset(registry_);
-		}
-		else
-		{	result = VI_EXIT_FAILURE;
-		}
-	}
-	return result;
+global_registry_t::finalizer_t global_registry_t::set_finalizer(finalizer_t fn) noexcept
+{	std::lock_guard lg{ mtx_ };
+	return std::exchange(finalizer_, std::move(fn));
 }
 
-timing_global_t* timing_global_t::global_instance(bool called_from_init)
-{	bool first = false;
-	static auto const global = [](bool &ref_novel)
-		{	assert(!global_instance_ && !ref_novel);
-			ref_novel = true;
-			global_instance_.reset(new(std::nothrow) timing_global_t);
-			return global_instance_.get();
-		}(first);
-
-	// If vi_tmInit is called, it should only be called first, before any other global timer calls.
-//	assert(!called_from_init || first || global->initialization_cnt_ > 0);
-	(void)called_from_init;
+global_registry_t* global_registry_t::instance()
+{	static auto const global = []
+		{	instance_owner_.reset(new(std::nothrow) global_registry_t);
+			return instance_owner_.get();
+		}();
 	return global;
 }
 
 vi_tmRegistry_t* misc::from_handle(VI_TM_HREG h)
 {	if (VI_TM_HGLOBAL == h)
-	{	static vi_tmRegistry_t* const global_registry = []
-			{	timing_global_t* const instance = timing_global_t::global_instance();
+	{	static vi_tmRegistry_t* const hglobal = []
+			{	auto const instance = global_registry_t::instance();
 				return verify(instance) ? instance->handle() : nullptr;
 			}();
-		return global_registry;
+		return hglobal;
 	}
 	assert(h);
 	return h;
 }
 
-VI_TM_RESULT VI_TM_CALL vi_tmInit(const char *title, VI_TM_FLAGS report_flags, VI_TM_FLAGS flags)
-{	VI_TM_RESULT result = VI_EXIT_FAILURE;
-
-	assert(0 == (~static_cast<VI_TM_FLAGS>(vi_tmReportFlagsMask) & report_flags));
-	if (auto const global = timing_global_t::global_instance(true))
-	{	result = global->init(title? title: "", report_flags & vi_tmReportFlagsMask);
+VI_TM_RESULT VI_TM_CALL vi_tmInit(const char *title, VI_TM_FLAGS flags, const char *footer)
+{	assert((flags & ~vi_tmReportFlagsMask) == 0);
+	if (auto const global = global_registry_t::instance())
+	{	std::string t = title ? title : "Timing report:\n";
+		std::string f = footer ? footer : "";
+		global->set_finalizer(global_registry_t::make_finalizer(std::move(t), std::move(f), flags));
+		return VI_SUCCESS;
 	}
-
-	assert(0 == (~static_cast<VI_TM_FLAGS>(vi_tmInitFlagsMask) & flags));
-	if (vi_tmInitWarmup & flags)
-	{	vi_WarmUp();
-	}
-	if (vi_tmInitThreadYield & flags)
-	{	vi_ThreadYield();
-	}
-	return result;
-}
-
-void VI_TM_CALL vi_tmShutdown()
-{	if (auto const global = timing_global_t::global_instance(); verify(!!global))
-	{	global->finit();
-	}
-}
-
-timing_global_t::finalizer_t timing_global_t::set_finalizer(finalizer_t fn) noexcept
-{	std::lock_guard lg{ mtx_ };
-	return std::exchange(finalizer_, std::move(fn));
-}
-
-VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter(const char *title, VI_TM_FLAGS flags)
-{	if (auto const global = timing_global_t::global_instance())
-	{	std::string&& t = title ? title : "";
-		auto fn = [t = std::move(t), flags](VI_TM_HREG jnl)
-			{	VI_TM_RESULT result = VI_EXIT_SUCCESS;
-				if (!t.empty() && vi_tmReportCb(t.c_str()) < 0)
-				{	result = VI_EXIT_FAILURE;
-				}
-				else if (vi_tmReport(jnl, flags) < 0)
-				{	result = VI_EXIT_FAILURE;
-				}
-				return result;
-			};
-		global->set_finalizer(std::move(fn));
-		return VI_EXIT_SUCCESS;
-	}
-	return VI_EXIT_FAILURE;
+	return VI_FAILURE;
 }
 
 /*
- * Global instance of timing_global_t.
+ * Global instance of global_registry_t.
  * 
  * LIFECYCLE SEMANTICS:
  * 
@@ -214,13 +135,12 @@ VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter(const char *title, VI_TM_FLAGS fl
 #if !VI_TM_SHARED
 #	ifdef _MSC_VER
 #		if defined(_DEBUG) && !defined(_DLL)
-// When statically linking the debug CRT (/MTd), locale and standard stream
-// objects are destroyed before functions from the .CRT$XIL (init_seg(lib))
-// section are executed. This leads to accesses to already destroyed locales
-// and causes a crash at program termination.
+#			pragma message(__FILE__ "(" VI_STRINGIZE(__LINE__) "): warning: "
+				"Static debug CRT (/MTd) destroys locale and iostream objects "
+				"before .CRT$XIL (init_seg(lib)) objects are finalized. "
+				"Global deinitialization order may be incorrect; init_seg(lib) disabled.")
 //#			pragma warning(suppress: 4073)
 //#			pragma init_seg(lib)
-#			pragma message(__FILE__ "(" VI_STRINGIZE(__LINE__) "): warning: with static debug CRT linking (/MTd), the time for global object deinitialization may be lost.")
 #		else
 #			pragma warning(suppress: 4073)
 #			pragma init_seg(lib)
@@ -233,4 +153,4 @@ VI_TM_RESULT VI_TM_CALL vi_tmGlobalSetReporter(const char *title, VI_TM_FLAGS fl
 #	define VI_HIINITPRIORITY
 #endif
 
-VI_HIINITPRIORITY std::unique_ptr<timing_global_t> timing_global_t::global_instance_;
+VI_HIINITPRIORITY std::unique_ptr<global_registry_t> global_registry_t::instance_owner_;

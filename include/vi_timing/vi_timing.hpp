@@ -59,56 +59,6 @@
 
 namespace vi_tm
 {
-	class [[nodiscard]] init_t
-	{
-		std::string title_ = "Timing report:\n";
-		VI_TM_FLAGS report_flags_ = vi_tmReportDefault;
-		VI_TM_FLAGS flags_ = 0;
-
-		init_t(const init_t &) = delete;
-		init_t& operator=(const init_t &) = delete;
-
-		template<typename T>
-		VI_TM_RESULT init_aux(T &&v)
-		{	VI_TM_RESULT result = 0;
-			if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportFlags_e>)
-			{	report_flags_ |= v;
-			}
-			else if constexpr (std::is_same_v<std::decay_t<T>, vi_tmInitFlags_e>)
-			{	flags_ |= v;
-			}
-			else if constexpr (std::is_same_v<T, decltype(title_)>)
-			{	title_ = std::forward<T>(v);
-			}
-			else if constexpr (std::is_convertible_v<T, decltype(title_)>)
-			{	title_ = v;
-			}
-			else
-			{	assert(false); // Unknown parameter type.
-				result = 0 - __LINE__;
-			}
-
-			return result;
-		}
-
-		template<typename... Args>
-		VI_TM_RESULT init(Args&&... args)
-		{	VI_TM_RESULT result = 0;
-			((result |= init_aux(std::forward<Args>(args))), ...);
-			result |= vi_tmInit(title_.c_str(), report_flags_, flags_);
-			return result;
-		}
-	public:
-		init_t() { auto ret = init(); (void)ret; assert(0 == ret); } // Default flags and other settings.
-		template<typename... Args> explicit init_t(Args&&... args)
-			: report_flags_{0U}
-		{	init(std::forward<Args>(args)...);
-		}
-		~init_t()
-		{	vi_tmShutdown();
-		}
-	}; // class init_t
-
 	// probe_t class: A RAII-style class for measuring code execution time.
 	// Unlike the API, this class is not thread-safe!!!
 	class [[nodiscard]] probe_t
@@ -241,9 +191,6 @@ namespace vi_tm
 	}
 } // namespace vi_tm
 
-// Initializes the global registry and sets up the report callback.
-#	define VI_TM_INIT(...) vi_tm::init_t vi_tm__UNIC_ID {__VA_ARGS__}
-
 // VI_[N]DEBUG_ONLY macro: Expands to its argument only in debug builds, otherwise expands to nothing.
 #	if VI_TM_DEBUG
 #		define VI_TM_DEBUG_ONLY(t) t
@@ -297,8 +244,6 @@ namespace vi_tm
 
 	// This macro is used to create a probe_t object with the function name as the measurement name.
 #	define VI_TM_FUNC VI_TM_S(VI_FUNCNAME, 1U)
-	// Generates a report for the global registry.
-#	define VI_TM_REPORT(...) vi_tmReport(VI_TM_HGLOBAL, __VA_ARGS__)
 	// Resets the data of the specified measure entry in global registry. The handle remains valid.
 #	define VI_TM_RESET(name) vi_tmMeasurementReset(vi_tmRegistryGetMeas(VI_TM_HGLOBAL, (name)))
 	// Full version string of the library (Example: "0.1.0.2506151515R static").

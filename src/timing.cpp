@@ -249,67 +249,67 @@ const VI_TM_FP VI_TM_FP_NEGATIVE_INF = -fp_limits_t::infinity();
 
 VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmStats_t *meas) noexcept
 {	if(nullptr == meas)
-	{	return VI_EXIT_FAILURE;
+	{	return VI_FAILURE;
 	}
 
 #if VI_TM_STAT_USE_RAW
-	if ((0U == meas->cnt_) != (0U == meas->calls_)) return VI_EXIT_FAILURE; // cnt_ and calls_ must be both zero or both non-zero.
-	if (meas->cnt_ < meas->calls_) return VI_EXIT_FAILURE; // cnt_ must be greater than or equal to calls_.
+	if ((0U == meas->cnt_) != (0U == meas->calls_)) return VI_FAILURE; // cnt_ and calls_ must be both zero or both non-zero.
+	if (meas->cnt_ < meas->calls_) return VI_FAILURE; // cnt_ must be greater than or equal to calls_.
 #endif
 
 #if VI_TM_STAT_USE_MINMAX
 	// **** !!! The comparison operation with INFINITY when using the -ffast-math option may be incorrect (RPi-1B+) !!! ****
 	if (meas->calls_ == 0U)
-	{	if (std::memcmp(&meas->min_, &VI_TM_FP_POSITIVE_INF, sizeof(VI_TM_FP))) return VI_EXIT_FAILURE; // If calls_ is zero, min_ must be infinity.
-		if (std::memcmp(&meas->max_, &VI_TM_FP_NEGATIVE_INF, sizeof(VI_TM_FP))) return VI_EXIT_FAILURE; // If calls_ is zero, max_ must be negative infinity. 
+	{	if (std::memcmp(&meas->min_, &VI_TM_FP_POSITIVE_INF, sizeof(VI_TM_FP))) return VI_FAILURE; // If calls_ is zero, min_ must be infinity.
+		if (std::memcmp(&meas->max_, &VI_TM_FP_NEGATIVE_INF, sizeof(VI_TM_FP))) return VI_FAILURE; // If calls_ is zero, max_ must be negative infinity. 
 	}
 	else
-	{	if (0 == std::memcmp(&meas->min_, &VI_TM_FP_POSITIVE_INF, sizeof(VI_TM_FP))) return VI_EXIT_FAILURE; // min_ must not be infinity.
-		if (0 == std::memcmp(&meas->max_, &VI_TM_FP_NEGATIVE_INF, sizeof(VI_TM_FP))) return VI_EXIT_FAILURE; // max_ must not be infinity.
+	{	if (0 == std::memcmp(&meas->min_, &VI_TM_FP_POSITIVE_INF, sizeof(VI_TM_FP))) return VI_FAILURE; // min_ must not be infinity.
+		if (0 == std::memcmp(&meas->max_, &VI_TM_FP_NEGATIVE_INF, sizeof(VI_TM_FP))) return VI_FAILURE; // max_ must not be infinity.
 		if (meas->calls_ == 1U)
-		{	if (meas->min_ != meas->max_) return VI_EXIT_FAILURE; // If there is only one call, min_ and max_ must be equal.
+		{	if (meas->min_ != meas->max_) return VI_FAILURE; // If there is only one call, min_ and max_ must be equal.
 		}
 		else
-		{	if (meas->min_ > meas->max_) return VI_EXIT_FAILURE; // min_ must be less than or equal to max_.
+		{	if (meas->min_ > meas->max_) return VI_FAILURE; // min_ must be less than or equal to max_.
 		}
 	}
 #endif
 
 #if VI_TM_STAT_USE_RAW && VI_TM_STAT_USE_MINMAX
-	if (meas->calls_ == 1U && (static_cast<VI_TM_FP>(meas->sum_) != meas->min_ * meas->cnt_)) return VI_EXIT_FAILURE; // If there is only one call, sum_ must equal min_ multiplied by cnt_.
-	if (meas->calls_ >= 1U && (static_cast<VI_TM_FP>(meas->sum_) < meas->max_)) return VI_EXIT_FAILURE; // sum_ must be greater than or equal to max_.
+	if (meas->calls_ == 1U && (static_cast<VI_TM_FP>(meas->sum_) != meas->min_ * meas->cnt_)) return VI_FAILURE; // If there is only one call, sum_ must equal min_ multiplied by cnt_.
+	if (meas->calls_ >= 1U && (static_cast<VI_TM_FP>(meas->sum_) < meas->max_)) return VI_FAILURE; // sum_ must be greater than or equal to max_.
 #endif
 
 #if VI_TM_STAT_USE_RMSE
-	if (meas->flt_calls_ > meas->calls_) return VI_EXIT_FAILURE; // flt_calls_ must be less than or equal to calls_.
-	if ((fp_ZERO != meas->flt_cnt_) != (0U != meas->flt_calls_)) return VI_EXIT_FAILURE; // flt_cnt_ and flt_calls_ must be both zero or both non-zero.
-	if (meas->flt_cnt_ < static_cast<VI_TM_FP>(meas->flt_calls_)) return VI_EXIT_FAILURE; // flt_cnt_ must be greater than or equal to flt_calls_.
-	if (VI_TM_FP _; std::modf(meas->flt_cnt_, &_) != fp_ZERO) return VI_EXIT_FAILURE; // flt_cnt_ must be an integer value.
-	if (meas->flt_avg_ < fp_ZERO) return VI_EXIT_FAILURE; // flt_avg_ must be non-negative.
-	if (meas->flt_ss_ < fp_ZERO) return VI_EXIT_FAILURE; // flt_ss_ must be non-negative.
+	if (meas->flt_calls_ > meas->calls_) return VI_FAILURE; // flt_calls_ must be less than or equal to calls_.
+	if ((fp_ZERO != meas->flt_cnt_) != (0U != meas->flt_calls_)) return VI_FAILURE; // flt_cnt_ and flt_calls_ must be both zero or both non-zero.
+	if (meas->flt_cnt_ < static_cast<VI_TM_FP>(meas->flt_calls_)) return VI_FAILURE; // flt_cnt_ must be greater than or equal to flt_calls_.
+	if (VI_TM_FP _; std::modf(meas->flt_cnt_, &_) != fp_ZERO) return VI_FAILURE; // flt_cnt_ must be an integer value.
+	if (meas->flt_avg_ < fp_ZERO) return VI_FAILURE; // flt_avg_ must be non-negative.
+	if (meas->flt_ss_ < fp_ZERO) return VI_FAILURE; // flt_ss_ must be non-negative.
 
 	if (meas->flt_cnt_ == fp_ZERO)
-	{	if (meas->flt_avg_ != fp_ZERO) return VI_EXIT_FAILURE; // If flt_cnt_ is zero, flt_avg_ must also be zero.
-		if (meas->flt_ss_ != fp_ZERO) return VI_EXIT_FAILURE; // If flt_cnt_ is zero, flt_ss_ must also be zero.
+	{	if (meas->flt_avg_ != fp_ZERO) return VI_FAILURE; // If flt_cnt_ is zero, flt_avg_ must also be zero.
+		if (meas->flt_ss_ != fp_ZERO) return VI_FAILURE; // If flt_cnt_ is zero, flt_ss_ must also be zero.
 	}
 	else if (meas->flt_cnt_ == fp_ONE)
-	{	if (meas->flt_ss_ != fp_ZERO) return VI_EXIT_FAILURE;
+	{	if (meas->flt_ss_ != fp_ZERO) return VI_FAILURE;
 	}
 #endif
 
 #if VI_TM_STAT_USE_RAW && VI_TM_STAT_USE_RMSE
-	if (meas->flt_cnt_ > static_cast<VI_TM_FP>(meas->cnt_)) return VI_EXIT_FAILURE; // flt_cnt_ must be less than or equal to cnt_.
+	if (meas->flt_cnt_ > static_cast<VI_TM_FP>(meas->cnt_)) return VI_FAILURE; // flt_cnt_ must be less than or equal to cnt_.
 #endif
 
 #if VI_TM_STAT_USE_MINMAX && VI_TM_STAT_USE_RMSE
 	if (meas->flt_calls_ > 0U)
 	{	constexpr auto fp_EPSILON = fp_limits_t::epsilon();
-		if ((meas->min_ - meas->flt_avg_) / meas->flt_avg_ >= fp_EPSILON) return VI_EXIT_FAILURE;
-		if ((meas->flt_avg_ - meas->max_) / meas->flt_avg_ >= fp_EPSILON) return VI_EXIT_FAILURE;
+		if ((meas->min_ - meas->flt_avg_) / meas->flt_avg_ >= fp_EPSILON) return VI_FAILURE;
+		if ((meas->flt_avg_ - meas->max_) / meas->flt_avg_ >= fp_EPSILON) return VI_FAILURE;
 	}
 #endif
 
-	return VI_EXIT_SUCCESS;
+	return VI_SUCCESS;
 }
 
 void VI_TM_CALL vi_tmStatsReset(vi_tmStats_t *meas) noexcept
@@ -332,7 +332,7 @@ void VI_TM_CALL vi_tmStatsReset(vi_tmStats_t *meas) noexcept
 	meas->flt_avg_ = fp_ZERO;
 	meas->flt_ss_ = fp_ZERO;
 #endif
-	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(meas));
+	assert(VI_SUCCESS == vi_tmStatsIsValid(meas));
 }
 
 void VI_TM_CALL vi_tmStatsAdd(vi_tmStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cnt) noexcept
@@ -340,7 +340,7 @@ void VI_TM_CALL vi_tmStatsAdd(vi_tmStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cn
 	if (!verify(!!meas) || 0U == cnt)
 	{	return;
 	}
-	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(meas));
+	assert(VI_SUCCESS == vi_tmStatsIsValid(meas));
 
 #if VI_TM_STAT_USE_RMSE || VI_TM_STAT_USE_MINMAX
 	const auto f_cnt = static_cast<VI_TM_FP>(cnt);
@@ -392,7 +392,7 @@ void VI_TM_CALL vi_tmStatsAdd(vi_tmStats_t *meas, VI_TM_TDIFF dur, VI_TM_SIZE cn
 		}
 #endif
 	}
-	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(meas));
+	assert(VI_SUCCESS == vi_tmStatsIsValid(meas));
 }
 
 void VI_TM_CALL vi_tmStatsMerge(vi_tmStats_t* VI_RESTRICT dst, const vi_tmStats_t* VI_RESTRICT src) noexcept
@@ -400,8 +400,8 @@ void VI_TM_CALL vi_tmStatsMerge(vi_tmStats_t* VI_RESTRICT dst, const vi_tmStats_
 	{	return;
 	}
 
-	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(dst));
-	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(src));
+	assert(VI_SUCCESS == vi_tmStatsIsValid(dst));
+	assert(VI_SUCCESS == vi_tmStatsIsValid(src));
 
 	dst->calls_ += src->calls_;
 #if VI_TM_STAT_USE_RAW
@@ -426,7 +426,7 @@ void VI_TM_CALL vi_tmStatsMerge(vi_tmStats_t* VI_RESTRICT dst, const vi_tmStats_
 		dst->flt_calls_ += src->flt_calls_;
 	}
 #endif
-	assert(VI_EXIT_SUCCESS == vi_tmStatsIsValid(dst));
+	assert(VI_SUCCESS == vi_tmStatsIsValid(dst));
 }
 
 VI_TM_HREG VI_TM_CALL vi_tmRegistryCreate()

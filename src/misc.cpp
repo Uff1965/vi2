@@ -156,21 +156,21 @@ namespace
 			{	if (0 == instance_.cnt_++)
 				{	const auto prev = set_affinity();
 					if (!verify(!!prev))
-					{	return VI_EXIT_FAILURE;
+					{	return VI_FAILURE;
 					}
 					instance_.previous_affinity_ = prev.value_or(AFFINITY_ZERO);
 				}
-				return VI_EXIT_SUCCESS;
+				return VI_SUCCESS;
 			}
 			static int restore()
 			{	assert(instance_.cnt_ > 0);
 				if (0 == --instance_.cnt_)
 				{	if(!verify(restore_affinity(instance_.previous_affinity_)))
-					{	return VI_EXIT_FAILURE;
+					{	return VI_FAILURE;
 					}
 					instance_.previous_affinity_ = AFFINITY_ZERO;
 				}
-				return VI_EXIT_SUCCESS;
+				return VI_SUCCESS;
 			}
 		};
 		thread_local affinity_fix_t affinity_fix_t::instance_;
@@ -328,13 +328,13 @@ std::string misc::to_string(double val, unsigned char significant, unsigned char
 }
 
 // Sets the current thread's CPU affinity to the processor it is currently running on.
-// Returns VI_EXIT_SUCCESS on success, or VI_EXIT_FAILURE on failure.
+// Returns VI_SUCCESS on success, or VI_FAILURE on failure.
 int VI_TM_CALL vi_CurrentThreadAffinityFixate()
 {	return affinity::affinity_fix_t::fixate();
 }
 
 // Restores the current thread's CPU affinity to its previous setting.
-// Returns VI_EXIT_SUCCESS on success, or VI_EXIT_FAILURE on failure.
+// Returns VI_SUCCESS on success, or VI_FAILURE on failure.
 int VI_TM_CALL vi_CurrentThreadAffinityRestore()
 {	return affinity::affinity_fix_t::restore();
 }
@@ -347,10 +347,10 @@ void VI_TM_CALL vi_ThreadYield(void) noexcept
 // Keeps the CPU payload for a specified duration using multiple threads to simulate workload and warm up the system.
 // - threads_qty: Number of threads to use (0 means use hardware concurrency).
 // - ms: Duration in milliseconds to keep the CPU payload.
-// Returns: VI_EXIT_SUCCESS on success, VI_EXIT_FAILURE on error.
+// Returns: VI_SUCCESS on success, VI_FAILURE on error.
 int  VI_TM_CALL vi_WarmUp(unsigned int threads_qty, unsigned int ms)
 {	if (0 == ms)
-	{	return VI_EXIT_SUCCESS;
+	{	return VI_SUCCESS;
 	}
 
 	if (threads_qty == 0U || threads_qty > std::thread::hardware_concurrency())
@@ -381,10 +381,10 @@ int  VI_TM_CALL vi_WarmUp(unsigned int threads_qty, unsigned int ms)
 	}
 	catch (...)
 	{	assert(false);
-		return VI_EXIT_FAILURE;
+		return VI_FAILURE;
 	}
 
-	return VI_EXIT_SUCCESS;
+	return VI_SUCCESS;
 }
 
 // vi_tmStaticInfo: Returns static information about the vi_timing library based on the requested info type.

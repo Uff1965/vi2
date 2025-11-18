@@ -19,11 +19,11 @@ struct vi_tmRegistry_t;
 namespace misc
 {
 #ifdef __cpp_lib_source_location
-#	define VI_EXIT_SUCCESS (0) // Use zero as success code.
-#	define VI_EXIT_FAILURE []() noexcept ->int { return(0 - std::source_location::current().line()); } () // Use negative line number as error code.
+#	define VI_SUCCESS (0) // Use zero as success code.
+#	define VI_FAILURE []() noexcept ->int { return(0 - std::source_location::current().line()); } () // Use negative line number as error code.
 #else
-#	define VI_EXIT_SUCCESS (0) // Use zero as success code.
-#	define VI_EXIT_FAILURE (0 - __LINE__) // Use negative line number as error code.
+#	define VI_SUCCESS (0) // Use zero as success code.
+#	define VI_FAILURE (0 - __LINE__) // Use negative line number as error code.
 #endif
 
 	struct space_out final: std::numpunct<char>
