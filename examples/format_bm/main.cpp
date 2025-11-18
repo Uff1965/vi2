@@ -104,7 +104,7 @@ namespace
 #endif
 
 int main(int argc, char** argv)
-{	std::cout << "vi_timing version: " << VI_TM_FULLVERSION() << std::endl;
+{	std::cout << "vi_timing version: " << VI_TM_FULLVERSION << std::endl;
 	std::cout << "Prepare..." << std::flush;
 	vi_tmInit(
 		"Timing report:\n",
