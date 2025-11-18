@@ -1,5 +1,5 @@
 add_subdirectory(simple)
 add_subdirectory(format_bm)
-if(VI_TM_SHARED)
+if(VI_TM_ENABLE_PYTHON and VI_TM_SHARED)
 	add_subdirectory(python_ext)
 endif()

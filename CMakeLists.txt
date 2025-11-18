@@ -141,7 +141,3 @@ endif()
 if (VI_TM_ENABLE_EXAMPLES)
     add_subdirectory(examples)
 endif()
-
-if(VI_TM_ENABLE_PYTHON)
-	add_subdirectory(python_ext)
-endif()
