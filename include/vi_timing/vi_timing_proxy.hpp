@@ -26,5 +26,6 @@
 #		define VI_TM_REPORT(...) ((void)0)
 #		define VI_TM_RESET(...) ((void)0)
 #		define VI_TM_FULLVERSION ""
+#		define VI_TM_GLOBALINIT(...) 0
 #	endif
 #endif // #ifndef VI_TIMING_PROXY_HPP

@@ -106,9 +106,9 @@ namespace
 int main(int argc, char** argv)
 {	std::cout << "vi_timing version: " << VI_TM_FULLVERSION << std::endl;
 	std::cout << "Prepare..." << std::flush;
-	vi_tmInit(
-		"Timing report:\n",
+	vi_tmGlobalInit(
 		vi_tmShowResolution | vi_tmShowUnit | vi_tmShowDuration | vi_tmShowOverhead | vi_tmSortBySpeed,
+		"Timing report:\n",
 		"Success - the test program completed!\n"
 	);
 	vi_CurrentThreadAffinityFixate();

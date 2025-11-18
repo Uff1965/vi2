@@ -102,7 +102,7 @@ vi_tmRegistry_t* misc::from_handle(VI_TM_HREG h)
 	return h;
 }
 
-VI_TM_RESULT VI_TM_CALL vi_tmInit(const char *title, VI_TM_FLAGS flags, const char *footer)
+VI_TM_RESULT VI_TM_CALL vi_tmGlobalInit(VI_TM_FLAGS flags, const char *title, const char *footer)
 {	assert((flags & ~vi_tmReportFlagsMask) == 0);
 	if (auto const global = global_registry_t::instance())
 	{	std::string t = title ? title : "Timing report:\n";

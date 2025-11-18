@@ -41,6 +41,7 @@
 #	define VI_TM_REPORT(...) ((void)0)
 #	define VI_TM_RESET(...) ((void)0)
 #	define VI_TM_FULLVERSION ""
+#	define VI_TM_GLOBALINIT(...) 0
 #elif defined(__cplusplus)
 #	// Visual Studio historically leaves __cplusplus as 199711L;
 #	// use _MSVC_LANG for actual MSVC standard (or enable /Zc:__cplusplus).
@@ -243,9 +244,14 @@ namespace vi_tm
 
 	// This macro is used to create a probe_t object with the function name as the measurement name.
 #	define VI_TM_FUNC VI_TM_S(VI_FUNCNAME, 1U)
+	// Generates a report for the global registry.
+#	define VI_TM_REPORT(...) vi_tmRegistryReport(VI_TM_HGLOBAL, __VA_ARGS__)
 	// Resets the data of the specified measure entry in global registry. The handle remains valid.
 #	define VI_TM_RESET(name) vi_tmMeasurementReset(vi_tmRegistryGetMeas(VI_TM_HGLOBAL, (name)))
 	// Full version string of the library (Example: "0.1.0.2506151515R static").
 #	define VI_TM_FULLVERSION static_cast<const char*>(vi_tmStaticInfo(vi_tmInfoVersion))
+
+#	define VI_TM_GLOBALINIT(...) vi_tmGlobalInit(__VA_ARGS__)
+
 #endif // #ifdef __cplusplus
 #endif // #ifndef VI_TIMING_VI_TIMING_H

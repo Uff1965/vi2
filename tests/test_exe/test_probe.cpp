@@ -229,7 +229,7 @@ TEST_F(ProbeTest, MoveAssignmentStopsTargetBeforeOverwrite) {
 #ifndef NDEBUG
 TEST_F(ProbeTest, DoublePauseTriggersDebugAssert) {
 	assert(0 == errno);
-//	vi_tmInit(nullptr, vi_tmDoNotReport);
+//	vi_tmGlobalInit(vi_tmDoNotReport, nullptr);
 	// Debug-only assert behavior. Adjust EXPECT_DEATH regex if your runtime prints something specific.
 	auto p = vi_tm::probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
 	p.pause();

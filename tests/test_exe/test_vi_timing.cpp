@@ -117,6 +117,8 @@ namespace
 
 int main(int argc, char** argv)
 {
+	VI_TM_GLOBALINIT(vi_tmReportDefault, "Timing report:\n", "\n");
+
 	const auto gtest_arg = any_gtest_arg(argc, argv);
 
 	if (!gtest_arg)

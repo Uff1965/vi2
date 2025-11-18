@@ -327,23 +327,23 @@ typedef enum vi_tmStatus_e
 VI_NODISCARD VI_TM_API VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT;
 
 /// <summary>
-/// Initializes the timing system and prepares it for use.
+/// Configures the appearance of the global registry report.
 /// </summary>
-/// <param name="title">
-/// The report title that will be displayed when generating statistics.
-/// Default: "Timing report:\n".
-/// </param>
 /// <param name="report_flags">
 /// A set of flags that define the contents and format of the report 
 /// (for example, showing timer resolution, duration, or sorting by name).
 /// Default: vi_tmReportDefault.
 /// </param>
+/// <param name="title">
+/// The report title that will be displayed when generating statistics.
+/// Default: "Timing report:\n".
+/// </param>
 /// <returns>
 /// Result code of the initialization (VI_TM_RESULT).
 /// </returns>
-VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmInit
-(	const char* title VI_DEFAULT("Timing report:\n"),
-	VI_TM_FLAGS report_flags VI_DEFAULT(vi_tmReportDefault),
+VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalInit
+(	VI_TM_FLAGS report_flags VI_DEFAULT(vi_tmReportDefault),
+	const char* title VI_DEFAULT("Timing report:\n"),
 	const char* footer VI_DEFAULT(NULL)
 );
 
