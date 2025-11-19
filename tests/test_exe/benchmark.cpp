@@ -94,7 +94,7 @@ static void BM_probe_make_paused(benchmark::State &state)
 {	VI_TM_RESET("xxxx");
 	auto m = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "xxxx");
 	for (auto _ : state)
-	{	auto probe = vi_tm::probe_t::make_paused(m);
+	{	auto probe = vi_tm::scoped_probe_t::make_paused(m);
 		benchmark::ClobberMemory();
 	}
 }
@@ -103,7 +103,7 @@ BENCHMARK(BM_probe_make_paused);
 static void BM_probe_resume_pause(benchmark::State &state)
 {	VI_TM_RESET("xxxx");
 	auto m = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "xxxx");
-	auto probe = vi_tm::probe_t::make_paused(m);
+	auto probe = vi_tm::scoped_probe_t::make_paused(m);
 	for (auto _ : state)
 	{	
 		probe.resume();

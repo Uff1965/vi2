@@ -23,8 +23,8 @@
 #		define VI_TM_H(h, ...) const int VI_UNIC_ID(vi_tm__) = 0
 #		define VI_TM_SH(h, ...) const int VI_UNIC_ID(vi_tm__) = 0
 #		define VI_TM_FUNC_H(h) const int VI_UNIC_ID(vi_tm__) = 0
-#		define VI_TM_REPORT_H(h, ...) const int VI_UNIC_ID(vi_tm__) = 0
-#		define VI_TM_RESET_H(h, ...) const int VI_UNIC_ID(vi_tm__) = 0
+#		define VI_TM_REPORT_H(h, ...) 0
+#		define VI_TM_RESET_H(h, ...) (void)0
 #		// Fallback macros for global registry timing functions
 #		define VI_TM(...) VI_TM_H(0, __VA_ARGS__)
 #		define VI_TM_S(...) VI_TM_SH(0, __VA_ARGS__)

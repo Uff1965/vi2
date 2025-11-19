@@ -56,7 +56,7 @@
 #	define VI_TM_DEBUG 1 // Enable debug mode.
 #endif
 
-// Set VI_TM_USE_STDCLOCK to TRUE to build the library as a SHARED library.
+// Set VI_TM_SHARED to TRUE to build the library as a SHARED library.
 // Requires library rebuild.
 #ifndef VI_TM_SHARED
 #	define VI_TM_SHARED 0
@@ -417,8 +417,14 @@ VI_TM_API void VI_TM_CALL vi_tmMeasurementMerge(VI_TM_HMEAS m, const vi_tmStats_
 /// Retrieves measurement information from a VI_TM_HMEAS object, including its name and statistics.
 /// </summary>
 /// <param name="m">The measurement handle from which to retrieve information.</param>
-/// <param name="name">Pointer to a string pointer that will receive the name of the measurement. Can be nullptr if not needed.</param>
-/// <param name="dst">Pointer to a vi_tmStats_t structure that will receive the measurement statistics. Can be nullptr if not needed.</param>
+/// <param name="name">Pointer to receive the measurement name string.
+/// The returned string is owned by the registry and remains valid until the registry is destroyed.
+/// Can be NULL if name is not needed.
+/// </param>
+/// <param name="dst">Pointer to user-allocated vi_tmStats_t structure that will be filled with a copy
+/// of the measurement statistics from the registry.
+/// Can be NULL if statistics are not needed.
+/// </param>
 /// <returns>This function does not return a value.</returns>
 VI_TM_API void VI_TM_CALL vi_tmMeasurementGet(VI_TM_HMEAS m, const char **name, vi_tmStats_t *dst);
 

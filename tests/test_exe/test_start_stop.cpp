@@ -7,18 +7,18 @@
 
 using namespace std::chrono_literals;
 
-vi_tm::probe_t foo(VI_TM_HREG registry)
-{	return vi_tm::probe_t::make_running(vi_tmRegistryGetMeas(registry, "start_stop_ext"));
+vi_tm::scoped_probe_t foo(VI_TM_HREG registry)
+{	return vi_tm::scoped_probe_t::make_running(vi_tmRegistryGetMeas(registry, "start_stop_ext"));
 }
 
-TEST(probe_t, start_stop)
+TEST(scoped_probe_t, start_stop)
 {
 	// "When a reference is bound to a temporary object, the temporary object's lifetime is extended to match the lifetime of the reference
 	const auto &&start_stop_ext = foo(VI_TM_HGLOBAL);
 	EXPECT_TRUE(start_stop_ext.active());
 
 	{	VI_TM("start_stop_VI_TM");
-		auto start_stop = vi_tm::probe_t::make_paused(vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "start_stop")); // Paused.
+		auto start_stop = vi_tm::scoped_probe_t::make_paused(vi_tmRegistryGetMeas(VI_TM_HGLOBAL, "start_stop")); // Paused.
 		EXPECT_TRUE(start_stop.paused());
 
 		start_stop.resume();

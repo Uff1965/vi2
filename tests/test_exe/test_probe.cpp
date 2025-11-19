@@ -19,13 +19,13 @@
 \*****************************************************************************/
 
 // probe_test.cpp
-// GoogleTest unit tests for vi_tm::probe_t using the real vi_timing C header types.
+// GoogleTest unit tests for vi_tm::scoped_probe_t using the real vi_timing C header types.
 // The production timing API (vi_tmGetTicks, vi_tmMeasurementAdd) is replaced
 // by test implementations defined here so tests can control time and observe
 // recorded measurements.
 //
 // Build instructions:
-// - Link with your probe implementation object that includes vi_tm::probe_t.
+// - Link with your probe implementation object that includes vi_tm::scoped_probe_t.
 // - Compile this file and link with GoogleTest.
 // - Ensure this translation unit is linked into the same executable so the
 //   test definitions override the production symbols.
@@ -35,7 +35,7 @@
 #include <limits>
 #include <utility>
 
-#define probe_t probe_fake_t
+#define scoped_probe_t probe_fake_t
 #define vi_tmGetTicks vi_tmGetTicks_fake
 #define vi_tmMeasurementAdd vi_tmMeasurementAdd_fake
 #include <vi_timing/vi_timing.hpp>
@@ -109,7 +109,7 @@ void VI_TM_CALL vi_tmMeasurementAdd_fake(VI_TM_HMEAS m, VI_TM_TDIFF dur, VI_TM_S
 TEST_F(ProbeTest, StartStopRecordsDurationAndCount) {
 	// Start at tick 100, then advance by 50 and stop.
 	set_ticks(VI_TM_TICK{100});
-	auto p = vi_tm::probe_t::make_running(TEST_MEAS, VI_TM_SIZE{3});
+	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{3});
 	EXPECT_TRUE(p.active());
 	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{0});
 	advance_ticks(VI_TM_TDIFF{50}); // ticks == 150
@@ -131,7 +131,7 @@ TEST_F(ProbeTest, StartStopRecordsDurationAndCount) {
 TEST_F(ProbeTest, PauseAccumulatesAndResumeContinues) {
 	// Run, pause, resume, and stop; total duration should be sum of parts.
 	set_ticks(VI_TM_TICK{10});
-	auto p = vi_tm::probe_t::make_running(TEST_MEAS, VI_TM_SIZE{2});
+	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{2});
 	advance_ticks(VI_TM_TDIFF{7}); // running for 7
 	p.pause();
 	EXPECT_TRUE(p.paused());
@@ -152,7 +152,7 @@ TEST_F(ProbeTest, PauseAccumulatesAndResumeContinues) {
 TEST_F(ProbeTest, PausedStopRecordsAccumulated) {
 	// Pause without resume, then stop should record the accumulated time.
 	set_ticks(VI_TM_TICK{0});
-	auto p = vi_tm::probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
+	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
 	advance_ticks(VI_TM_TDIFF{8});
 	p.pause();
 	p.stop();
@@ -164,7 +164,7 @@ TEST_F(ProbeTest, PausedStopRecordsAccumulated) {
 TEST_F(ProbeTest, ElapsedReflectsRunningPausedIdle) {
 	// Validate elapsed() in running, paused and after stop (idle).
 	set_ticks(VI_TM_TICK{100});
-	auto p = vi_tm::probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
+	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
 	advance_ticks(VI_TM_TDIFF{4});
 	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{4});
 
@@ -182,7 +182,7 @@ TEST_F(ProbeTest, ElapsedReflectsRunningPausedIdle) {
 TEST_F(ProbeTest, MoveConstructionTransfersOwnershipAndDoesNotDoubleRecord) {
 	// Move-constructing from a running probe transfers responsibility to the new object.
 	set_ticks(VI_TM_TICK{0});
-	auto a = vi_tm::probe_t::make_running(TEST_MEAS, VI_TM_SIZE{2});
+	auto a = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{2});
 	advance_ticks(VI_TM_TDIFF{5});
 	auto b = std::move(a);
 	EXPECT_TRUE(b.active());
@@ -201,9 +201,9 @@ TEST_F(ProbeTest, MoveAssignmentStopsTargetBeforeOverwrite) {
 	// operator= should stop the target before overwriting it, so previous target's
 	// measurement is recorded exactly once.
 	set_ticks(VI_TM_TICK{0});
-	auto a = vi_tm::probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
+	auto a = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
 	advance_ticks(VI_TM_TDIFF{3}); // 'a' has run for 3
-	auto b = vi_tm::probe_t::make_running(TEST_MEAS, VI_TM_SIZE{2});
+	auto b = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{2});
 	advance_ticks(VI_TM_TDIFF{7}); // 'b' has run for 10 total
 
 	// Move-assign 'a' into 'b'. operator= is expected to call stop() on the existing 'b'.
@@ -231,7 +231,7 @@ TEST_F(ProbeTest, DoublePauseTriggersDebugAssert) {
 	assert(0 == errno);
 //	vi_tmGlobalInit(vi_tmDoNotReport, nullptr);
 	// Debug-only assert behavior. Adjust EXPECT_DEATH regex if your runtime prints something specific.
-	auto p = vi_tm::probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
+	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
 	p.pause();
 	EXPECT_TRUE(p.paused());
 	EXPECT_DEATH({ p.pause(); }, ".*");
@@ -243,9 +243,23 @@ TEST_F(ProbeTest, DoublePauseTriggersDebugAssert) {
 }
 #endif
 
+TEST_F(ProbeTest, make_running) {
+	// Ensure calling stop() on an idle/moved-from object does not record a new measurement.
+	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
+	EXPECT_TRUE(p.active());
+	EXPECT_EQ(p.elapsed(), 0);
+}
+
+TEST_F(ProbeTest, make_paused) {
+	// Ensure calling stop() on an idle/moved-from object does not record a new measurement.
+	auto p = vi_tm::scoped_probe_t::make_paused(TEST_MEAS, VI_TM_SIZE{1});
+	EXPECT_TRUE(p.paused());
+	EXPECT_EQ(p.elapsed(), 0);
+}
+
 TEST_F(ProbeTest, StopOnIdleDoesNotRecord) {
 	// Ensure calling stop() on an idle/moved-from object does not record a new measurement.
-	auto p = vi_tm::probe_t::make_paused(TEST_MEAS, VI_TM_SIZE{1});
+	auto p = vi_tm::scoped_probe_t::make_paused(TEST_MEAS, VI_TM_SIZE{1});
 	EXPECT_TRUE(p.paused());
 	// First stop may record accumulated zero depending on paused ctor semantics.
 	p.stop();
@@ -253,4 +267,16 @@ TEST_F(ProbeTest, StopOnIdleDoesNotRecord) {
 	// Subsequent stop must be a no-op.
 	p.stop();
 	EXPECT_EQ(g_last_meas, UNDEF_MEAS);
+}
+
+TEST_F(ProbeTest, scoped_pause_t) {
+	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
+	advance_ticks(VI_TM_TDIFF{3}); // 'a' has run for 3
+	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{3});
+	{	vi_tm::scoped_pause_t sp{ p };
+		advance_ticks(VI_TM_TDIFF{ 777 }); // skip
+	}
+	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{3});
+	advance_ticks(VI_TM_TDIFF{7}); // 'b' has run for 10 total
+	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{10});
 }
