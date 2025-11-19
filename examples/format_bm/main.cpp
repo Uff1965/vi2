@@ -5,9 +5,10 @@
 #endif
 
 #include <algorithm>
-#include <cmath>
 #include <charconv>
+#include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <format>
 #include <iomanip>
 #include <iostream>
