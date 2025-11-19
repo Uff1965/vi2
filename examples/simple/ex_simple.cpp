@@ -11,6 +11,12 @@ volatile unsigned N = 30;
 
 VI_TM("Global scope");
 
+static const auto _ = VI_TM_GLOBALINIT(
+	vi_tmReportDefault,
+	"Timing report:\n",
+	"Success - the test program completed!\n"
+);
+
 int main()
 {	VI_TM_FUNC;
 

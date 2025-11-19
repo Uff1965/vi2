@@ -33,29 +33,35 @@
 #		define VI_UNIC_ID( prefix ) VI_STR_CONCAT( prefix, __LINE__ )
 #	endif
 
-#if defined(VI_TM_DISABLE)
+#if defined(VI_TM_DISABLE) || !defined(__cplusplus)
 #	// Fallback macros for timing functions
-#	define VI_TM(...) const int VI_UNIC_ID(vi_tm__) = 0
-#	define VI_TM_S(...) const int VI_UNIC_ID(vi_tm__) = 0
-#	define VI_TM_FUNC ((void)0)
-#	define VI_TM_REPORT(...) ((void)0)
-#	define VI_TM_RESET(...) ((void)0)
+#	define VI_TM_H(h, ...) const int VI_UNIC_ID(vi_tm__) = 0
+#	define VI_TM_SH(h, ...) const int VI_UNIC_ID(vi_tm__) = 0
+#	define VI_TM_FUNC_H(h) const int VI_UNIC_ID(vi_tm__) = 0
+#	define VI_TM_REPORT_H(h, ...) const int VI_UNIC_ID(vi_tm__) = 0
+#	define VI_TM_RESET_H(h, ...) const int VI_UNIC_ID(vi_tm__) = 0
+#	// Fallback macros for global registry timing functions
+#	define VI_TM(...) VI_TM_H(0, __VA_ARGS__)
+#	define VI_TM_S(...) VI_TM_SH(0, __VA_ARGS__)
+#	define VI_TM_FUNC VI_TM_FUNC_H(V0)
+#	define VI_TM_REPORT(...) VI_TM_REPORT_H(0, __VA_ARGS__)
+#	define VI_TM_RESET(...) VI_TM_RESET_h(0, __VA_ARGS__)
+#	// Fallback macro for full version string and global init
 #	define VI_TM_FULLVERSION ""
 #	define VI_TM_GLOBALINIT(...) 0
-#elif defined(__cplusplus)
+#else
 #	// Visual Studio historically leaves __cplusplus as 199711L;
 #	// use _MSVC_LANG for actual MSVC standard (or enable /Zc:__cplusplus).
 #	if __cplusplus < 201703L && (!defined(_MSVC_LANG) || _MSVC_LANG < 201703L)
 #		error "vi_timing requires C++17 or later."
 #	endif
 
-#	include <cassert>
-#	include <cstdint>
-#	include <cstring>
-#	include <limits>
+#	include <cassert> // assert
+//#	include <cstring>
+#	include <limits> // std::numeric_limits
 #	include <string>
-#	include <type_traits>
-#	include <utility>
+//#	include <type_traits>
+#	include <utility> // std::exchange
 
 namespace vi_tm
 {
@@ -191,48 +197,48 @@ namespace vi_tm
 	}
 } // namespace vi_tm
 
-// VI_[N]DEBUG_ONLY macro: Expands to its argument only in debug builds, otherwise expands to nothing.
+#// VI_[N]DEBUG_ONLY macro: Expands to its argument only in debug builds, otherwise expands to nothing.
 #	if VI_TM_DEBUG
 #		define VI_TM_DEBUG_ONLY(t) t
 #	else
 #		define VI_TM_DEBUG_ONLY(t)
 #	endif
 
-	/// <summary>
-	/// Starts a scoped timing probe for high-resolution profiling.
-	/// </summary>
-	/// <param name="name">
-	/// A literal, null-terminated string that names this profiling scope.
-	/// </param>
-	/// <param name="cnt">
-	/// Optional count multiplier for this probe (default is 1).
-	/// </param>
-	/// <remarks>
-	/// The macro defines a unique probe object whose underlying measurement handle
-	/// is obtained from the global registry. The handle is looked up by name and
-	/// used to construct a RAII-style `vi_tm::probe_t` that starts immediately.
-	/// </remarks>
-#	define VI_TM(...) \
+#	/// <summary>
+#	/// Starts a scoped timing probe for high-resolution profiling.
+#	/// </summary>
+#	/// <param name="name">
+#	/// A literal, null-terminated string that names this profiling scope.
+#	/// </param>
+#	/// <param name="cnt">
+#	/// Optional count multiplier for this probe (default is 1).
+#	/// </param>
+#	/// <remarks>
+#	/// The macro defines a unique probe object whose underlying measurement handle
+#	/// is obtained from the global registry. The handle is looked up by name and
+#	/// used to construct a RAII-style `vi_tm::probe_t` that starts immediately.
+#	/// </remarks>
+#	define VI_TM_H(h, ...) \
 		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
-		{	const auto meas = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, name); \
+		{	const auto meas = vi_tmRegistryGetMeas((h), name); \
 			return vi_tm::probe_t::make_running(meas, cnt); \
 		}(__VA_ARGS__)
-
-	/// <summary>
-	/// See <see cref="VI_TM"/> for the full description. Starts a scoped timing probe with a cached measurement lookup.
-	/// </summary>
-	/// <remarks>
-	/// Behavior is the same as <see cref="VI_TM"/> except that the measurement handle is cached
-	/// in a static variable to avoid repeated lookups by name.
-	///
-	/// Important: each invocation of <c>VI_TM_S</c> at the same source location MUST use the
-	/// exact same <paramref name="name"/> and <paramref name="cnt"/> values. Reusing the macro
-	/// at the same location with different arguments is forbidden and will produce inconsistent
-	/// or invalid profiling data.
-	/// </remarks>
-#	define VI_TM_S(...) \
+#
+#	/// <summary>
+#	/// See <see cref="VI_TM"/> for the full description. Starts a scoped timing probe with a cached measurement lookup.
+#	/// </summary>
+#	/// <remarks>
+#	/// Behavior is the same as <see cref="VI_TM"/> except that the measurement handle is cached
+#	/// in a static variable to avoid repeated lookups by name.
+#	///
+#	/// Important: each invocation of <c>VI_TM_S</c> at the same source location MUST use the
+#	/// exact same <paramref name="name"/> and <paramref name="cnt"/> values. Reusing the macro
+#	/// at the same location with different arguments is forbidden and will produce inconsistent
+#	/// or invalid profiling data.
+#	/// </remarks>
+#	define VI_TM_SH(h, ...) \
 		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::probe_t \
-		{	static const auto meas = vi_tmRegistryGetMeas(VI_TM_HGLOBAL, name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
+		{	static const auto meas = vi_tmRegistryGetMeas((h), name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
 			VI_TM_DEBUG_ONLY \
 			(	const char* registered_name = nullptr; \
 				vi_tmMeasurementGet(meas, &registered_name, nullptr); \
@@ -241,17 +247,25 @@ namespace vi_tm
 			) \
 			return vi_tm::probe_t::make_running(meas, cnt); \
 		}(__VA_ARGS__)
-
-	// This macro is used to create a probe_t object with the function name as the measurement name.
-#	define VI_TM_FUNC VI_TM_S(VI_FUNCNAME, 1U)
-	// Generates a report for the global registry.
-#	define VI_TM_REPORT(...) vi_tmRegistryReport(VI_TM_HGLOBAL, __VA_ARGS__)
-	// Resets the data of the specified measure entry in global registry. The handle remains valid.
-#	define VI_TM_RESET(name) vi_tmMeasurementReset(vi_tmRegistryGetMeas(VI_TM_HGLOBAL, (name)))
-	// Full version string of the library (Example: "0.1.0.2506151515R static").
+#
+#	// This macro is used to create a probe_t object with the function name as the measurement name.
+#	define VI_TM_FUNC_H(h) VI_TM_SH((h), VI_FUNCNAME, 1U)
+#	// Generates a report for the global registry.
+#	define VI_TM_REPORT_H(h, ...) vi_tmRegistryReport((h), __VA_ARGS__)
+#	// Resets the data of the specified measure entry in global registry. The handle remains valid.
+#	define VI_TM_RESET_H(h, name) vi_tmMeasurementReset(vi_tmRegistryGetMeas((h), (name)))
+#
+#	// Macros for global registry timing functions.
+#	define VI_TM(...) VI_TM_H(VI_TM_HGLOBAL, __VA_ARGS__)
+#	define VI_TM_S(...) VI_TM_SH(VI_TM_HGLOBAL, __VA_ARGS__)
+#	define VI_TM_FUNC VI_TM_FUNC_H(VI_TM_HGLOBAL)
+#	define VI_TM_REPORT(...) VI_TM_REPORT_H(VI_TM_HGLOBAL, __VA_ARGS__)
+#	define VI_TM_RESET(...) VI_TM_RESET_H(VI_TM_HGLOBAL, __VA_ARGS__)
+#
+#	// Full version string of the library (Example: "0.1.0.2506151515R static").
 #	define VI_TM_FULLVERSION static_cast<const char*>(vi_tmStaticInfo(vi_tmInfoVersion))
-
+#	// Initializes the global timing registry with optional reporting.
 #	define VI_TM_GLOBALINIT(...) vi_tmGlobalInit(__VA_ARGS__)
 
-#endif // #ifdef __cplusplus
+#endif // #if !defined(VI_TM_DISABLE) && defined(__cplusplus)
 #endif // #ifndef VI_TIMING_VI_TIMING_H

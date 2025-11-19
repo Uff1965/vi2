@@ -117,7 +117,7 @@ namespace
 
 int main(int argc, char** argv)
 {
-	VI_TM_GLOBALINIT(vi_tmReportDefault, "Timing report:\n", "\n");
+	VI_TM_GLOBALINIT(vi_tmReportDefault, "Timing report:\n", "Success - the test program completed!\n");
 
 	const auto gtest_arg = any_gtest_arg(argc, argv);
 

@@ -124,7 +124,7 @@ int main(int argc, char** argv)
 	{	return 1;
 	}
 	::benchmark::RunSpecifiedBenchmarks();
-	std::cout << "Benchmark - done.\n" << std::endl;
+	std::cout << "Benchmark - done." << std::endl;
 #endif
 
 	func_desc_t fncs[] = {
@@ -147,7 +147,7 @@ int main(int argc, char** argv)
 				BM_DNO(tmp);
 			}
 		}
-		std::cout << " done.\n" << std::endl;
+		std::cout << " done." << std::endl;
 	}
 
 	{	VI_TM("Per-Operation Mean");
@@ -162,8 +162,9 @@ int main(int argc, char** argv)
 				}
 			} while (std::next_permutation(std::begin(fncs), std::end(fncs)));
 		}
-		std::cout << " done.\n" << std::endl;
+		std::cout << " done." << std::endl;
 	}
 
 	vi_CurrentThreadAffinityRestore();
+	endl(std::cout);
 }
