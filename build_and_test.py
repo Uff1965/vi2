@@ -310,7 +310,7 @@ def parse_args() -> Config:
 		cmake_defines=args.cmake_defines or [],
 		list_only=args.list_only,
 		dry_run=args.dry_run or args.list_only
-		)
+	)
 	return result
 
 # ---------------- Main ----------------
