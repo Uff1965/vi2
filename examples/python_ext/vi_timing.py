@@ -58,8 +58,7 @@ VI_TM_TICK = c_uint64
 VI_TM_TDIFF = VI_TM_TICK
 VI_TM_HMEAS = c_void_p
 VI_TM_HJOUR = c_void_p
-#VI_TM_HGLOBAL = ctypes.cast(VI_TM_HJOUR(-1 & 0xFFFFFFFFFFFFFFFF), VI_TM_HJOUR)
-VI_TM_HGLOBAL = c_void_p(-1 & 0xFFFFFFFFFFFFFFFF).value
+VI_TM_HGLOBAL = VI_TM_HJOUR(-1).value
 
 vi_lib.vi_Dummy.argtypes = []
 vi_lib.vi_Dummy.restype = None

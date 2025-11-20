@@ -31,14 +31,19 @@ namespace
 
 	PyObject* vi_timing_init(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
 	{	static constexpr const char * kwlist[] = { "flags", "title", "footer", nullptr };
-		int flags = vi_tmReportDefault;
+		unsigned long long flags = vi_tmReportDefault;
 		const char *title = nullptr;
 		const char *footer = nullptr;
-		if (PyArg_ParseTupleAndKeywords(args, kwargs, "i|ss", const_cast<char**>(kwlist), &flags, &title, &footer))
-		{	if (long result = vi_tmGlobalInit(flags, title, footer); VI_SUCCEEDED(result))
+		if (PyArg_ParseTupleAndKeywords(args, kwargs, "K|ss", const_cast<char**>(kwlist), &flags, &title, &footer))
+		{	if (flags > std::numeric_limits<uint32_t>::max())
+			{	PyErr_SetString(PyExc_ValueError, "flags out of range for uint32_t");
+			}
+			else if (long result = vi_tmGlobalInit(static_cast<uint32_t>(flags), title, footer); VI_FAILED(result))
+			{	PyErr_SetString(PyExc_RuntimeError, "Failed to initialize global timing report");
+			}
+			else
 			{	return PyLong_FromLong(result);
 			}
-			PyErr_SetString(PyExc_RuntimeError, "Failed to initialize global timing report");
 		}
 		assert(false);
 		return NULL;
@@ -66,7 +71,7 @@ namespace
 	PyObject* vi_timing_registry_get_meas(PyObject* Py_UNUSED(self), PyObject* args, PyObject* kwargs)
 	{	static constexpr const char* kwlist[] = {"jour", "name", NULL};
 		PyObject* pobj;
-		char* name;
+		const char* name;
 		if (PyArg_ParseTupleAndKeywords(args, kwargs, "Os", const_cast<char**>(kwlist), &pobj, &name))
 		{	auto jour = static_cast<VI_TM_HREG>(PyLong_AsVoidPtr(pobj));
 			if ( !PyErr_Occurred())
