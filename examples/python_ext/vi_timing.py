@@ -53,7 +53,7 @@ vi_lib = ctypes.CDLL(module_path)
 ###############################################################################
 VI_TM_RESULT = c_int32
 VI_TM_FLAGS = c_uint32
-VI_TM_SIZE = c_size_t
+VI_TM_SIZE = c_uint64
 VI_TM_TICK = c_uint64
 VI_TM_TDIFF = VI_TM_TICK
 VI_TM_HMEAS = c_void_p
