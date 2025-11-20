@@ -30,15 +30,15 @@ namespace
 	}
 
 	PyObject* vi_timing_init(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
-	{	static constexpr const char * kwlist[] = { "title", "report_flags", "flags", nullptr };
-		const char *title;
-		int report_flags;
-		int flags;
-		if (PyArg_ParseTupleAndKeywords(args, kwargs, "sii", const_cast<char**>(kwlist), &title, &report_flags, &flags))
-		{	if (long result = vi_tmInit(title, report_flags, flags); VI_SUCCEEDED(result))
+	{	static constexpr const char * kwlist[] = { "flags", "title", "footer", nullptr };
+		int flags = vi_tmReportDefault;
+		const char *title = nullptr;
+		const char *footer = nullptr;
+		if (PyArg_ParseTupleAndKeywords(args, kwargs, "i|ss", const_cast<char**>(kwlist), &flags, &title, &footer))
+		{	if (long result = vi_tmGlobalInit(flags, title, footer); VI_SUCCEEDED(result))
 			{	return PyLong_FromLong(result);
 			}
-			PyErr_SetString(PyExc_RuntimeError, "Failed to initialize timing library");
+			PyErr_SetString(PyExc_RuntimeError, "Failed to initialize global timing report");
 		}
 		assert(false);
 		return NULL;
