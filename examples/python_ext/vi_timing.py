@@ -82,8 +82,8 @@ vi_lib.vi_tmMeasurementAdd.restype = None
 vi_lib.vi_tmRegistryGetMeas.restype = VI_TM_HMEAS
 vi_lib.vi_tmRegistryGetMeas.argtypes = [VI_TM_HJOUR, c_char_p]
 
-vi_lib.vi_tmReport.restype = VI_TM_RESULT
-vi_lib.vi_tmReport.argtypes = [VI_TM_HJOUR, VI_TM_FLAGS, c_void_p, c_void_p]
+vi_lib.vi_tmRegistryReport.restype = VI_TM_RESULT
+vi_lib.vi_tmRegistryReport.argtypes = [VI_TM_HJOUR, VI_TM_FLAGS, c_void_p, c_void_p]
 
 ###############################################################################
 # Provide a simple CLI demo entrypoint
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 		reg_lib = vi_lib.vi_tmRegistryCreate()
 		yield reg_lib
 		callback_addr = ctypes.cast(vi_lib.vi_tmReportCb, ctypes.c_void_p).value
-		vi_lib.vi_tmReport(reg_lib, 320, callback_addr, None)
+		vi_lib.vi_tmRegistryReport(reg_lib, 320, callback_addr, None)
 		vi_lib.vi_tmRegistryClose(reg_lib)
 
 	print("\nTimes when using exported functions via ctypes:")
