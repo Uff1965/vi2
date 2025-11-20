@@ -6,6 +6,6 @@ EXPORTS
     vi_tmRegistryClose
     vi_tmRegistryCreate
     vi_tmRegistryGetMeas
-    vi_tmReport
+    vi_tmRegistryReport
     vi_tmReportCb
     vi_tmStaticInfo

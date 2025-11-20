@@ -119,7 +119,7 @@ namespace
 			{	vi_tmReportCb_t cb = vi_tmReportCb;
 				void *ctx = nullptr;
 				// TODO: p_cb->cb; p_ctx->ctx;
-				const auto result = vi_tmReport(jour, static_cast<VI_TM_FLAGS>(flags), cb, ctx);
+				const auto result = vi_tmRegistryReport(jour, static_cast<VI_TM_FLAGS>(flags), cb, ctx);
 				if (VI_SUCCEEDED(result))
 				{	return PyLong_FromLongLong(result);
 				}
