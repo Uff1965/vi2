@@ -506,8 +506,10 @@ VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmRegistryReport(
 );
 // Auxiliary functions: ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-#define VI_STRINGIZE_AUX(x) #x
-#define VI_STRINGIZE(x) VI_STRINGIZE_AUX(x)
+#define VI_STR_AUX(x) #x
+#define VI_STRINGIZE(x) VI_STR_AUX(x)
+#define VI_STR_CONCAT_AUX( a, b ) a##b
+#define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
 
 #ifdef __cplusplus
 } // extern "C"

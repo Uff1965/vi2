@@ -25,9 +25,6 @@
 #	include "vi_timing.h"
 #	include "vi_timing_aux.h"
 
-#	define VI_STR_CONCAT_AUX( a, b ) a##b
-#	define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
-#
 #	if defined(__COUNTER__) // MSVC, GCC, Clang and some other compilers support __COUNTER__
 #		define VI_UNIC_ID( prefix ) VI_STR_CONCAT(prefix, VI_STR_CONCAT(__LINE__, VI_STR_CONCAT(_, __COUNTER__)))
 #	else // Fallback to __LINE__ only which may cause collisions if multiple expansions occur on the same line
