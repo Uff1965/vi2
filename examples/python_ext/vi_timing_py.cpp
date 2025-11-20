@@ -44,12 +44,6 @@ namespace
 		return NULL;
 	}
 
-	PyObject* vi_timing_shutdown(PyObject* Py_UNUSED(self), PyObject* noargs)
-	{	assert(nullptr == noargs);
-		vi_tmShutdown();
-		Py_RETURN_NONE;
-	}
-
 	PyObject* vi_timing_registry_create(PyObject* Py_UNUSED(self), PyObject* noargs)
 	{	assert(nullptr == noargs);
 		if (VI_TM_HREG jour = vi_tmRegistryCreate())
@@ -140,7 +134,6 @@ namespace
 	{
 		{"dummy", vi_timing_dummy, METH_NOARGS, "Dummy function"},
 		{"init", reinterpret_cast<PyCFunction>(vi_timing_init), METH_VARARGS | METH_KEYWORDS, "Initialize the timing library"},
-		{"shutdown", vi_timing_shutdown, METH_NOARGS, "Shutdown the timing library"},
 		{"get_ticks", vi_timing_get_ticks, METH_NOARGS, "Get the current time in ticks"},
 		{"registry_create", vi_timing_registry_create, METH_NOARGS, "Create a registry"},
 		{"registry_close", vi_timing_registry_close, METH_O, "Close a registry"},
