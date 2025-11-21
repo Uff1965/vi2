@@ -10,7 +10,7 @@ list(REMOVE_ITEM LUA_CORE "lua/lua.c" "lua/luac.c")
 add_library(lua_core STATIC ${LUA_CORE})
 target_include_directories(lua_core
 INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}
+	${CMAKE_CURRENT_SOURCE_DIR}
 )
 set_target_properties(lua_core
 PROPERTIES
@@ -24,6 +24,9 @@ PROPERTIES
 # Build Lua interpreter executable
 add_executable(lua "lua/lua.c")
 target_link_libraries(lua PRIVATE lua_core)
+if(UNIX AND NOT APPLE)
+	target_link_libraries(lua PRIVATE m)
+endif()
 
 set_target_properties(lua
 PROPERTIES
