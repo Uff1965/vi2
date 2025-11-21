@@ -8,28 +8,30 @@
 #include <thread>
 
 #ifdef _WIN32
-    #define API_EXPORT __declspec(dllexport)
+	#define API_EXPORT __declspec(dllexport)
 #else
   #define API_EXPORT __attribute__((visibility("default")))
 #endif
 
-extern "C"
-{
-	API_EXPORT
-	void vi_Dummy() noexcept
-	{	/**/
-	}
-} // extern "C"
+extern "C" API_EXPORT void tmDummy() noexcept
+{	/**/
+}
 
 namespace
 {
-	PyObject* vi_timing_dummy(PyObject* Py_UNUSED(self), PyObject* noargs)
+	PyObject* py_tmDummy(PyObject* Py_UNUSED(self), PyObject* noargs)
 	{	assert(nullptr == noargs);
-		::vi_Dummy();
+		tmDummy();
 		Py_RETURN_NONE;
 	}
 
-	PyObject* vi_timing_init(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
+	PyObject* py_vi_tmGetTicks(PyObject* Py_UNUSED(self), PyObject* noargs)
+	{	assert(nullptr == noargs);
+		VI_TM_TICK ticks = vi_tmGetTicks();
+		return PyLong_FromLongLong(ticks);
+	}
+
+	PyObject* py_vi_tmGlobalInit(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
 	{	static constexpr const char * kwlist[] = { "flags", "title", "footer", nullptr };
 		unsigned long long flags = vi_tmReportDefault;
 		const char *title = nullptr;
@@ -49,7 +51,7 @@ namespace
 		return NULL;
 	}
 
-	PyObject* vi_timing_registry_create(PyObject* Py_UNUSED(self), PyObject* noargs)
+	PyObject* py_vi_tmRegistryCreate(PyObject* Py_UNUSED(self), PyObject* noargs)
 	{	assert(nullptr == noargs);
 		if (VI_TM_HREG jour = vi_tmRegistryCreate())
 		{	return PyLong_FromVoidPtr(jour);
@@ -59,7 +61,7 @@ namespace
 		return NULL;
 	}
 
-	PyObject* vi_timing_registry_close(PyObject* Py_UNUSED(self), PyObject* arg)
+	PyObject* py_vi_tmRegistryClose(PyObject* Py_UNUSED(self), PyObject* arg)
 	{	if (auto jour = static_cast<VI_TM_HREG>(PyLong_AsVoidPtr(arg)); !PyErr_Occurred())
 		{	vi_tmRegistryClose(jour);
 			Py_RETURN_NONE;
@@ -68,7 +70,7 @@ namespace
 		return NULL;
 	}
 
-	PyObject* vi_timing_registry_get_meas(PyObject* Py_UNUSED(self), PyObject* args, PyObject* kwargs)
+	PyObject* py_vi_tmRegistryGetMeas(PyObject* Py_UNUSED(self), PyObject* args, PyObject* kwargs)
 	{	static constexpr const char* kwlist[] = {"jour", "name", NULL};
 		PyObject* pobj;
 		const char* name;
@@ -85,13 +87,7 @@ namespace
 		return NULL;
 	}
 
-	PyObject* vi_timing_get_ticks(PyObject* Py_UNUSED(self), PyObject* noargs)
-	{	assert(nullptr == noargs);
-		VI_TM_TICK ticks = vi_tmGetTicks();
-		return PyLong_FromLongLong(ticks);
-	}
-
-	PyObject* vi_timing_add_measurement(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
+	PyObject* py_vi_tmMeasurementAdd(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
 	{	static constexpr const char *kwlist[] = { "meas", "dur", "cnt", NULL };
 		PyObject *pobj;
 		Py_ssize_t dur_ss;
@@ -100,7 +96,7 @@ namespace
 		{
 			if (dur_ss < 0)
 			{	PyErr_SetString(PyExc_ValueError, "dur must be non-negative");
-		    }
+			}
 			else if(cnt_ss < 0)
 			{	PyErr_SetString(PyExc_ValueError, "cnt must be non-negative");
 			}
@@ -115,7 +111,7 @@ namespace
 		return NULL;
 	}
 
-	PyObject *vi_timing_report(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
+	PyObject *py_vi_tmRegistryReport(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
 	{	static constexpr const char *kwlist[] = { "jour", "flags", "cb", "ctx", NULL };
 		PyObject *p_jour, *p_cb = Py_None, *p_ctx = Py_None;
 		int flags = vi_tmReportDefault;
@@ -137,14 +133,14 @@ namespace
 
 	PyMethodDef vi_timing_methods[] =
 	{
-		{"dummy", vi_timing_dummy, METH_NOARGS, "Dummy function"},
-		{"init", reinterpret_cast<PyCFunction>(vi_timing_init), METH_VARARGS | METH_KEYWORDS, "Initialize the timing library"},
-		{"get_ticks", vi_timing_get_ticks, METH_NOARGS, "Get the current time in ticks"},
-		{"registry_create", vi_timing_registry_create, METH_NOARGS, "Create a registry"},
-		{"registry_close", vi_timing_registry_close, METH_O, "Close a registry"},
-		{"create_measurement", reinterpret_cast<PyCFunction>(vi_timing_registry_get_meas), METH_VARARGS | METH_KEYWORDS, "Create a measurement"},
-		{"add_measurement", reinterpret_cast<PyCFunction>(vi_timing_add_measurement), METH_VARARGS | METH_KEYWORDS, "Add a measurement"},
-		{"report", reinterpret_cast<PyCFunction>(vi_timing_report), METH_VARARGS | METH_KEYWORDS, "Generate a report for a registry"},
+		{"dummy", py_tmDummy, METH_NOARGS, "Dummy function"},
+		{"GlobalInit", reinterpret_cast<PyCFunction>(py_vi_tmGlobalInit), METH_VARARGS | METH_KEYWORDS, "Initialize the timing library"},
+		{"GetTicks", py_vi_tmGetTicks, METH_NOARGS, "Get the current time in ticks"},
+		{"RegistryCreate", py_vi_tmRegistryCreate, METH_NOARGS, "Create a registry"},
+		{"RegistryClose", py_vi_tmRegistryClose, METH_O, "Close a registry"},
+		{"RegistryGetMeas", reinterpret_cast<PyCFunction>(py_vi_tmRegistryGetMeas), METH_VARARGS | METH_KEYWORDS, "Create a measurement"},
+		{"MeasurementAdd", reinterpret_cast<PyCFunction>(py_vi_tmMeasurementAdd), METH_VARARGS | METH_KEYWORDS, "Add a measurement"},
+		{"RegistryReport", reinterpret_cast<PyCFunction>(py_vi_tmRegistryReport), METH_VARARGS | METH_KEYWORDS, "Generate a report for a registry"},
 		{nullptr, nullptr, 0, nullptr}
 	};
 
@@ -159,5 +155,14 @@ namespace
 
 PyMODINIT_FUNC PyInit_vi_timing(void)
 {
-	return PyModule_Create(&vi_timing_module);
+	auto m = PyModule_Create(&vi_timing_module);
+	if (!m)
+	{	return NULL;
+	}
+
+	PyModule_AddIntConstant(m, "ReportDefault", (int)vi_tmReportDefault);
+	PyModule_AddIntConstant(m, "SUCCESS", (int)VI_SUCCESS);
+	PyModule_AddObject(m, "HGLOBAL", PyLong_FromVoidPtr((void *)VI_TM_HGLOBAL));
+
+	return m;
 }

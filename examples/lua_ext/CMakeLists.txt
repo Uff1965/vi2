@@ -1,60 +1,27 @@
-# File: "vi2/examples/python_ext/CMakeLists.txt"
+# File: "vi2/examples/lua_ext/CMakeLists.txt"
 cmake_minimum_required(VERSION 3.22)
-project(test_python_ext LANGUAGES CXX)
+project(test_lua_ext LANGUAGES CXX)
 
-# Find Python3 and determine extension suffix!
-message("")
-find_package(Python3 3.11 COMPONENTS Interpreter Development REQUIRED)
-message(STATUS "Python3 found version: ${Python3_VERSION}")
-if(NOT Python3_EXTENSION_SUFFIX OR Python3_EXTENSION_SUFFIX STREQUAL "")
-    execute_process(
-        COMMAND ${Python3_EXECUTABLE} -c "import importlib.machinery as m; s = m.EXTENSION_SUFFIXES[0] if m.EXTENSION_SUFFIXES else ''; print(s)"
-        OUTPUT_VARIABLE PY_EXT_SUFFIX
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-    if(PY_EXT_SUFFIX)
-        set(Python3_EXTENSION_SUFFIX "${PY_EXT_SUFFIX}")
-    else()
-        if(WIN32)
-            set(Python3_EXTENSION_SUFFIX ".pyd")
-        elseif(UNIX)
-            set(Python3_EXTENSION_SUFFIX ".so")
-        else()
-            set(Python3_EXTENSION_SUFFIX ".so")
-        endif()
-    endif()
-endif()
-message(STATUS "\tPython3_EXTENSION_SUFFIX: ${Python3_EXTENSION_SUFFIX}\n")
-
-add_library(${PROJECT_NAME} MODULE "vi_timing_py.cpp" "vi_timing_py.def" "vi_timing.py")
-set_source_files_properties(vi_timing.py PROPERTIES HEADER_FILE_ONLY TRUE)
+add_library(${PROJECT_NAME} MODULE "vi_timing_lua.cpp" "vi_timing_lua.def" "vi_timing.lua")
+set_source_files_properties(vi_timing.lua PROPERTIES HEADER_FILE_ONLY TRUE)
 
 target_link_libraries(${PROJECT_NAME}
 PRIVATE
-    ${Python3_LIBRARIES}
+    lua_core
     vi_timing
 )
 target_include_directories(${PROJECT_NAME}
 PRIVATE
-    ${Python3_INCLUDE_DIRS}
+    lua_core
 )
 
 set_target_properties(${PROJECT_NAME}
 PROPERTIES
-    PREFIX ""
-    SUFFIX "${Python3_EXTENSION_SUFFIX}"
     FOLDER "Examples"
-    OUTPUT_NAME "vi_timing_py$<$<CONFIG:Debug>:_d>"
-    OUTPUT_NAME_DEBUG "vi_timing_py_d"
-    OUTPUT_NAME_RELEASE "vi_timing_py"
+    OUTPUT_NAME "vi_timing_lua$<$<CONFIG:Debug>:_d>"
+    OUTPUT_NAME_DEBUG "vi_timing_lua_d"
+    OUTPUT_NAME_RELEASE "vi_timing_lua"
     POSITION_INDEPENDENT_CODE ON
-)
-
-target_compile_definitions(${PROJECT_NAME}
-PRIVATE
-    $<$<CONFIG:Release>: NDEBUG>
-PUBLIC
 )
 
 if (WIN32)
@@ -99,14 +66,12 @@ endif()
 
 add_test(
     NAME ${PROJECT_NAME}
-    COMMAND  ${Python3_EXECUTABLE}
-        "${CMAKE_CURRENT_SOURCE_DIR}/vi_timing.py"
+    COMMAND  "./lua$<$<CONFIG:Debug>:_d>"
+        "${CMAKE_CURRENT_SOURCE_DIR}/vi_timing.lua"
     WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
 )
 set_tests_properties(${PROJECT_NAME}
 PROPERTIES
-    DISABLED $<NOT:$<CONFIG:Release>>
     TIMEOUT 60
-    ENVIRONMENT "VI_TM_NO_PAUSE=1"
-    PASS_REGULAR_EXPRESSION "2\\. global_(mod|lib):[^\\n]*$"
+    ENVIRONMENT "VI_TM_NO_PAUSE=1;CONFIG=$<CONFIG>"
 )

@@ -3,3 +3,8 @@ add_subdirectory(format_bm)
 if(VI_TM_ENABLE_PYTHON)
 	add_subdirectory(python_ext)
 endif()
+
+if(VI_TM_ENABLE_LUA)
+	add_subdirectory(lua)
+	add_subdirectory(lua_ext)
+endif()
