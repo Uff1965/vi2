@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(lua LANGUAGES C VERSION 5.48)
+project(lua LANGUAGES C CXX VERSION 5.48)
 
 # Collect all Lua source and header files from lua/
 file(GLOB LUA_CORE lua/*.c lua/*.h)
