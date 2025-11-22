@@ -51,7 +51,7 @@ import vi_timing_mod
 print("done.")
 
 print(f"\tNative shared library '{module_path}' loading...", end=" ")
-vi_timing_lib = ctypes.CDLL(module_path)
+vi_timing_lib = ctypes.CDLL(os.path.abspath(module_path))
 print("done.")
 
 ###############################################################################
