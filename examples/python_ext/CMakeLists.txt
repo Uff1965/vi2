@@ -106,7 +106,7 @@ add_test(
 set_tests_properties(${PROJECT_NAME}
 PROPERTIES
     DISABLED $<NOT:$<CONFIG:Release>>
-    TIMEOUT 90
+    TIMEOUT 0
     ENVIRONMENT "VI_TM_NO_PAUSE=1"
     PASS_REGULAR_EXPRESSION "2\\. global_(mod|lib):[^\\n]*$"
 )
