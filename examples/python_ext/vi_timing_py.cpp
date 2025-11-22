@@ -13,15 +13,27 @@
   #define API_EXPORT __attribute__((visibility("default")))
 #endif
 
-extern "C" API_EXPORT void tmDummy() noexcept
+extern "C" API_EXPORT double DummyFloatC(double f) noexcept
+{	return f;
+}
+
+extern "C" API_EXPORT void DummyVoidC() noexcept
 {	/**/
 }
 
 namespace
 {
-	PyObject* py_tmDummy(PyObject* Py_UNUSED(self), PyObject* noargs)
+	PyObject* py_DummyFloatC(PyObject* Py_UNUSED(self), PyObject* arg)
+	{	double value = 0.0;
+		if (!PyArg_ParseTuple(arg, "d", &value))
+			return nullptr;
+		value = DummyFloatC(value);
+		return PyFloat_FromDouble(value);
+	}
+
+	PyObject* py_DummyVoidC(PyObject* Py_UNUSED(self), PyObject* noargs)
 	{	assert(nullptr == noargs);
-		tmDummy();
+		DummyVoidC();
 		Py_RETURN_NONE;
 	}
 
@@ -133,13 +145,14 @@ namespace
 
 	PyMethodDef vi_timing_methods[] =
 	{
-		{"dummy", py_tmDummy, METH_NOARGS, "Dummy function"},
-		{"GlobalInit", reinterpret_cast<PyCFunction>(py_vi_tmGlobalInit), METH_VARARGS | METH_KEYWORDS, "Initialize the timing library"},
+		{"DummyFloatC", py_DummyFloatC, METH_VARARGS, "Calculate dummy value"},
+		{"DummyVoidC", py_DummyVoidC, METH_NOARGS, "DummyVoidC function"},
 		{"GetTicks", py_vi_tmGetTicks, METH_NOARGS, "Get the current time in ticks"},
-		{"RegistryCreate", py_vi_tmRegistryCreate, METH_NOARGS, "Create a registry"},
-		{"RegistryClose", py_vi_tmRegistryClose, METH_O, "Close a registry"},
-		{"RegistryGetMeas", reinterpret_cast<PyCFunction>(py_vi_tmRegistryGetMeas), METH_VARARGS | METH_KEYWORDS, "Create a measurement"},
+		{"GlobalInit", reinterpret_cast<PyCFunction>(py_vi_tmGlobalInit), METH_VARARGS | METH_KEYWORDS, "Initialize the timing library"},
 		{"MeasurementAdd", reinterpret_cast<PyCFunction>(py_vi_tmMeasurementAdd), METH_VARARGS | METH_KEYWORDS, "Add a measurement"},
+		{"RegistryClose", py_vi_tmRegistryClose, METH_O, "Close a registry"},
+		{"RegistryCreate", py_vi_tmRegistryCreate, METH_NOARGS, "Create a registry"},
+		{"RegistryGetMeas", reinterpret_cast<PyCFunction>(py_vi_tmRegistryGetMeas), METH_VARARGS | METH_KEYWORDS, "Create a measurement"},
 		{"RegistryReport", reinterpret_cast<PyCFunction>(py_vi_tmRegistryReport), METH_VARARGS | METH_KEYWORDS, "Generate a report for a registry"},
 		{nullptr, nullptr, 0, nullptr}
 	};
