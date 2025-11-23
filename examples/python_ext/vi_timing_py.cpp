@@ -102,20 +102,15 @@ namespace
 	PyObject* py_vi_tmMeasurementAdd(PyObject *Py_UNUSED(self), PyObject *args, PyObject *kwargs)
 	{	static constexpr const char *kwlist[] = { "meas", "dur", "cnt", NULL };
 		PyObject *pobj;
-		Py_ssize_t dur_ss;
+		unsigned long long dur_ss;
 		Py_ssize_t cnt_ss = 1;
-		if (PyArg_ParseTupleAndKeywords(args, kwargs, "On|n", const_cast<char**>(kwlist), &pobj, &dur_ss, &cnt_ss))
+		if (PyArg_ParseTupleAndKeywords(args, kwargs, "OK|n", const_cast<char**>(kwlist), &pobj, &dur_ss, &cnt_ss))
 		{
-			if (dur_ss < 0)
-			{	PyErr_SetString(PyExc_ValueError, "dur must be non-negative");
-			}
-			else if(cnt_ss < 0)
+			if(cnt_ss < 0)
 			{	PyErr_SetString(PyExc_ValueError, "cnt must be non-negative");
 			}
 			else if (auto meas = static_cast<VI_TM_HMEAS>(PyLong_AsVoidPtr(pobj)); !PyErr_Occurred())
-			{	const auto dur = static_cast<VI_TM_TDIFF>(dur_ss);
-				const auto cnt = static_cast<VI_TM_SIZE>(cnt_ss);
-				vi_tmMeasurementAdd(meas, dur, cnt);
+			{	vi_tmMeasurementAdd(meas, static_cast<VI_TM_TDIFF>(dur_ss), static_cast<VI_TM_SIZE>(cnt_ss));
 				Py_RETURN_NONE;
 			}
 		}
