@@ -70,6 +70,8 @@ namespace vi_tm
 		std::optional<VI_TM_FLAGS> report_flags_;
 	};
 
+	// Auxiliary function to process a single parameter for global_init.
+	// Used internally by global_init.
 	template<typename T>
 	VI_TM_RESULT init_aux(init_t &self, T &&v)
 	{	VI_TM_RESULT result = VI_SUCCESS;
@@ -94,6 +96,15 @@ namespace vi_tm
 		return result;
 	}
 
+	// Variadic global initialization function.
+	// Accepts parameters in any order:
+	// - vi_tmReportFlags_e (multiple allowed; separated by comma)
+	// - const char* or std::string (first is title, second is footer)
+	// Returns VI_SUCCESS on success; error code otherwise.
+	// Asserts on invalid parameter types or too many string parameters.
+	// Example usage:
+	// vi_tm::global_init(vi_tmReportSortByName, vi_tmReportShowResolution, "My Timing Report", "End of Report");
+	// vi_tm::global_init("My Timing Report", vi_tmReportShowDuration, vi_tmReportShowCalls);
 	template<typename... Args>
 	VI_TM_RESULT global_init(Args&&... args)
 	{	VI_TM_RESULT result = VI_SUCCESS;
@@ -119,16 +130,16 @@ namespace vi_tm
 		// Invariants:
 		//  - meas_ is a non-owning handle; caller retains ownership and must ensure validity.
 		//  - cnt_ encodes state: >0 running (count = cnt_), <0 paused (count = -cnt_), 0 idle.
-		//  - start_ is meaningful only when cnt_ != 0 (running or paused).
+		//  - time_data_ is meaningful only when cnt_ != 0 (running or paused).
 		VI_TM_HMEAS meas_{nullptr};
 		signed_tm_size_t cnt_{0};
-		VI_TM_TICK start_{VI_TM_TICK{ 0 }}; // Must be declared last - initializes after other members to minimize overhead between object construction and measurement start.
+		VI_TM_TICK time_data_{VI_TM_TICK{ 0 }}; // Must be declared last - initializes after other members to minimize overhead between object construction and measurement start.
 
 		// Private constructor used by factory methods
 		explicit scoped_probe_t(VI_TM_HMEAS m, signed_tm_size_t cnt) noexcept
 		:	meas_{ m },
 			cnt_{ cnt },
-			start_{ vi_tmGetTicks() }
+			time_data_{ vi_tmGetTicks() }
 		{/**/}
 	public:
 		scoped_probe_t() = delete;
@@ -162,7 +173,7 @@ namespace vi_tm
 		scoped_probe_t(scoped_probe_t &&s) noexcept
 		:	meas_{std::exchange(s.meas_, nullptr)},
 			cnt_{ std::exchange(s.cnt_, signed_tm_size_t{ 0 }) },
-			start_{std::exchange(s.start_, VI_TM_TICK{ 0 })}
+			time_data_{std::exchange(s.time_data_, VI_TM_TICK{ 0 })}
 		{
 		}
 
@@ -171,7 +182,7 @@ namespace vi_tm
 			{	stop();
 				meas_ = std::exchange(s.meas_, nullptr);
 				cnt_ = std::exchange(s.cnt_, signed_tm_size_t{ 0 });
-				start_ = std::exchange(s.start_, VI_TM_TICK{ 0 });
+				time_data_ = std::exchange(s.time_data_, VI_TM_TICK{ 0 });
 			}
 			return *this;
 		}
@@ -189,7 +200,7 @@ namespace vi_tm
 		{	const auto t = vi_tmGetTicks(); // Read ticks first to avoid introducing measurement overhead in conditional branch
 			assert(active());
 			if(active())
-			{	start_ = t - start_;
+			{	time_data_ = t - time_data_;
 				cnt_ = -cnt_;
 			}
 		}
@@ -199,7 +210,7 @@ namespace vi_tm
 		{	assert(paused());
 			if (paused())
 			{	cnt_ = -cnt_;
-				start_ = vi_tmGetTicks() - start_;
+				time_data_ = vi_tmGetTicks() - time_data_;
 			}
 		}
 
@@ -208,10 +219,10 @@ namespace vi_tm
 		{	const auto t = vi_tmGetTicks(); // Read ticks first to avoid introducing measurement overhead in conditional branch
 			assert(idle() || !!meas_);
 			if (active())
-			{	vi_tmMeasurementAdd(meas_, t - start_, cnt_);
+			{	vi_tmMeasurementAdd(meas_, t - time_data_, cnt_);
 			}
 			else if (paused())
-			{	vi_tmMeasurementAdd(meas_, start_, -cnt_);
+			{	vi_tmMeasurementAdd(meas_, time_data_, -cnt_);
 			}
 			cnt_ = 0; // Set idle state.
 		}
@@ -219,10 +230,10 @@ namespace vi_tm
 		/// Obtaining the current accumulated time (for debugging/monitoring)
 		[[nodiscard]] VI_TM_TDIFF elapsed() const noexcept
 		{	if (paused()) // The measurement will probably be paused before the 'function'elapsed()' is called.
-			{	return start_;
+			{	return time_data_;
 			}
 			if (active())
-			{	return vi_tmGetTicks() - start_;
+			{	return vi_tmGetTicks() - time_data_;
 			}
 			assert(false);
 			return VI_TM_TDIFF{ 0 };
