@@ -184,7 +184,7 @@ namespace vi_tm
 			if (active())
 			{	return vi_tmGetTicks() - start_;
 			}
-// GTEST conflict			assert(false);
+			assert(false);
 			return VI_TM_TDIFF{ 0 };
 		}
 
