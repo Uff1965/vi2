@@ -109,21 +109,21 @@ void VI_TM_CALL vi_tmMeasurementAdd_fake(VI_TM_HMEAS m, VI_TM_TDIFF dur, VI_TM_S
 TEST_F(ProbeTest, StartStopRecordsDurationAndCount) {
 	// Start at tick 100, then advance by 50 and stop.
 	set_ticks(VI_TM_TICK{100});
-	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{3});
-	EXPECT_TRUE(p.active());
-	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{0});
+	auto probe = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{3});
+	EXPECT_TRUE(probe.active());
+	EXPECT_EQ(probe.elapsed(), VI_TM_TDIFF{0});
 	advance_ticks(VI_TM_TDIFF{50}); // ticks == 150
-	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{50});
-	p.stop();
-	EXPECT_TRUE(p.idle());
+	EXPECT_EQ(probe.elapsed(), VI_TM_TDIFF{50});
+	probe.stop();
+	EXPECT_TRUE(probe.idle());
 	EXPECT_EQ(g_last_meas, TEST_MEAS);
 	EXPECT_EQ(g_last_dur, VI_TM_TDIFF{50});
 	EXPECT_EQ(g_last_cnt, VI_TM_SIZE{3});
 
 	// Stopping again must be a no-op.
 	clear_last_measurement();
-	p.stop();
-	EXPECT_TRUE(p.idle());
+	probe.stop();
+	EXPECT_TRUE(probe.idle());
 	EXPECT_EQ(g_last_meas, UNDEF_MEAS);
 	EXPECT_EQ(g_last_dur, UNDEF_DIFF);
 	EXPECT_EQ(g_last_cnt, UNDEF_SIZE);
@@ -131,20 +131,20 @@ TEST_F(ProbeTest, StartStopRecordsDurationAndCount) {
 TEST_F(ProbeTest, PauseAccumulatesAndResumeContinues) {
 	// Run, pause, resume, and stop; total duration should be sum of parts.
 	set_ticks(VI_TM_TICK{10});
-	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{2});
+	auto probe = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{2});
 	advance_ticks(VI_TM_TDIFF{7}); // running for 7
-	p.pause();
-	EXPECT_TRUE(p.paused());
-	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{7});
+	probe.pause();
+	EXPECT_TRUE(probe.paused());
+	EXPECT_EQ(probe.elapsed(), VI_TM_TDIFF{7});
 
 	// Advance time while paused (should not count), then resume and add 5 more ticks.
 	advance_ticks(VI_TM_TDIFF{3}); // tick source jumps while paused
-	p.resume();
-	EXPECT_TRUE(p.active());
-	EXPECT_EQ(p.elapsed(), 7);
+	probe.resume();
+	EXPECT_TRUE(probe.active());
+	EXPECT_EQ(probe.elapsed(), 7);
 	advance_ticks(VI_TM_TDIFF{5});
-	p.stop();
-	EXPECT_TRUE(p.idle());
+	probe.stop();
+	EXPECT_TRUE(probe.idle());
 	EXPECT_EQ(g_last_meas, TEST_MEAS);
 	EXPECT_EQ(g_last_dur, VI_TM_TDIFF{12}); // 7 + 5
 	EXPECT_EQ(g_last_cnt, VI_TM_SIZE{2});
@@ -152,10 +152,10 @@ TEST_F(ProbeTest, PauseAccumulatesAndResumeContinues) {
 TEST_F(ProbeTest, PausedStopRecordsAccumulated) {
 	// Pause without resume, then stop should record the accumulated time.
 	set_ticks(VI_TM_TICK{0});
-	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
+	auto probe = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
 	advance_ticks(VI_TM_TDIFF{8});
-	p.pause();
-	p.stop();
+	probe.pause();
+	probe.stop();
 	EXPECT_EQ(g_last_meas, TEST_MEAS);
 	EXPECT_EQ(g_last_dur, VI_TM_TDIFF{8});
 	EXPECT_EQ(g_last_cnt, VI_TM_SIZE{1});
@@ -164,19 +164,19 @@ TEST_F(ProbeTest, PausedStopRecordsAccumulated) {
 TEST_F(ProbeTest, ElapsedReflectsRunningPausedIdle) {
 	// Validate elapsed() in running, paused and after stop (idle).
 	set_ticks(VI_TM_TICK{100});
-	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
+	auto probe = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
 	advance_ticks(VI_TM_TDIFF{4});
-	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{4});
+	EXPECT_EQ(probe.elapsed(), VI_TM_TDIFF{4});
 
-	p.pause();
-	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{4});
+	probe.pause();
+	EXPECT_EQ(probe.elapsed(), VI_TM_TDIFF{4});
 
-	p.resume();
+	probe.resume();
 	advance_ticks(VI_TM_TDIFF{6});
-	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{10});
+	EXPECT_EQ(probe.elapsed(), VI_TM_TDIFF{10});
 
-	p.stop();
-	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{0});
+	probe.stop();
+	EXPECT_EQ(probe.elapsed(), VI_TM_TDIFF{0});
 }
 
 TEST_F(ProbeTest, MoveConstructionTransfersOwnershipAndDoesNotDoubleRecord) {
@@ -231,13 +231,13 @@ TEST_F(ProbeTest, DoublePauseTriggersDebugAssert) {
 	assert(0 == errno);
 //	vi_tmGlobalInit(vi_tmDoNotReport, nullptr);
 	// Debug-only assert behavior. Adjust EXPECT_DEATH regex if your runtime prints something specific.
-	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
-	p.pause();
-	EXPECT_TRUE(p.paused());
-	EXPECT_DEATH({ p.pause(); }, ".*");
-	p.resume();
-	EXPECT_TRUE(p.active());
-	EXPECT_DEATH({ p.resume(); }, ".*");
+	auto probe = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
+	probe.pause();
+	EXPECT_TRUE(probe.paused());
+	EXPECT_DEATH({ probe.pause(); }, ".*");
+	probe.resume();
+	EXPECT_TRUE(probe.active());
+	EXPECT_DEATH({ probe.resume(); }, ".*");
 //    vi_tmShutdown();
 	errno = 0;
 }
@@ -245,38 +245,73 @@ TEST_F(ProbeTest, DoublePauseTriggersDebugAssert) {
 
 TEST_F(ProbeTest, make_running) {
 	// Ensure calling stop() on an idle/moved-from object does not record a new measurement.
-	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
-	EXPECT_TRUE(p.active());
-	EXPECT_EQ(p.elapsed(), 0);
+	auto probe = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
+	EXPECT_TRUE(probe.active());
+	EXPECT_EQ(probe.elapsed(), 0);
 }
 
 TEST_F(ProbeTest, make_paused) {
 	// Ensure calling stop() on an idle/moved-from object does not record a new measurement.
-	auto p = vi_tm::scoped_probe_t::make_paused(TEST_MEAS, VI_TM_SIZE{1});
-	EXPECT_TRUE(p.paused());
-	EXPECT_EQ(p.elapsed(), 0);
+	auto probe = vi_tm::scoped_probe_t::make_paused(TEST_MEAS, VI_TM_SIZE{1});
+	EXPECT_TRUE(probe.paused());
+	EXPECT_EQ(probe.elapsed(), 0);
 }
 
 TEST_F(ProbeTest, StopOnIdleDoesNotRecord) {
 	// Ensure calling stop() on an idle/moved-from object does not record a new measurement.
-	auto p = vi_tm::scoped_probe_t::make_paused(TEST_MEAS, VI_TM_SIZE{1});
-	EXPECT_TRUE(p.paused());
+	auto probe = vi_tm::scoped_probe_t::make_paused(TEST_MEAS, VI_TM_SIZE{1});
+	EXPECT_TRUE(probe.paused());
 	// First stop may record accumulated zero depending on paused ctor semantics.
-	p.stop();
+	probe.stop();
 	clear_last_measurement();
 	// Subsequent stop must be a no-op.
-	p.stop();
+	probe.stop();
 	EXPECT_EQ(g_last_meas, UNDEF_MEAS);
 }
 
 TEST_F(ProbeTest, scoped_pause_t) {
-	auto p = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
+	auto probe = vi_tm::scoped_probe_t::make_running(TEST_MEAS, VI_TM_SIZE{1});
 	advance_ticks(VI_TM_TDIFF{3}); // 'a' has run for 3
-	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{3});
-	{	vi_tm::scoped_pause_t sp{ p };
+	EXPECT_EQ(probe.elapsed(), VI_TM_TDIFF{3});
+	{	auto sc_pause1 = probe.scoped_pause();
 		advance_ticks(VI_TM_TDIFF{ 777 }); // skip
 	}
-	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{3});
+	EXPECT_EQ(probe.elapsed(), VI_TM_TDIFF{3});
 	advance_ticks(VI_TM_TDIFF{7}); // 'b' has run for 10 total
-	EXPECT_EQ(p.elapsed(), VI_TM_TDIFF{10});
+	EXPECT_EQ(probe.elapsed(), VI_TM_TDIFF{10});
+}
+
+TEST_F(ProbeTest, scoped_resume_t) {
+	set_ticks(777);
+
+	auto probe = vi_tm::scoped_probe_t::make_running(TEST_MEAS, 1);
+	EXPECT_EQ(probe.elapsed(), 0);
+	advance_ticks(1);
+	EXPECT_EQ(probe.elapsed(), 1);
+
+	{	auto sc_pause1 = probe.scoped_pause();
+		advance_ticks(777);
+		EXPECT_EQ(probe.elapsed(), 1);
+
+		{	auto sc_resume1 = sc_pause1.scoped_resume();
+			advance_ticks(1);
+			EXPECT_EQ(probe.elapsed(), 2);
+
+			{	auto sc_pause2 = sc_resume1.scoped_pause();
+				advance_ticks(777);
+				EXPECT_EQ(probe.elapsed(), 2);
+			}
+			advance_ticks(1);
+			EXPECT_EQ(probe.elapsed(), 3);
+		}
+
+		advance_ticks(777);
+		EXPECT_EQ(probe.elapsed(), 3);
+	}
+
+	advance_ticks(1);
+	EXPECT_EQ(probe.elapsed(), 4);
+
+	advance_ticks(1);
+	EXPECT_EQ(probe.elapsed(), 5);
 }

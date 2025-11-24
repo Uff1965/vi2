@@ -1,0 +1,92 @@
+# File: "vi2/examples/scrypts_ext/CMakeLists.txt"
+cmake_minimum_required(VERSION 3.22)
+project(test_scrypt_ext LANGUAGES CXX)
+
+# Find Python3 and determine extension suffix!
+message("")
+find_package(Python3 3.11 COMPONENTS Interpreter Development REQUIRED)
+message(STATUS "Python3 found version: ${Python3_VERSION}")
+
+add_executable(${PROJECT_NAME} main.cpp)
+
+target_link_libraries(${PROJECT_NAME}
+PRIVATE
+    ${Python3_LIBRARIES}
+    lua
+    vi_timing
+)
+
+set_target_properties(${PROJECT_NAME}
+PROPERTIES
+    FOLDER "Examples"
+    OUTPUT_NAME "${PROJECT_NAME}$<$<CONFIG:Debug>:_d>"
+    OUTPUT_NAME_DEBUG "${PROJECT_NAME}_d"
+    OUTPUT_NAME_RELEASE "${PROJECT_NAME}"
+    POSITION_INDEPENDENT_CODE ON
+)
+
+target_compile_definitions(${PROJECT_NAME}
+PRIVATE
+    $<$<CONFIG:Release>: NDEBUG>
+PUBLIC
+)
+
+if (WIN32)
+    target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+        WIN32_LEAN_AND_MEAN # Exclude rarely-used stuff from Windows headers.
+        NOMINMAX # WinAPI
+        $<$<CONFIG:Debug>: _DEBUG> # Microsoft debug RTL
+    )
+
+    target_compile_options(${PROJECT_NAME}
+    PRIVATE
+        /MP /nologo # Enable multi-processor compilation, disable logo.
+        /W4 # Set warning level 4.
+        /EHsc # Enable C++ exceptions.
+        /arch:AVX2 # Enable use AVX2 instruction set.
+        /Zi # Generate debug info
+        /Zc:__cplusplus # By default, Visual Studio always returns the value 199711L for the __cplusplus preprocessor macro.
+        $<$<CONFIG:Release>: /Ox /GL> # Ox include /O2 /Ob2 /Og /Oi /Ot /Oy /Gs /GF /Gy
+        $<$<CONFIG:Debug>: /Od /RTC1 /Zi /Ob0> # Enable runtime checks, debug info, no optimizations, disable function inlining.
+    )
+
+    target_link_options(${PROJECT_NAME}
+    PRIVATE
+        $<$<CONFIG:Release>: /LTCG> # Link Time Code Generation for Release builds.
+        $<$<CONFIG:Debug>: /DEBUG> # Generate debug info for Debug builds.
+    )
+elseif(UNIX)
+    target_compile_options(${PROJECT_NAME}
+    PRIVATE
+        -fvisibility=hidden # Hide symbols by default, only export those marked with VI_TM_EXPORTS.
+        -Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
+        -march=native # Switch on all instruction sets supported by the host CPU. Support FMA, AVX, AVX2, etc.
+        $<$<CONFIG:Release>: -O3 -flto=auto -s> # Optimize for speed, strip symbols.
+    )
+
+    target_link_options(${PROJECT_NAME}
+    PRIVATE
+        "$<$<CONFIG:Release>:-flto=auto>"
+    )
+endif()
+
+add_test(
+    NAME ${PROJECT_NAME}
+    COMMAND  ${Python3_EXECUTABLE}
+        "${CMAKE_CURRENT_SOURCE_DIR}/vi_timing.py"
+    WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+)
+set_tests_properties(${PROJECT_NAME}
+PROPERTIES
+    DISABLED $<NOT:$<CONFIG:Release>>
+#    TIMEOUT 450
+    ENVIRONMENT "VI_TM_NO_PAUSE=1"
+#    PASS_REGULAR_EXPRESSION "2\\. global_(mod|lib):[^\\n]*$"
+)
+
+add_test(NAME ${PROJECT_NAME} COMMAND $<TARGET_FILE:${PROJECT_NAME}>)
+set_tests_properties(${PROJECT_NAME}
+PROPERTIES
+#    PASS_REGULAR_EXPRESSION "Timing report:;#. Name +:;Success - the test program completed!"
+)

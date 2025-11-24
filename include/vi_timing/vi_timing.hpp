@@ -187,17 +187,35 @@ namespace vi_tm
 // GTEST conflict			assert(false);
 			return VI_TM_TDIFF{ 0 };
 		}
-	}; // class scoped_probe_t
 
-	// scoped_pause_t: RAII-style pause/resume helper for scoped_probe_t.
-	class [[nodiscard]] scoped_pause_t
-	{	scoped_probe_t &p_;
-	public:
-		explicit scoped_pause_t(scoped_probe_t &p) noexcept: p_{ p } { p_.pause(); }
-		~scoped_pause_t() noexcept { p_.resume(); }
-		scoped_pause_t(const scoped_pause_t &) = delete;
-		scoped_pause_t &operator=(const scoped_pause_t &) = delete;
-	};
+		class scoped_pause_t;
+		class scoped_resume_t;
+
+		// scoped_pause_t: RAII-style pause/resume helper for scoped_probe_t.
+		class [[nodiscard]] scoped_pause_t
+		{	scoped_probe_t &p_;
+		public:
+			explicit scoped_pause_t(scoped_probe_t &p) noexcept: p_{ p } { p_.pause(); }
+			~scoped_pause_t() noexcept { p_.resume(); }
+			scoped_pause_t(const scoped_pause_t &) = delete;
+			scoped_pause_t &operator=(const scoped_pause_t &) = delete;
+			[[nodiscard]] scoped_resume_t scoped_resume() noexcept { return scoped_resume_t{ p_ }; }
+		};
+
+		// scoped_resume_t: RAII-style resume/pause helper for scoped_probe_t.
+		class [[nodiscard]] scoped_resume_t
+		{	scoped_probe_t &p_;
+		public:
+			explicit scoped_resume_t(scoped_probe_t &p) noexcept: p_{ p } { p_.resume(); }
+			~scoped_resume_t() noexcept { p_.pause(); }
+			scoped_resume_t(const scoped_resume_t &) = delete;
+			scoped_resume_t &operator=(const scoped_resume_t &) = delete;
+			[[nodiscard]] scoped_pause_t scoped_pause() noexcept { return scoped_pause_t{ p_ }; }
+		};
+
+		[[nodiscard]] scoped_resume_t scoped_resume() noexcept { return scoped_resume_t{ *this }; }
+		[[nodiscard]] scoped_pause_t scoped_pause() noexcept { return scoped_pause_t{ *this }; }
+	}; // class scoped_probe_t
 
 	[[nodiscard]] inline std::string to_string(double val, unsigned char sig = 2U, unsigned char dec = 1U)
 	{	std::string result;
