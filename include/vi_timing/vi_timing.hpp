@@ -57,12 +57,57 @@
 #	include <cassert> // assert
 #	include <cstring> // std::strcmp
 #	include <limits> // std::numeric_limits
+#	include <optional>
 #	include <string> // std::string
 #	include <type_traits> // std::make_signed_t
 #	include <utility> // std::exchange
 
 namespace vi_tm
 {
+	struct init_t
+	{	std::optional<std::string> title_;
+		std::optional<std::string> footer_;
+		std::optional<VI_TM_FLAGS> report_flags_;
+	};
+
+	template<typename T>
+	VI_TM_RESULT init_aux(init_t &self, T &&v)
+	{	VI_TM_RESULT result = VI_SUCCESS;
+		if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportFlags_e>)
+		{	self.report_flags_.emplace(v | self.report_flags_.value_or(0));
+		}
+		else if constexpr (std::is_convertible_v<T, decltype(self.title_)>)
+		{	if(!self.title_.has_value())
+				self.title_.emplace(std::forward<T>(v));
+			else if(!self.footer_.has_value())
+				self.footer_.emplace(std::forward<T>(v));
+			else
+			{	assert(false); // Both title and footer are already set.
+				result = 1 - __LINE__;
+			}
+		}
+		else
+		{	assert(false); // Unknown parameter type.
+			result = 1 - __LINE__;
+		}
+
+		return result;
+	}
+
+	template<typename... Args>
+	VI_TM_RESULT global_init(Args&&... args)
+	{	VI_TM_RESULT result = VI_SUCCESS;
+		init_t self;
+		((result |= init_aux(self, std::forward<Args>(args))), ...);
+		assert(VI_SUCCEEDED(result));
+		result |= vi_tmGlobalInit(
+			self.report_flags_ ? *self.report_flags_ : vi_tmReportDefault,
+			self.title_ ? self.title_->c_str() : nullptr,
+			self.footer_ ? self.footer_->c_str() : nullptr
+		);
+		return result;
+	}
+
 /// In class comment:
 /// scoped_probe_t class: A RAII-style class for measuring code execution time.
 /// Unlike the API, this class is not thread-safe!!!
@@ -298,7 +343,7 @@ namespace vi_tm
 #	// Full version string of the library (Example: "0.1.0.2506151515R static").
 #	define VI_TM_FULLVERSION static_cast<const char*>(vi_tmStaticInfo(vi_tmInfoVersion))
 #	// Initializes the global timing registry with optional reporting.
-#	define VI_TM_GLOBALINIT(...) vi_tmGlobalInit(__VA_ARGS__)
+#	define VI_TM_GLOBALINIT(...) vi_tm::global_init(__VA_ARGS__)
 
 #endif // #if !defined(VI_TM_DISABLE) && defined(__cplusplus)
 #endif // #ifndef VI_TIMING_VI_TIMING_H
