@@ -283,9 +283,9 @@ namespace vi_tm
 #
 #	// This macro is used to create a scoped_probe_t object with the function name as the measurement name.
 #	define VI_TM_FUNC_H(hreg) VI_TM_SH((hreg), VI_FUNCNAME, 1U)
-#	// Generates a report for the global registry.
+#	// Generates a report for the registry.
 #	define VI_TM_REPORT_H(hreg, ...) vi_tmRegistryReport((hreg), __VA_ARGS__)
-#	// Resets the data of the specified measure entry in global registry. The handle remains valid.
+#	// Resets the data of the specified measure entry in registry. The handle remains valid.
 #	define VI_TM_RESET_H(hreg, name) vi_tmMeasurementReset(vi_tmRegistryGetMeas((hreg), (name)))
 #
 #	// Macros for global registry timing functions.
