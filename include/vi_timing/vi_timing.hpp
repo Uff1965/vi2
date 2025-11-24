@@ -70,7 +70,6 @@ namespace vi_tm
 /// but the RAII object’s own state transitions must be externally synchronized when shared.
 	class [[nodiscard]] scoped_probe_t
 	{	using signed_tm_size_t = std::make_signed_t<VI_TM_SIZE>; // Signed type with the same size as VI_TM_SIZE
-		struct paused_tag {}; // Tag type for paused constructor
 
 		// Invariants:
 		//  - meas_ is a non-owning handle; caller retains ownership and must ensure validity.
@@ -81,13 +80,9 @@ namespace vi_tm
 		VI_TM_TICK start_{VI_TM_TICK{ 0 }}; // Must be declared last - initializes after other members to minimize overhead between object construction and measurement start.
 
 		// Private constructor used by factory methods
-		explicit scoped_probe_t(paused_tag, VI_TM_HMEAS m, VI_TM_SIZE cnt) noexcept
+		explicit scoped_probe_t(VI_TM_HMEAS m, signed_tm_size_t cnt) noexcept
 		:	meas_{ m },
-			cnt_{ -static_cast<signed_tm_size_t>(cnt) }
-		{/**/}
-		explicit scoped_probe_t(VI_TM_HMEAS m, VI_TM_SIZE cnt) noexcept
-		:	meas_{ m },
-			cnt_{ static_cast<signed_tm_size_t>(cnt) },
+			cnt_{ cnt },
 			start_{ vi_tmGetTicks() }
 		{/**/}
 	public:
@@ -107,14 +102,14 @@ namespace vi_tm
 		[[nodiscard]] static scoped_probe_t make_running(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
 		{	assert(!!m && !!cnt && cnt <= static_cast<VI_TM_SIZE>(std::numeric_limits<signed_tm_size_t>::max()));
 			// cnt must fit into signed_tm_size_t; caller is responsible for sane values.
-			return scoped_probe_t{ m, cnt };
+			return scoped_probe_t{ m, static_cast<signed_tm_size_t>(cnt) };
 		}
 
 		/// Create a paused probe (not started yet).
 		[[nodiscard]] static scoped_probe_t make_paused(VI_TM_HMEAS m, VI_TM_SIZE cnt = 1) noexcept
 		{	assert(!!m && !!cnt && cnt <= static_cast<VI_TM_SIZE>(std::numeric_limits<signed_tm_size_t>::max()));
 			// cnt must fit into signed_tm_size_t; caller is responsible for sane values.
-			return scoped_probe_t{ paused_tag{}, m, cnt };
+			return scoped_probe_t{ m, -static_cast<signed_tm_size_t>(cnt) };
 		}
 
 		// === Move support ===
