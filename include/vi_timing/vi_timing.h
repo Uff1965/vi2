@@ -41,7 +41,7 @@
 
 // Optionally include auto-generated version header if available and not already defined
 #if !defined(VI_TM_VERSION_MAJOR) && defined(__has_include) && __has_include("vi_timing_version.h")
-#	include "vi_timing_version.h" // Include the generated version data.
+#	include "vi_timing_version.h"
 #endif
 
 #include <stdint.h> // uint64_t
@@ -88,7 +88,7 @@
 #	define VI_TM_STAT_USE_RMSE 1
 #endif
 
-// Set the VI_TM_STAT_USE_RMSE macro to FALSE to switch off filtering in measurements.
+// Set the VI_TM_STAT_USE_FILTER macro to FALSE to switch off filtering in measurements.
 // Library rebuild required
 #if !defined(VI_TM_STAT_USE_FILTER) && VI_TM_STAT_USE_RMSE
 #	define VI_TM_STAT_USE_FILTER 1
@@ -108,24 +108,38 @@
 
 //*******************************************************************************************************************
 
-// Configure calling conventions and symbol visibility for different compilers and platforms.
-#if defined(_MSC_VER)
+// Compiler-Specific Configuration and Feature Abstraction
+// This section provides a unified interface for compiler-specific features
+// including calling conventions, symbol visibility, and compiler intrinsics.
+#if defined(_MSC_VER) // Microsoft Visual C++ Compiler
+#	// Calling conventions: x86 requires cdecl for compatibility; 
+#	// other architectures use default calling convention
 #	ifdef _M_IX86 // x86 architecture MSVC
-#		define VI_SYS_CALL __cdecl
-#		define VI_TM_CALL __cdecl
+#		define VI_SYS_CALL __cdecl // System API compatibility (e.g., fputs)
+#		define VI_TM_CALL __cdecl // Library internal functions
 #	else
-#		define VI_SYS_CALL
+#		define VI_SYS_CALL // Default calling convention (e.g., x64)
 #		define VI_TM_CALL
 #	endif
 #
+#	// Symbol visibility control for shared library builds
 #	if ! VI_TM_SHARED
-#		define VI_TM_API
+#		define VI_TM_API // Static library - no decoration needed
 #	elif ! VI_TM_EXPORTS
-#		define VI_TM_API __declspec(dllimport)
+#		define VI_TM_API __declspec(dllimport) // Client importing from DLL
 #	else
-#		define VI_TM_API __declspec(dllexport)
+#		define VI_TM_API __declspec(dllexport) // Library exporting symbols
 #	endif
-#elif defined (__GNUC__) || defined(__clang__)
+#
+#	// Compiler intrinsics and attributes
+#	define VI_FUNCNAME __FUNCSIG__ // Full function signature with type information
+#	define VI_RESTRICT __restrict // Pointer aliasing optimization hint
+#	define VI_NOINLINE		__declspec(noinline) // Prevent inlining
+#	define VI_OPTIMIZE_OFF	_Pragma("optimize(\"\", off)") // Disable optimizations
+#	define VI_OPTIMIZE_ON	_Pragma("optimize(\"\", on)") // Restore optimizations
+#
+#elif defined (__GNUC__) || defined(__clang__) // GCC and Clang Compilers
+#	// Calling conventions: x86 requires cdecl for compatibility;
 #	ifdef __i386__ // x86 architecture GCC/Clang
 #		define VI_SYS_CALL __attribute__((cdecl))
 #		define VI_TM_CALL __attribute__((cdecl))
@@ -134,65 +148,47 @@
 #		define VI_TM_CALL
 #	endif
 #
+#	// Symbol visibility control (GCC/Clang style)
 #	if VI_TM_EXPORTS
-#		define VI_TM_API __attribute__((visibility("default")))
+#		define VI_TM_API __attribute__((visibility("default"))) // Export symbol
 #	else
-#		define VI_TM_API
+#		define VI_TM_API // Import or static build
 #	endif
-#else
-#	define VI_TM_DISABLE "Unknown compiler!"
-#	define VI_SYS_CALL
-#	define VI_TM_CALL
-#	define VI_TM_API
+#
+#	// Compiler-specific variations between Clang and GCC
+#	if defined(__clang__) // Clang-specific features
+#		define VI_FUNCNAME __PRETTY_FUNCTION__ // Demangled function name
+#		define VI_RESTRICT __restrict__ // Restricted pointer qualifier
+#		define VI_NOINLINE		[[gnu::noinline]] // C++11 style noinline attribute
+#		// Clang-specific optimization control pragmas
+#		define VI_OPTIMIZE_OFF	_Pragma("clang optimize push") \
+								_Pragma("clang optimize off")
+#		define VI_OPTIMIZE_ON	_Pragma("clang optimize pop")
+#	else // defined(__GNUC__)
+#		// GCC-specific features
+#		define VI_FUNCNAME __PRETTY_FUNCTION__ // Demangled function name
+#		define VI_RESTRICT __restrict__ // Restricted pointer qualifier
+#		define VI_NOINLINE		[[gnu::noinline]] // C++11 style noinline attribute
+#		// GCC-specific optimization control pragmas
+#		define VI_OPTIMIZE_OFF	_Pragma("GCC push_options") \
+								_Pragma("GCC optimize(\"O0\")")
+#		define VI_OPTIMIZE_ON	_Pragma("GCC pop_options")
+#	endif
+#else // Unknown/Unsupported Compiler
+#	define VI_TM_DISABLE "Unknown compiler!" // Disable library for unsupported compilers
+#	// Fallback definitions (minimal functionality)
+#	define VI_SYS_CALL	// No calling convention specified
+#	define VI_TM_CALL	// No calling convention specified  
+#	define VI_TM_API	// No visibility control
+#
+#	// Minimal compiler feature support
+#	define VI_FUNCNAME __func__	// Basic function name (C99 standard)
+#	define VI_RESTRICT			// No restrict support
+#	define VI_NOINLINE			// No inlining control
+#	define VI_OPTIMIZE_OFF		// No optimization control
+#	define VI_OPTIMIZE_ON		// No optimization control
 #endif
 
-// Auxiliary macros: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-
-#define VI_SUCCESS (0) // Use zero as success code.
-#define VI_FAILURE (0 - __LINE__) // Use negative line number as error code.
-#define VI_SUCCEEDED( v ) ((v) >= 0)
-#define VI_FAILED( v ) ((v) < 0)
-
-// Compiler feature abstraction layer
-// Normalizes compiler-specific keywords and pragmas for:
-//   - Function name introspection (VI_FUNCNAME)
-//   - Pointer aliasing (VI_RESTRICT)
-//   - Inline control (VI_NOINLINE)
-//   - Temporary optimization disabling/enabling (VI_OPTIMIZE_OFF/ON)
-// Supported compilers: MSVC, GCC, Clang
-// Usage:
-//   VI_NOINLINE void my_function() { ... }
-//   VI_OPTIMIZE_OFF
-//		... unoptimized code section
-//   VI_OPTIMIZE_ON
-#if defined(_MSC_VER)
-#	define VI_FUNCNAME __FUNCSIG__
-#	define VI_RESTRICT __restrict
-#	define VI_NOINLINE		__declspec(noinline)
-#	define VI_OPTIMIZE_OFF	_Pragma("optimize(\"\", off)")
-#	define VI_OPTIMIZE_ON	_Pragma("optimize(\"\", on)")
-#elif defined(__clang__)
-#	define VI_FUNCNAME __PRETTY_FUNCTION__
-#	define VI_RESTRICT __restrict__
-#	define VI_NOINLINE		[[gnu::noinline]]
-#	define VI_OPTIMIZE_OFF	_Pragma("clang optimize push") \
-							_Pragma("clang optimize off")
-#	define VI_OPTIMIZE_ON	_Pragma("clang optimize pop")
-#elif defined(__GNUC__)
-#	define VI_FUNCNAME __PRETTY_FUNCTION__
-#	define VI_RESTRICT __restrict__
-#	define VI_NOINLINE		[[gnu::noinline]]
-#	define VI_OPTIMIZE_OFF	_Pragma("GCC push_options") \
-							_Pragma("GCC optimize(\"O0\")")
-#	define VI_OPTIMIZE_ON	_Pragma("GCC pop_options")
-#else
-#	define VI_FUNCNAME __func__
-#	define VI_RESTRICT
-#	define VI_NOINLINE
-#	define VI_OPTIMIZE_OFF
-#	define VI_OPTIMIZE_ON
-#endif
- 
 // Language feature abstraction layer
 // Unifies C and C++ attributes for consistent API definitions.
 // Provides:
@@ -202,20 +198,25 @@
 #ifdef __cplusplus
 #	define VI_NODISCARD [[nodiscard]]
 #	define VI_NOEXCEPT noexcept
-#	define VI_DEFAULT(v) =(v)
+#	define VI_DEFAULT(v) =(v) // C++ default argument syntax
+#elif defined(_MSC_VER)
+#	define VI_NODISCARD _Check_return_ 
+#	define VI_NOEXCEPT __declspec(nothrow)
+#	define VI_DEFAULT(v)
 #elif defined(__GNUC__) || defined(__clang__)
 #	define VI_NODISCARD __attribute__((warn_unused_result))
 #	define VI_NOEXCEPT __attribute__((nothrow))
-#	define VI_DEFAULT(v)
-#elif defined(_MSC_VER)
-#	define VI_NODISCARD _Check_return_
-#	define VI_NOEXCEPT __declspec(nothrow)
 #	define VI_DEFAULT(v)
 #else
 #	define VI_NODISCARD
 #	define VI_NOEXCEPT
 #	define VI_DEFAULT(v)
 #endif
+
+#define VI_SUCCESS (0)
+#define VI_FAILURE (0 - __LINE__) // Use negative line number as error code. For debugging purposes.
+#define VI_SUCCEEDED( v ) ((v) >= 0)
+#define VI_FAILED( v ) ((v) < 0)
 
 #ifdef __cplusplus
 extern "C" {
@@ -224,7 +225,7 @@ extern "C" {
 typedef int32_t VI_TM_RESULT;
 typedef uint32_t VI_TM_FLAGS;
 typedef double VI_TM_FP; // Floating-point type used for timing calculations, typically double precision.
-typedef size_t VI_TM_SIZE; // Size type used for counting events, typically size_t.
+typedef uintptr_t VI_TM_SIZE; // Size type used for counting events, typically size_t.
 typedef uint64_t VI_TM_TICK; // !!! UNSIGNED !!! Represents a tick count (typically from a high-resolution timer). VI_TM_TICK and VI_TM_TDIFF are always unsigned to handle timer wraparound safely.
 typedef VI_TM_TICK VI_TM_TDIFF; // !!! UNSIGNED !!! Represents a difference between two tick counts (duration). Do NOT compare to zero as signed. If a signed value is needed (e.g. for debugging/printing), cast explicitly.
 typedef struct vi_tmMeasurement_t *VI_TM_HMEAS; // Opaque handle to a measurement entry.
@@ -232,6 +233,10 @@ typedef struct vi_tmRegistry_t *VI_TM_HREG; // Opaque handle to a measurements r
 typedef VI_TM_RESULT (VI_TM_CALL *vi_tmMeasEnumCb_t)(VI_TM_HMEAS hmeas, void* ctx); // Callback type for enumerating measurements; returning non-zero aborts enumeration.
 typedef VI_TM_RESULT (VI_SYS_CALL *vi_tmReportCb_t)(const char* str, void* ctx); // Callback type for report function. ABI must be compatible with std::fputs!
 
+// Save current packing alignment and set maximum alignment to 16. Since all fields 
+// in struct vi_tmStats_t require <=8-byte alignment, this effectively restores natural ABI 
+// layout and protects the struct from being affected by client code's smaller pack values.
+#pragma pack(push, 16)
 // vi_tmStats_t: Structure holding statistics for a timing measurement.
 // This structure is used to store the number of calls, total time spent, and other statistical data for a measurement.
 // !!!Use the vi_tmStatsReset function to reset the structure to its initial state!!!
@@ -253,6 +258,7 @@ typedef struct vi_tmStats_t
 	VI_TM_FP max_; // Initialized to VI_TM_FP_NEGATIVE_INF by vi_tmStatsReset! Maximum time taken for a single event, in ticks.
 #endif
 } vi_tmStats_t;
+#pragma pack(pop) // Restore previous packing alignment
 
 // Positive and negative infinity constants used for min/max statistics calculations.
 #if VI_TM_STAT_USE_MINMAX
