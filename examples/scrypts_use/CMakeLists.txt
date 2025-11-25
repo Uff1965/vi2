@@ -1,6 +1,6 @@
 # File: "vi2/examples/scrypts_ext/CMakeLists.txt"
 cmake_minimum_required(VERSION 3.22)
-project(test_scrypt_ext LANGUAGES CXX)
+project(scrypts_use LANGUAGES CXX)
 
 # Find Python3 and determine extension suffix!
 message("")
@@ -9,12 +9,17 @@ message(STATUS "Python3 found version: ${Python3_VERSION}")
 
 add_executable(${PROJECT_NAME} main.cpp)
 
-target_link_libraries(${PROJECT_NAME}
-PRIVATE
-    ${Python3_LIBRARIES}
-    lua
-    vi_timing
+target_link_libraries(${PROJECT_NAME} PRIVATE vi_timing)
+
+if(VI_TM_ENABLE_PYTHON)
+	target_link_libraries(${PROJECT_NAME} PRIVATE ${Python3_LIBRARIES}
 )
+endif()
+
+if(VI_TM_ENABLE_LUA)
+	target_link_libraries(${PROJECT_NAME} PRIVATE lua}
+)
+endif()
 
 set_target_properties(${PROJECT_NAME}
 PROPERTIES
@@ -71,22 +76,11 @@ elseif(UNIX)
     )
 endif()
 
-add_test(
-    NAME ${PROJECT_NAME}
-    COMMAND  ${Python3_EXECUTABLE}
-        "${CMAKE_CURRENT_SOURCE_DIR}/vi_timing.py"
-    WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-)
-set_tests_properties(${PROJECT_NAME}
-PROPERTIES
-    DISABLED $<NOT:$<CONFIG:Release>>
-#    TIMEOUT 450
-    ENVIRONMENT "VI_TM_NO_PAUSE=1"
-#    PASS_REGULAR_EXPRESSION "2\\. global_(mod|lib):[^\\n]*$"
-)
-
 add_test(NAME ${PROJECT_NAME} COMMAND $<TARGET_FILE:${PROJECT_NAME}>)
 set_tests_properties(${PROJECT_NAME}
 PROPERTIES
-#    PASS_REGULAR_EXPRESSION "Timing report:;#. Name +:;Success - the test program completed!"
+#    DISABLED $<NOT:$<CONFIG:Release>>
+#    TIMEOUT 450
+    ENVIRONMENT "VI_TM_NO_PAUSE=1"
+#    PASS_REGULAR_EXPRESSION "2\\. global_(mod|lib):[^\\n]*$"
 )

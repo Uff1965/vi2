@@ -8,3 +8,5 @@ if(VI_TM_ENABLE_LUA)
 	add_subdirectory(lua)
 	add_subdirectory(lua_ext)
 endif()
+
+add_subdirectory(scrypts_use)
