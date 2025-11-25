@@ -27,7 +27,7 @@ namespace
 
 	[[nodiscard]] fs::path get_module_path(const void* addr)
 	{	if(!addr)
-		{	assert(false);
+		{	assert(false && "Address cannot be null");
 			return {};
 		}
 
@@ -54,7 +54,7 @@ namespace
 #	else
 		if (!dladdr(addr, &info))
 #	endif
-		{	assert(false);
+		{	assert(false && "dladdr failed");
 			return {};
 		}
 
@@ -67,10 +67,10 @@ namespace
 		if (info.dli_fname && info.dli_fname[0] != '\0')
 		{	return{ info.dli_fname };
 		}
-		assert(false);
+		assert(false && "No valid module path found");
 		return {};
 #else
-#	error "Error: Unknown platform!"
+#	error "Unsupported platform!"
 #endif
 	}
 } // namespace

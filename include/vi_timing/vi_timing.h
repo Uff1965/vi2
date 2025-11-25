@@ -18,6 +18,18 @@
 *   - See LICENSE in the project root for full terms.
 \*****************************************************************************/
 
+/*****************************************************************************\
+* This header defines the C API of vi_timing.
+* All functions here are designed for C99/C++17 interoperability.
+*
+* The library is distributed as source code. For error localization,
+* source line information is considered sufficient, and separate
+* error documentation is intentionally omitted as redundant.
+*
+* All C-API functions declared in this file are thread-safe
+* when the library is built with VI_TM_THREADSAFE defined as 1 (true).
+\*****************************************************************************/
+
 #ifndef VI_TIMING_VI_TIMING_C_H
 #	define VI_TIMING_VI_TIMING_C_H
 #	pragma once
@@ -57,14 +69,14 @@
 #endif
 
 // Set VI_TM_SHARED to TRUE to build the library as a SHARED library.
-// Requires library rebuild.
+// Library rebuild required.
 #ifndef VI_TM_SHARED
 #	define VI_TM_SHARED 0
 #endif
 
 // Used high-performance timing methods (e.g., platform-specific optimizations like ASM).
 // Set VI_TM_USE_STDCLOCK to TRUE to switch to the standard C11 function `timespec_get()`.
-// Requires library rebuild.
+// Library rebuild required.
 #ifndef VI_TM_USE_STDCLOCK
 #	define VI_TM_USE_STDCLOCK 0
 #endif
@@ -76,7 +88,7 @@
 #	define VI_TM_THREADSAFE 1
 #endif
 
-// Set VI_TM_STAT_USE_RAW macro to FALSE to skip basic statistics collection (cnt, sum).
+// Set VI_TM_STAT_USE_RAW macro to FALSE to disable basic statistics collection (cnt, sum).
 // Library rebuild required
 #ifndef VI_TM_STAT_USE_RAW
 #	define VI_TM_STAT_USE_RAW 1
@@ -88,7 +100,7 @@
 #	define VI_TM_STAT_USE_RMSE 1
 #endif
 
-// Set the VI_TM_STAT_USE_FILTER macro to FALSE to switch off filtering in measurements.
+// Set the VI_TM_STAT_USE_FILTER macro to FALSE to disable filtering in measurements.
 // Library rebuild required
 #if !defined(VI_TM_STAT_USE_FILTER) && VI_TM_STAT_USE_RMSE
 #	define VI_TM_STAT_USE_FILTER 1
@@ -96,7 +108,8 @@
 #	error "The filter is only available when RMSE is enabled."
 #endif
 
-// Uncomment the next line to store minimum and maximum measurement values. Library rebuild required
+// Uncomment the next line to enable min/max tracking measurement values.
+// Library rebuild required
 #ifndef VI_TM_STAT_USE_MINMAX
 #	define VI_TM_STAT_USE_MINMAX 0
 #endif
@@ -200,7 +213,7 @@
 #	define VI_NOEXCEPT noexcept
 #	define VI_DEFAULT(v) =(v) // C++ default argument syntax
 #elif defined(_MSC_VER)
-#	define VI_NODISCARD _Check_return_ 
+#	define VI_NODISCARD _Check_return_ // #include <sal.h> may be required for full SAL support. In practice, this works without it.
 #	define VI_NOEXCEPT __declspec(nothrow)
 #	define VI_DEFAULT(v)
 #elif defined(__GNUC__) || defined(__clang__)
@@ -227,11 +240,11 @@ typedef uint32_t VI_TM_FLAGS;
 typedef double VI_TM_FP; // Floating-point type used for timing calculations, typically double precision.
 typedef uintptr_t VI_TM_SIZE; // Size type used for counting events, typically size_t.
 typedef uint64_t VI_TM_TICK; // !!! UNSIGNED !!! Represents a tick count (typically from a high-resolution timer). VI_TM_TICK and VI_TM_TDIFF are always unsigned to handle timer wraparound safely.
-typedef VI_TM_TICK VI_TM_TDIFF; // !!! UNSIGNED !!! Represents a difference between two tick counts (duration). Do NOT compare to zero as signed. If a signed value is needed (e.g. for debugging/printing), cast explicitly.
+typedef VI_TM_TICK VI_TM_TDIFF; // !!! UNSIGNED !!! Wraparound counter. Represents a difference between two tick counts (duration). Do NOT compare to zero as signed. If a signed value is needed (e.g. for debugging/printing), cast explicitly.
 typedef struct vi_tmMeasurement_t *VI_TM_HMEAS; // Opaque handle to a measurement entry.
 typedef struct vi_tmRegistry_t *VI_TM_HREG; // Opaque handle to a measurements registry.
 typedef VI_TM_RESULT (VI_TM_CALL *vi_tmMeasEnumCb_t)(VI_TM_HMEAS hmeas, void* ctx); // Callback type for enumerating measurements; returning non-zero aborts enumeration.
-typedef VI_TM_RESULT (VI_SYS_CALL *vi_tmReportCb_t)(const char* str, void* ctx); // Callback type for report function. ABI must be compatible with std::fputs!
+typedef VI_TM_RESULT (VI_SYS_CALL *vi_tmReportCb_t)(const char* str, void* ctx); // Callback must be callable from C with same calling convention as library; default implementation use std::fputs or OutputDebugString on Windows.
 
 // Save current packing alignment and set maximum alignment to 16. Since all fields 
 // in struct vi_tmStats_t require <=8-byte alignment, this effectively restores natural ABI 
@@ -397,7 +410,7 @@ VI_NODISCARD VI_TM_API VI_TM_HMEAS VI_TM_CALL vi_tmRegistryGetMeas(
 /// <param name="fn">A callback function to be called for each measurement. It receives a handle to the measurement and the user-provided data pointer.</param>
 /// <param name="ctx">A pointer to user-defined data that is passed to the callback function.</param>
 /// <returns>Returns 0 if all measurements were processed. If the callback returns a non-zero value, iteration stops and that value is returned.</returns>
-VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmRegistryEnumerateMeas(
+VI_TM_API int VI_TM_CALL vi_tmRegistryEnumerateMeas(
 	VI_TM_HREG hreg,
 	vi_tmMeasEnumCb_t fn,
 	void* ctx
@@ -453,11 +466,7 @@ VI_TM_API void VI_TM_CALL vi_tmMeasurementReset(VI_TM_HMEAS hmeas);
 /// <param name="dur">The duration value to add to the statistics.</param>
 /// <param name="cnt">The number of measured events.</param>
 /// <returns>This function does not return a value.</returns>
-VI_TM_API void VI_TM_CALL vi_tmStatsAdd(
-	vi_tmStats_t *dst,
-	VI_TM_TDIFF dur,
-	VI_TM_SIZE cnt VI_DEFAULT(1)
-) VI_NOEXCEPT;
+VI_TM_API void VI_TM_CALL vi_tmStatsAdd(vi_tmStats_t *dst, VI_TM_TDIFF dur, VI_TM_SIZE cnt VI_DEFAULT(1)) VI_NOEXCEPT;
 
 /// <summary>
 /// Merges the statistics from the source measurement statistics structure into the destination.
@@ -465,10 +474,7 @@ VI_TM_API void VI_TM_CALL vi_tmStatsAdd(
 /// <param name="dst">Pointer to the destination measurement statistics structure to update.</param>
 /// <param name="src">Pointer to the source measurement statistics structure to merge.</param>
 /// <returns>This function does not return a value.</returns>
-VI_TM_API void VI_TM_CALL vi_tmStatsMerge(
-	vi_tmStats_t* VI_RESTRICT dst,
-	const vi_tmStats_t* VI_RESTRICT src
-) VI_NOEXCEPT;
+VI_TM_API void VI_TM_CALL vi_tmStatsMerge(vi_tmStats_t *VI_RESTRICT dst, const vi_tmStats_t *VI_RESTRICT src) VI_NOEXCEPT;
 
 /// <summary>
 /// Resets the given measurement statistics structure to its initial state.
@@ -490,7 +496,7 @@ VI_NODISCARD VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmStatsIsValid(const vi_tmStat
 /// </summary>
 /// <param name="info">The type of information to retrieve, specified as a value of the vi_tmInfo_e enumeration.</param>
 /// <returns>A pointer to the requested static information. The type of the returned data depends on the info parameter and may point to an unsigned int, a double, or a null-terminated string. Returns nullptr if the info type is not recognized.</returns>
-VI_NODISCARD VI_TM_API const void* VI_TM_CALL vi_tmStaticInfo(VI_TM_FLAGS info);
+VI_NODISCARD VI_TM_API const void* VI_TM_CALL vi_tmStaticInfo(vi_tmInfo_e info);
 // Main functions ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 // Auxiliary functions: vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv

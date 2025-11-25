@@ -18,6 +18,16 @@
 *   - See LICENSE in the project root for full terms.
 \*****************************************************************************/
 
+/*****************************************************************************\
+* This header defines the C++ RAII wrappers for vi_timing.
+* Unlike the C API, these classes are not thread-safe,
+* even when VI_TM_THREADSAFE is defined as true.
+* 
+* Designed for minimal overhead in practical use.
+* In release builds, runtime checks that could slow down execution are omitted;
+* debug builds provide necessary validation through assert().
+\*****************************************************************************/
+
 #ifndef VI_TIMING_VI_TIMING_H
 #	define VI_TIMING_VI_TIMING_H
 #	pragma once
@@ -107,21 +117,22 @@ namespace vi_tm
 	// vi_tm::global_init("My Timing Report", vi_tmReportShowDuration, vi_tmReportShowCalls);
 	template<typename... Args>
 	VI_TM_RESULT global_init(Args&&... args)
-	{	VI_TM_RESULT result = VI_SUCCESS;
-		init_t self;
-		((result |= init_aux(self, std::forward<Args>(args))), ...);
-		assert(VI_SUCCEEDED(result));
-		result |= vi_tmGlobalInit(
-			self.report_flags_ ? *self.report_flags_ : vi_tmReportDefault,
+	{	init_t self;
+		for (auto r : { init_aux(self, std::forward<Args>(args))... })
+			if (VI_FAILED(r))
+			{	return r;
+			}
+		return vi_tmGlobalInit
+		(	self.report_flags_ ? *self.report_flags_ : vi_tmReportDefault,
 			self.title_ ? self.title_->c_str() : nullptr,
 			self.footer_ ? self.footer_->c_str() : nullptr
 		);
-		return result;
 	}
 
 /// In class comment:
 /// scoped_probe_t class: A RAII-style class for measuring code execution time.
-/// Unlike the API, this class is not thread-safe!!!
+/// Note: This class is not thread-safe. If shared across threads,
+/// external synchronization is required even when VI_TM_THREADSAFE is enabled.
 /// If VI_TM_THREADSAFE is enabled at the C layer, the registry/measurement updates are protected,
 /// but the RAII object’s own state transitions must be externally synchronized when shared.
 	class [[nodiscard]] scoped_probe_t
@@ -129,16 +140,16 @@ namespace vi_tm
 
 		// Invariants:
 		//  - meas_ is a non-owning handle; caller retains ownership and must ensure validity.
-		//  - cnt_ encodes state: >0 running (count = cnt_), <0 paused (count = -cnt_), 0 idle.
-		//  - time_data_ is meaningful only when cnt_ != 0 (running or paused).
+		//  - cnt_and_state_ encodes state: >0 running (count = cnt_and_state_), <0 paused (count = -cnt_and_state_), 0 idle.
+		//  - time_data_ is meaningful only when cnt_and_state_ != 0 (running or paused).
 		VI_TM_HMEAS meas_{nullptr};
-		signed_tm_size_t cnt_{0};
+		signed_tm_size_t cnt_and_state_{0};
 		VI_TM_TICK time_data_{VI_TM_TICK{ 0 }}; // Must be declared last - initializes after other members to minimize overhead between object construction and measurement start.
 
 		// Private constructor used by factory methods
 		explicit scoped_probe_t(VI_TM_HMEAS m, signed_tm_size_t cnt) noexcept
 		:	meas_{ m },
-			cnt_{ cnt },
+			cnt_and_state_{ cnt },
 			time_data_{ vi_tmGetTicks() }
 		{/**/}
 	public:
@@ -148,9 +159,9 @@ namespace vi_tm
 
 		// === State checks ===
 
-		[[nodiscard]] bool idle() const noexcept { return cnt_ == 0; }
-		[[nodiscard]] bool active() const noexcept { return cnt_ > 0; }
-		[[nodiscard]] bool paused() const noexcept { return cnt_ < 0; }
+		[[nodiscard]] bool idle() const noexcept { return cnt_and_state_ == 0; }
+		[[nodiscard]] bool active() const noexcept { return cnt_and_state_ > 0; }
+		[[nodiscard]] bool paused() const noexcept { return cnt_and_state_ < 0; }
 
 		// === Factory methods ===
 
@@ -172,7 +183,7 @@ namespace vi_tm
 
 		scoped_probe_t(scoped_probe_t &&s) noexcept
 		:	meas_{std::exchange(s.meas_, nullptr)},
-			cnt_{ std::exchange(s.cnt_, signed_tm_size_t{ 0 }) },
+			cnt_and_state_{ std::exchange(s.cnt_and_state_, signed_tm_size_t{ 0 }) },
 			time_data_{std::exchange(s.time_data_, VI_TM_TICK{ 0 })}
 		{
 		}
@@ -181,7 +192,7 @@ namespace vi_tm
 		{	if (&s != this)
 			{	stop();
 				meas_ = std::exchange(s.meas_, nullptr);
-				cnt_ = std::exchange(s.cnt_, signed_tm_size_t{ 0 });
+				cnt_and_state_ = std::exchange(s.cnt_and_state_, signed_tm_size_t{ 0 });
 				time_data_ = std::exchange(s.time_data_, VI_TM_TICK{ 0 });
 			}
 			return *this;
@@ -201,7 +212,7 @@ namespace vi_tm
 			assert(active());
 			if(active())
 			{	time_data_ = t - time_data_;
-				cnt_ = -cnt_;
+				cnt_and_state_ = -cnt_and_state_;
 			}
 		}
 
@@ -209,7 +220,7 @@ namespace vi_tm
 		void resume() noexcept
 		{	assert(paused());
 			if (paused())
-			{	cnt_ = -cnt_;
+			{	cnt_and_state_ = -cnt_and_state_;
 				time_data_ = vi_tmGetTicks() - time_data_;
 			}
 		}
@@ -219,12 +230,12 @@ namespace vi_tm
 		{	const auto t = vi_tmGetTicks(); // Read ticks first to avoid introducing measurement overhead in conditional branch
 			assert(idle() || !!meas_);
 			if (active())
-			{	vi_tmMeasurementAdd(meas_, t - time_data_, cnt_);
+			{	vi_tmMeasurementAdd(meas_, t - time_data_, cnt_and_state_);
 			}
 			else if (paused())
-			{	vi_tmMeasurementAdd(meas_, time_data_, -cnt_);
+			{	vi_tmMeasurementAdd(meas_, time_data_, -cnt_and_state_);
 			}
-			cnt_ = 0; // Set idle state.
+			cnt_and_state_ = 0; // Set idle state.
 		}
 
 		/// Obtaining the current accumulated time (for debugging/monitoring)
@@ -302,6 +313,9 @@ namespace vi_tm
 /// The macro defines a unique probe object whose underlying measurement handle
 /// is obtained from the global registry. The handle is looked up by name and
 /// used to construct a RAII-style `vi_tm::scoped_probe_t` that starts immediately.
+/// Important: This macro relies on auto-generated identifiers (__LINE__, __COUNTER__).
+/// Uniqueness is not guaranteed in all cases. If a conflict occurs,
+/// declare a vi_tm::scoped_probe_t manually.
 /// </remarks>
 #	define VI_TM_H(hreg, ...) \
 		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::scoped_probe_t \
@@ -321,9 +335,13 @@ namespace vi_tm
 /// at the same location with different arguments is forbidden and will produce inconsistent
 /// or invalid profiling data.
 /// 
-/// Important: the registry handle (h) must remain alive for the entire lifetime
+/// Important: the registry handle (hreg) must remain alive for the entire lifetime
 /// of this translation unit’s static storage; the cached measurement handle 'meas'
-/// will dangle if 'vi_tmRegistryClose(h)' is called earlier.
+/// will dangle if 'vi_tmRegistryClose(hreg)' is called earlier.
+/// 
+/// Important: This macro relies on auto-generated identifiers (__LINE__, __COUNTER__).
+/// Uniqueness is not guaranteed in all cases. If a conflict occurs,
+/// declare a vi_tm::scoped_probe_t manually.
 /// </remarks>
 #	define VI_TM_SH(hreg, ...) \
 		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::scoped_probe_t \

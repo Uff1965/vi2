@@ -449,7 +449,7 @@ void VI_TM_CALL vi_tmRegistryReset(VI_TM_HREG registry) noexcept
 {	vi_tmRegistryEnumerateMeas(registry, [](VI_TM_HMEAS m, void *) { vi_tmMeasurementReset(m); return 0; }, nullptr);
 }
 
-VI_TM_RESULT VI_TM_CALL vi_tmRegistryEnumerateMeas(VI_TM_HREG registry, vi_tmMeasEnumCb_t fn, void *ctx)
+int VI_TM_CALL vi_tmRegistryEnumerateMeas(VI_TM_HREG registry, vi_tmMeasEnumCb_t fn, void *ctx)
 {	return misc::from_handle(registry)->for_each_measurement(fn, ctx);
 }
 
