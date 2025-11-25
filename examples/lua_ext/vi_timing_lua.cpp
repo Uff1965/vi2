@@ -365,7 +365,7 @@ namespace
 	// vi_tmStaticInfo(info_flag) -> number|string|lightuserdata|nil
 	int l_vi_tmStaticInfo(lua_State *L)
 	{
-		VI_TM_FLAGS info = (VI_TM_FLAGS)luaL_checkinteger(L, 1);
+		vi_tmInfo_e info = static_cast<vi_tmInfo_e>(luaL_checkinteger(L, 1));
 		const void *p = vi_tmStaticInfo(info);
 		if (!p) { lua_pushnil(L); return 1; }
 		// Heuristic: try to interpret some known types if user asks
