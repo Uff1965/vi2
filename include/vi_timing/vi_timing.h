@@ -532,7 +532,7 @@ VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmRegistryReport(
 
 #ifdef __cplusplus
 } // extern "C"
-#	if __has_include("vi_timing.hpp")
+#	if defined(__has_include) && __has_include("vi_timing.hpp")
 #		include "vi_timing.hpp"
 #	endif
 #endif

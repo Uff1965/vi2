@@ -68,6 +68,8 @@ add_compile_options(
 #    $<$<AND:$<CXX_COMPILER_ID:GNU>,$<CONFIG:Debug>>:-fsanitize=address>
 #)
 
+add_compile_definitions(VI_TM_ROOT_DIR=\"${CMAKE_SOURCE_DIR}\")
+
 include("cmake/GenerateVersion.cmake") # Include the script to generate version information.
 vi_get_version_from_git(VI_GIT)
 message(STATUS "\nGIT:")

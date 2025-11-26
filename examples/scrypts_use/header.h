@@ -1,5 +1,7 @@
 #pragma once
 #include <string>
 
-using test_func_t = void (*)();
-void register_test(std::string test_name, test_func_t*);
+#define FILE_PATH (__FILE__ + sizeof(VI_TM_ROOT_DIR))
+
+using test_func_t = void (*)(void);
+int register_test(test_func_t fn);

@@ -33,7 +33,9 @@
 #	pragma once
 
 #	include "vi_timing.h"
-#	include "vi_timing_aux.h"
+#	if defined(__has_include) && __has_include("vi_timing_aux.h")
+#		include "vi_timing_aux.h"
+#	endif
 
 #	if defined(__COUNTER__) // MSVC, GCC, Clang and some other compilers support __COUNTER__
 #		define VI_UNIC_ID( prefix ) VI_STR_CONCAT(prefix, VI_STR_CONCAT(__LINE__, VI_STR_CONCAT(_, __COUNTER__)))

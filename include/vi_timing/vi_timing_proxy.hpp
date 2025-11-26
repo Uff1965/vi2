@@ -26,7 +26,9 @@
 #	define VI_TIMING_PROXY_HPP
 #	pragma once
 #
-#	if !defined(VI_TM_DISABLE) && !__has_include(<vi_timing/vi_timing.hpp>)
+#	if !defined(__has_include)
+#		error "Compiler does not support __has_include. This proxy header requires __has_include support."
+#	elif !defined(VI_TM_DISABLE) && !__has_include(<vi_timing/vi_timing.hpp>)
 #		define VI_TM_DISABLE // Timing functions are disabled because the header 'vi_timing.h' is not available.
 #	endif
 #
