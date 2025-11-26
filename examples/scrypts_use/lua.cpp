@@ -1,8 +1,6 @@
 #include "header.h"
-
 #include <vi_timing/vi_timing.h>
 
-// Include Lua headers (assumes Lua 5.x)
 extern "C" {
 	#include <lua/lua.h>
 	#include <lua/lualib.h>
@@ -13,66 +11,77 @@ VI_TM(FILE_PATH);
 
 namespace lua
 {
-	// 1. C++ Function to be called from Lua
+	// C++ function exposed to Lua
+	// This simulates a native callback that Lua can invoke.
 	static int cpp_callback(lua_State *L)
-	{	VI_TM_FUNC;
-		luaL_checkstring(L, 1); // Check if the first argument is a string and get it
-		lua_pushinteger(L, 42); // Push return value (an integer) onto the stack
-		return 1; // Return the number of results pushed (1)
+	{   VI_TM("Lua callback");
+		luaL_checkstring(L, 1);   // Validate first argument is a string
+		lua_pushinteger(L, 42);   // Push a dummy integer result
+		return 1;                 // Return one result to Lua
 	}
 
-	// 2. Main Application
-	void test_lua(void)
+	// Step 1: Initialize Lua state and open standard libraries
+	lua_State* init_lua()
+	{   VI_TM("Lua(1) Initialize");
+		lua_State *L = luaL_newstate();   // Create new Lua interpreter state
+		luaL_openlibs(L);                 // Load all standard Lua libraries
+		lua_register(L, "cpp_callback", cpp_callback); // Register native function
+		return L;
+	}
+
+	// Step 2: Load and compile Lua script
+	bool load_script(lua_State *L)
+	{   VI_TM("Lua(2) Load and compile");
+		static constexpr char lua_script[] =
+			R"(function lua_worker()
+				local result = cpp_callback('Hello from Lua!')
+				end
+			)";
+
+		// Compile and execute script
+		if (luaL_dostring(L, lua_script) != LUA_OK)
+		{   fprintf(stderr, "Lua error: %s\n", lua_tostring(L, -1));
+			return false;
+		}
+		return true;
+	}
+
+	// Step 3: Call Lua function
+	bool call_worker(lua_State *L)
+	{	VI_TM("Lua(3) Call");
+		lua_getglobal(L, "lua_worker");   // Push function onto stack
+
+		if (!lua_isfunction(L, -1))
+		{	fprintf(stderr, "Lua error: lua_worker not found\n");
+			return false;
+		}
+
+		// Execute Lua function with no args and no return values
+		if (lua_pcall(L, 0, 0, 0) != LUA_OK)
+		{	fprintf(stderr, "Lua error: %s\n", lua_tostring(L, -1));
+			return false;
+		}
+		return true;
+	}
+
+	// Step 4: Cleanup Lua state
+	void cleanup_lua(lua_State *L)
+	{	VI_TM("Lua(4) Cleanup");
+		lua_close(L);   // Free all resources
+	}
+
+	// Main test function
+	// Purpose: measure mandatory time costs of standard steps
+	// when working with an embedded scripting language (Lua).
+	void test_lua()
 	{	VI_TM_FUNC;
+		lua_State *L = init_lua();
+		if (!L) return;
 
-		lua_State *L = nullptr;
+		if (load_script(L))
+			call_worker(L);
 
-		{	VI_TM("Lua(1) Initialize");
-			L = luaL_newstate(); // Create a new Lua state
-			luaL_openlibs(L); // Load standard Lua libraries (print, string, math, etc.)
-
-			// Register the C++ function as a global in Lua
-			// "cpp_callback" is the name used inside Lua
-			lua_register(L, "cpp_callback", cpp_callback);
-		}
-
-		{	VI_TM("Lua(2) Load and compile");
-			// Define Lua script inline
-			const char *lua_script =
-				"function lua_worker()"
-				"local result = cpp_callback('Hello from Lua!')"
-				"end";
-
-			// Load and compile the string (pushes the chunk onto stack), then run it
-			if (luaL_dostring(L, lua_script) != LUA_OK)
-			{
-				lua_close(L);
-				return;
-			}
-		}
-
-		{	VI_TM("Lua(3) Call");
-			// --- THE FULL CYCLE HAPPENS HERE ---
-			lua_getglobal(L, "lua_worker"); // Push the global function name onto the stack
-
-			// Check if it's actually a function
-			if (lua_isfunction(L, -1))
-			{	// Call the function: 0 arguments, 0 results, 0 error handler
-				if (lua_pcall(L, 0, 0, 0) != LUA_OK)
-				{	assert(false);
-				}
-			}
-			else
-			{	assert(false);
-			}
-		}
-
-		{	VI_TM("Lua(4) Cleanup");
-			// Cleanup is done below
-			lua_close(L); // Cleanup
-		}
-
-		return;
+		cleanup_lua(L);
 	}
 
 	const auto _ = register_test(test_lua);
