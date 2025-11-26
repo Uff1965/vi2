@@ -86,9 +86,9 @@ namespace vi_tm
 	VI_TM_RESULT init_aux(init_t &self, T &&v)
 	{	VI_TM_RESULT result = VI_SUCCESS;
 		if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportFlags_e>)
-		{	self.report_flags_.emplace(v | self.report_flags_.value_or(0));
+		{	self.report_flags_.emplace(v | self.report_flags_.value_or(0U));
 		}
-		else if constexpr (std::is_convertible_v<T, decltype(self.title_)>)
+		else if constexpr (std::is_convertible_v<T, decltype(self.title_)::value_type>)
 		{	if(!self.title_.has_value())
 				self.title_.emplace(std::forward<T>(v));
 			else if(!self.footer_.has_value())
@@ -99,10 +99,10 @@ namespace vi_tm
 			}
 		}
 		else
-		{	assert(false); // Unknown parameter type.
+		{	static_assert(false); // Unknown parameter type.
 			result = 1 - __LINE__;
 		}
-
+		
 		return result;
 	}
 
@@ -118,10 +118,12 @@ namespace vi_tm
 	template<typename... Args>
 	VI_TM_RESULT global_init(Args&&... args)
 	{	init_t self;
-		for (auto r : { init_aux(self, std::forward<Args>(args))... })
-			if (VI_FAILED(r))
-			{	return r;
-			}
+		if constexpr (sizeof...(Args))
+		{	for (auto r : { init_aux(self, std::forward<Args>(args))... })
+				if (VI_FAILED(r))
+				{	return r;
+				}
+		}
 		return vi_tmGlobalInit
 		(	self.report_flags_ ? *self.report_flags_ : vi_tmReportDefault,
 			self.title_ ? self.title_->c_str() : nullptr,

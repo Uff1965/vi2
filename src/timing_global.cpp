@@ -63,17 +63,23 @@ global_registry_t::~global_registry_t()
 }
 
 global_registry_t::finalizer_t global_registry_t::make_finalizer(
-	std::string title,
+	std::string header,
 	std::string footer,
 	VI_TM_FLAGS flags
 )
-{	return [t = std::move(title), f = std::move(footer), flags](const global_registry_t &registry)
-		{	return
-				(t.empty() || VI_SUCCEEDED(vi_tmReportCb(t.c_str()))) &&
-				(flags & vi_tmDoNotReport || VI_SUCCEEDED(vi_tmRegistryReport(registry.handle(), flags))) &&
-				(f.empty() || VI_SUCCEEDED(vi_tmReportCb(f.c_str()))) ?
-				VI_SUCCESS:
-				VI_FAILURE;
+{	return [h = std::move(header), f = std::move(footer), flags](const global_registry_t &registry)
+		{	if ((flags & vi_tmDoNotReport) == 0)
+			{	if (!h.empty() && VI_FAILED(vi_tmReportCb(h.c_str()))) 
+				{	return VI_FAILURE;
+				}
+				if (VI_FAILED(vi_tmRegistryReport(registry.handle(), flags)))
+				{	return VI_FAILURE;
+				}
+			}
+			if (!f.empty() && VI_FAILED(vi_tmReportCb(f.c_str())))
+			{	return VI_FAILURE;
+			}
+			return VI_SUCCESS;
 		};
 }
 
