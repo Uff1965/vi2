@@ -21,7 +21,7 @@ int register_test(test_func_t fn)
 
 int main()
 {	VI_TM_FUNC;
-	VI_TM_GLOBALINIT("Header:\n", vi_tmSortByName, vi_tmSortAscending, "\nHello, World!\n");
+	VI_TM_GLOBALINIT("Timing report:\n", vi_tmSortByName, vi_tmSortAscending, "Goodbye!\n");
 
 	vi_CurrentThreadAffinityFixate();
 	vi_WarmUp(0, 500);
