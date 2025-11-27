@@ -8,10 +8,7 @@ list(REMOVE_ITEM LUA_CORE "lua/lua.c" "lua/luac.c")
 
 # Build static library liblua.a from core sources
 add_library(lua_core STATIC ${LUA_CORE})
-target_include_directories(lua_core
-INTERFACE
-	${CMAKE_CURRENT_SOURCE_DIR}
-)
+target_include_directories(lua_core INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(lua_core
 PROPERTIES
 	FOLDER "Examples/Lua"

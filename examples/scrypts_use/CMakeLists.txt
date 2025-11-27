@@ -34,6 +34,14 @@ if(VI_TM_ENABLE_LUA)
 	list(APPEND SOURCES lua.cpp)
 endif()
 
+if(VI_TM_ENABLE_QJS)
+	include(${CMAKE_SOURCE_DIR}/cmake/QuickJS-NG.cmake)
+
+	target_link_libraries(${PROJECT_NAME} PRIVATE qjs)
+
+	list(APPEND SOURCES qjs.cpp)
+endif()
+
 target_sources(${PROJECT_NAME} PRIVATE ${SOURCES})
 
 target_compile_definitions(${PROJECT_NAME}

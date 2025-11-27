@@ -209,21 +209,25 @@
 //   - VI_NOEXCEPT  : declare function as non-throwing
 //   - VI_DEFAULT(v): set default argument value (C++ only)
 #ifdef __cplusplus
+#	define VI_STATIC_ASSERT static_assert
 #	define VI_NODISCARD [[nodiscard]]
 #	define VI_NOEXCEPT noexcept
 #	define VI_DEFAULT(v) =(v) // C++ default argument syntax
-#elif defined(_MSC_VER)
-#	define VI_NODISCARD _Check_return_ // #include <sal.h> may be required for full SAL support. In practice, this works without it.
-#	define VI_NOEXCEPT __declspec(nothrow)
-#	define VI_DEFAULT(v)
-#elif defined(__GNUC__) || defined(__clang__)
-#	define VI_NODISCARD __attribute__((warn_unused_result))
-#	define VI_NOEXCEPT __attribute__((nothrow))
-#	define VI_DEFAULT(v)
 #else
-#	define VI_NODISCARD
-#	define VI_NOEXCEPT
-#	define VI_DEFAULT(v)
+#	define VI_STATIC_ASSERT _Static_assert
+#	if defined(_MSC_VER)
+#		define VI_NODISCARD _Check_return_ // #include <sal.h> may be required for full SAL support. In practice, this works without it.
+#		define VI_NOEXCEPT __declspec(nothrow)
+#		define VI_DEFAULT(v)
+#	elif defined(__GNUC__) || defined(__clang__)
+#		define VI_NODISCARD __attribute__((warn_unused_result))
+#		define VI_NOEXCEPT __attribute__((nothrow))
+#		define VI_DEFAULT(v)
+#	else
+#		define VI_NODISCARD
+#		define VI_NOEXCEPT
+#		define VI_DEFAULT(v)
+#	endif
 #endif
 
 #define VI_SUCCESS (0)

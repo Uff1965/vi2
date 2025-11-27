@@ -41,7 +41,13 @@ extern "C" {
 	/// <param name="sig">Number of significant digits to display.</param>
 	/// <param name="dec">Number of decimal places to display.</param>
 	/// <returns>The required buffer size (including null-terminator) for the formatted string.</returns>
-	VI_TM_API VI_TM_SIZE VI_TM_CALL vi_tmF2A(char *buff, VI_TM_SIZE sz, double val, unsigned char sig, unsigned char dec);
+	VI_TM_API VI_TM_SIZE VI_TM_CALL vi_tmF2A(
+		char *buff,
+		VI_TM_SIZE sz,
+		double val,
+		unsigned char sig VI_DEFAULT(2),
+		unsigned char dec VI_DEFAULT(1)
+	);
 
 #ifdef __cplusplus
 } // extern "C" {
