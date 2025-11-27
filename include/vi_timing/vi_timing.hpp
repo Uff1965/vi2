@@ -90,7 +90,7 @@ namespace vi_tm
 		if constexpr (std::is_same_v<std::decay_t<T>, vi_tmReportFlags_e>)
 		{	self.report_flags_.emplace(v | self.report_flags_.value_or(0U));
 		}
-		else if constexpr (std::is_convertible_v<T, decltype(self.title_)::value_type>)
+		else if constexpr (std::is_convertible_v<T, typedef decltype(self.title_)::value_type>)
 		{	if(!self.title_.has_value())
 				self.title_.emplace(std::forward<T>(v));
 			else if(!self.footer_.has_value())
