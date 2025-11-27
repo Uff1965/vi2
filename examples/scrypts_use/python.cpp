@@ -11,7 +11,7 @@ namespace python
 	// Native C++ function exposed to Python
 	// This simulates a callback from Python into C++.
 	PyObject* emb_callback(PyObject*, PyObject* args)
-	{   VI_TM("Py callback");
+	{   VI_TM("0: Py callback");
 		const char* message;
 		if (!PyArg_ParseTuple(args, "s", &message))
 		{	return nullptr; // Argument parsing failed
@@ -28,7 +28,7 @@ namespace python
 
 	// Step 1: Initialize Python interpreter and register module
 	bool init_python()
-	{	VI_TM("Py(1) Initialize");
+	{	VI_TM("1: Py Initialize");
 		if (PyImport_AppendInittab("embedded_cpp", &PyInit_embedded_cpp) == -1)
 		{	return false;
 		}
@@ -38,7 +38,7 @@ namespace python
 
 	// Step 2: Load and run inline Python script
 	bool load_script()
-	{	VI_TM("Py(2) Python run");
+	{	VI_TM("2: Py Python run");
 		static constexpr char py_script[] =
 			"import embedded_cpp\n"
 			"def py_worker():\n"
@@ -53,7 +53,7 @@ namespace python
 	// Step 3: Call Python function
 	bool call_worker()
 	{
-		VI_TM("Py(3) Call");
+		VI_TM("3: Py Call");
 		PyObject* main_module = PyImport_ImportModule("__main__");
 		PyObject* func = PyObject_GetAttrString(main_module, "py_worker");
 
@@ -82,7 +82,7 @@ namespace python
 	// Step 4: Finalize Python interpreter
 	void cleanup_python()
 	{
-		VI_TM("Py(4) Cleanup");
+		VI_TM("4: Py Cleanup");
 		Py_Finalize();
 	}
 

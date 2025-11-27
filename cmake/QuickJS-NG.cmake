@@ -4,6 +4,9 @@ FetchContent_Declare(
   GIT_TAG        v0.11.0
 )
 
+# Build standard library modules as part of the library.
+set(QJS_BUILD_LIBC ON CACHE BOOL "" FORCE)
+
 FetchContent_MakeAvailable(quickjs)
 
 set_target_properties(qjs
@@ -13,8 +16,6 @@ PROPERTIES
 	DEBUG_POSTFIX "_d"
 	FOLDER "3rdparty"
 )
-
-
 
 set_target_properties(qjs_exe
 PROPERTIES
