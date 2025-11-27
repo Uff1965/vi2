@@ -4,32 +4,27 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
-VI_TM(FILE_PATH);
-
 namespace python
 {
 	// Native C++ function exposed to Python
 	// This simulates a callback from Python into C++.
-	PyObject* emb_callback(PyObject*, PyObject* args)
+	PyObject* cpp_callback(PyObject*, PyObject* args)
 	{   VI_TM("0: Py callback");
 		const char* message;
 		if (!PyArg_ParseTuple(args, "s", &message))
 		{	return nullptr; // Argument parsing failed
 		}
-		return PyLong_FromLong(1); // Return a dummy integer (status code)
-	}
-
-	// Module definition for "embedded_cpp"
-	static PyMethodDef EmbMethods[] = { { "callback", emb_callback, METH_VARARGS, "C++ Callback" }, {} };
-	static struct PyModuleDef embmodule = { PyModuleDef_HEAD_INIT, "embedded_cpp", NULL, -1, EmbMethods };
-	static PyObject* PyInit_embedded_cpp(void)
-	{	return PyModule_Create(&embmodule);
+		return PyLong_FromLong(42); // Return a dummy integer
 	}
 
 	// Step 1: Initialize Python interpreter and register module
-	bool init_python()
+	bool init()
 	{	VI_TM("1: Py Initialize");
-		if (PyImport_AppendInittab("embedded_cpp", &PyInit_embedded_cpp) == -1)
+
+		// Module definition for "embedded_cpp"
+		static PyMethodDef EmbMethods[] = { { "callback", cpp_callback, METH_VARARGS, "C++ Callback" }, {} };
+		static struct PyModuleDef embmodule = { PyModuleDef_HEAD_INIT, "embedded_cpp", NULL, -1, EmbMethods };
+		if (PyImport_AppendInittab("embedded_cpp", [] { return PyModule_Create(&embmodule); }) == -1)
 		{	return false;
 		}
 		Py_Initialize();
@@ -43,6 +38,7 @@ namespace python
 			"import embedded_cpp\n"
 			"def py_worker():\n"
 			"\tresult = embedded_cpp.callback('Hello from Python!')\n";
+
 		if (PyRun_SimpleString(py_script) != 0)
 		{	Py_Finalize();
 			return false;
@@ -80,24 +76,23 @@ namespace python
 	}
 
 	// Step 4: Finalize Python interpreter
-	void cleanup_python()
-	{
-		VI_TM("4: Py Cleanup");
+	void cleanup()
+	{	VI_TM("4: Py Cleanup");
 		Py_Finalize();
 	}
 
-	// Main test function
-	// Purpose: measure mandatory time costs of standard steps
-	// when working with an embedded scripting language (Python).
-	void test_python()
-	{
-		VI_TM_FUNC;
-		if (!init_python()) return;
-		if (load_script())
-			call_worker();
-		cleanup_python();
+	// Test entry
+	void test()
+	{	VI_TM_FUNC;
+
+		if (init())
+		{	if (load_script())
+			{	call_worker();
+			}
+			cleanup();
+		}
 	}
 
-	const auto _ = register_test(test_python);
+	const auto _ = register_test(test);
 
 } // namespace python

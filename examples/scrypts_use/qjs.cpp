@@ -8,15 +8,12 @@ extern "C" {
 
 #include <stdio.h>
 
-VI_TM(FILE_PATH);
-
 namespace qjs
 {
 	JSRuntime *rt = nullptr;
-	JSContext *ctx = nullptr;
 
 	// Error logging utilities
-	static void log_exception()
+	static void log_exception(JSContext *ctx)
 	{	JSValue exc = JS_GetException(ctx);
 		if (!JS_IsError(exc))
 		{	const char *msg = JS_ToCString(ctx, exc);
@@ -37,21 +34,21 @@ namespace qjs
 	// Native callback
 	static JSValue cpp_callback(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
 	{	VI_TM("0: QJS callback");
-		const char *message = argc > 0? JS_ToCString(ctx, argv[0]): nullptr;
+		const char *message = (argc > 0) ? JS_ToCString(ctx, argv[0]) : nullptr;
 		JS_FreeCString(ctx, message);
 		return JS_NewInt32(ctx, 42);
 	}
 
 	// Step 1: init
-	bool init_qjs()
+	JSContext* init()
 	{	VI_TM("1: QJS Initialize");
 
 		rt = JS_NewRuntime();
-		ctx = JS_NewContext(rt);
+		JSContext *ctx = JS_NewContext(rt);
 
 		if (!rt || !ctx)
 		{	std::fprintf(stderr, "QuickJS: failed to initialize runtime\n");
-			return false;
+			return nullptr;
 		}
 
 		// Add standard library functions (e.g., console.log)
@@ -62,23 +59,19 @@ namespace qjs
 		JS_SetPropertyStr(ctx, global, "cpp_callback", cfunc);
 
 		JS_FreeValue(ctx, global);
-		return true;
+		return ctx;
 	}
 
 	// Step 2: load script
-	bool load_script()
+	bool load_script(JSContext *ctx)
 	{	VI_TM("2: QJS Load script");
 
-		static constexpr char js_script[] = R"(
-			function js_worker() {
-				let r = cpp_callback("Hello from QJS!");
-			}
-		)";
+		static constexpr char js_script[] = R"(function js_worker() {let r = cpp_callback("Hello from QJS!");})";
 
 		JSValue eval_res = JS_Eval(ctx, js_script, strlen(js_script), "<input>", JS_EVAL_TYPE_GLOBAL);
 		if (JS_IsException(eval_res))
 		{	std::fprintf(stderr, "QuickJS: script load error\n");
-			log_exception();
+			log_exception(ctx);
 			JS_FreeValue(ctx, eval_res);
 			return false;
 		}
@@ -90,7 +83,7 @@ namespace qjs
 	// ---------------------------------------------------------
 	// Step 3: call worker
 	// ---------------------------------------------------------
-	bool call_worker()
+	bool call_worker(JSContext *ctx)
 	{	VI_TM("3: QJS Call");
 
 		JSValue global = JS_GetGlobalObject(ctx);
@@ -105,7 +98,7 @@ namespace qjs
 		JSValue ret = JS_Call(ctx, func, global, 0, nullptr);
 		if (JS_IsException(ret))
 		{	std::fprintf(stderr, "QuickJS: exception in js_worker()\n");
-			log_exception();
+			log_exception(ctx);
 		}
 
 		JS_FreeValue(ctx, ret);
@@ -116,7 +109,7 @@ namespace qjs
 	}
 
 	// Step 4: cleanup
-	void cleanup_qjs()
+	void cleanup(JSContext *ctx)
 	{	VI_TM("4: QJS Cleanup");
 
 		JS_FreeContext(ctx);
@@ -126,15 +119,18 @@ namespace qjs
 	}
 
 	// Test entry
-	void test_qjs()
+	void test()
 	{	VI_TM_FUNC;
 
-		if (!init_qjs()) return;
-		if (load_script()) call_worker();
+		if (auto ctx = init())
+		{	if (load_script(ctx))
+			{	call_worker(ctx);
+			}
 
-		cleanup_qjs();
+			cleanup(ctx);
+		}
 	}
 
-	const auto _ = register_test(test_qjs);
+	const auto _ = register_test(test);
 
 } // namespace qjs

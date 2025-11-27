@@ -7,8 +7,6 @@ extern "C" {
 	#include <lua/lauxlib.h>
 }
 
-VI_TM(FILE_PATH);
-
 namespace lua
 {
 	// C++ function exposed to Lua
@@ -21,7 +19,7 @@ namespace lua
 	}
 
 	// Step 1: Initialize Lua state and open standard libraries
-	lua_State* init_lua()
+	lua_State* init()
 	{   VI_TM("1: Lua Initialize");
 		lua_State *L = luaL_newstate();   // Create new Lua interpreter state
 		luaL_openlibs(L);                 // Load all standard Lua libraries
@@ -65,25 +63,24 @@ namespace lua
 	}
 
 	// Step 4: Cleanup Lua state
-	void cleanup_lua(lua_State *L)
+	void cleanup(lua_State *L)
 	{	VI_TM("4: Lua Cleanup");
 		lua_close(L);   // Free all resources
 	}
 
-	// Main test function
-	// Purpose: measure mandatory time costs of standard steps
-	// when working with an embedded scripting language (Lua).
-	void test_lua()
+	// Test entry
+	void test()
 	{	VI_TM_FUNC;
-		lua_State *L = init_lua();
-		if (!L) return;
+		
+		if (auto L = init())
+		{	if (load_script(L))
+			{	call_worker(L);
+			}
 
-		if (load_script(L))
-			call_worker(L);
-
-		cleanup_lua(L);
+			cleanup(L);
+		}
 	}
 
-	const auto _ = register_test(test_lua);
+	const auto _ = register_test(test);
 
 } // namespace lua
