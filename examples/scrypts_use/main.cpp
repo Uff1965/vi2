@@ -38,7 +38,7 @@ int main()
 				func();
 			}
 		}
-		std::fprintf(stdout, "First execution\n");
+		std::fprintf(stdout, "First execution:\n");
 		vi_tmRegistryReport(h_register, vi_tmSortByName | vi_tmSortAscending);
 		std::fprintf(stdout, "\n");
 		vi_tmRegistryClose(h_register);
