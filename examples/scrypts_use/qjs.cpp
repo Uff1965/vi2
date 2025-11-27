@@ -6,7 +6,7 @@ extern "C" {
 #include <quickjs-libc.h>
 }
 
-#include <stdio.h>
+#include <cstdio>
 
 namespace qjs
 {
@@ -33,7 +33,7 @@ namespace qjs
 
 	// Native callback
 	static JSValue cpp_callback(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
-	{	VI_TM("0: QJS callback");
+	{	TM("0: QJS callback");
 		const char *message = (argc > 0) ? JS_ToCString(ctx, argv[0]) : nullptr;
 		JS_FreeCString(ctx, message);
 		return JS_NewInt32(ctx, 42);
@@ -41,7 +41,7 @@ namespace qjs
 
 	// Step 1: init
 	JSContext* init()
-	{	VI_TM("1: QJS Initialize");
+	{	TM("1: QJS Initialize");
 
 		rt = JS_NewRuntime();
 		JSContext *ctx = JS_NewContext(rt);
@@ -64,11 +64,11 @@ namespace qjs
 
 	// Step 2: load script
 	bool load_script(JSContext *ctx)
-	{	VI_TM("2: QJS Load script");
+	{	TM("2: QJS Load script");
 
-		static constexpr char js_script[] = R"(function js_worker() {let r = cpp_callback("Hello from QJS!");})";
+		static constexpr char script[] = R"(function js_worker() {let r = cpp_callback("Hello from QJS!");})";
 
-		JSValue eval_res = JS_Eval(ctx, js_script, strlen(js_script), "<input>", JS_EVAL_TYPE_GLOBAL);
+		JSValue eval_res = JS_Eval(ctx, script, strlen(script), "<input>", JS_EVAL_TYPE_GLOBAL);
 		if (JS_IsException(eval_res))
 		{	std::fprintf(stderr, "QuickJS: script load error\n");
 			log_exception(ctx);
@@ -84,9 +84,7 @@ namespace qjs
 	// Step 3: call worker
 	// ---------------------------------------------------------
 	bool call_worker(JSContext *ctx)
-	{	VI_TM("3: QJS Call");
-
-		JSValue global = JS_GetGlobalObject(ctx);
+	{	JSValue global = JS_GetGlobalObject(ctx);
 		JSValue func = JS_GetPropertyStr(ctx, global, "js_worker");
 		if (!JS_IsFunction(ctx, func))
 		{	std::fprintf(stderr, "QuickJS: function js_worker not found\n");
@@ -108,9 +106,27 @@ namespace qjs
 		return true;
 	}
 
+	bool call(JSContext *ctx)
+	{
+		{	TM("3.1: QJS First Call");
+			if(!call_worker(ctx))
+			{	return false;
+			}
+		}
+
+		for(int n = 0; n < 100; ++n)
+		{	TM("3.2: QJS Other Call");
+			if(!call_worker(ctx))
+			{	return false;
+			}
+		}
+
+		return true;
+	}
+
 	// Step 4: cleanup
 	void cleanup(JSContext *ctx)
-	{	VI_TM("4: QJS Cleanup");
+	{	TM("4: QJS Cleanup");
 
 		JS_FreeContext(ctx);
 		ctx = nullptr;
@@ -120,11 +136,11 @@ namespace qjs
 
 	// Test entry
 	void test()
-	{	VI_TM_FUNC;
+	{	TM("qjs test");
 
 		if (auto ctx = init())
 		{	if (load_script(ctx))
-			{	call_worker(ctx);
+			{	call(ctx);
 			}
 
 			cleanup(ctx);
