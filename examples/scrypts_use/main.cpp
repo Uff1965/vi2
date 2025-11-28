@@ -58,23 +58,33 @@ int main()
 	}
 #endif
 
+	auto erase_last = [](int n)
+		{	for (int i = 0; i < n; i++)
+			{	printf("\b \b"); // шаг назад, пробел, снова назад
+			}
+		};
+
+	std::fprintf(stdout, "Other executions:\nTesting: ");
 	for (int n = 0; n < 100; ++n)
 	{	auto tm = vi_tm::scoped_probe_t::make_paused(vi_tmRegistryGetMeas(h_register, "***ALL TESTS***"));
+		auto len = std::fprintf(stdout, "%02d/100 ... ", n + 1);
 		for (const auto &[name, func] : instance())
 		{
 #ifndef VI_TM_DISABLE
 			vi_ThreadYield();
 #endif
+			std::fflush(stdout);
 			{	auto resume = tm.scoped_resume();
 				if (!func())
-				{
-					assert(false);
+				{	assert(false);
 					std::fprintf(stderr, "Test %s failed\n", name.c_str());
 					return 1;
 				}
 			}
 		}
+		erase_last(len);
 	}
+	std::fprintf(stdout, "All tests done.\n\n");
 
 #ifndef VI_TM_DISABLE
 	vi_CurrentThreadAffinityRestore();
