@@ -33,7 +33,8 @@ int main()
 
 	{	std::fprintf(stdout, "First execution:\n");
 		h_register = vi_tmRegistryCreate();
-		{	auto tm = vi_tm::scoped_probe_t::make_paused(vi_tmRegistryGetMeas(h_register, "***ALL TESTS***"));
+		{	auto const h_meas = vi_tmRegistryGetMeas(h_register, "***ALL TESTS***");
+			auto tm = vi_tm::scoped_probe_t::make_paused(h_meas);
 			for (const auto &[name, func] : instance())
 			{
 #ifndef VI_TM_DISABLE
@@ -66,7 +67,8 @@ int main()
 
 	std::fprintf(stdout, "Other executions:\nTesting: ");
 	for (int n = 0; n < 100; ++n)
-	{	auto tm = vi_tm::scoped_probe_t::make_paused(vi_tmRegistryGetMeas(h_register, "***ALL TESTS***"));
+	{	auto const h_meas = vi_tmRegistryGetMeas(h_register, "***ALL TESTS***");
+		auto tm = vi_tm::scoped_probe_t::make_paused(h_meas);
 		auto len = std::fprintf(stdout, "%02d/100 ... ", n + 1);
 		for (const auto &[name, func] : instance())
 		{
