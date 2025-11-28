@@ -3,6 +3,8 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 
+#include <cstdio>
+
 namespace python
 {
 	// Native C++ function exposed to Python
@@ -11,9 +13,10 @@ namespace python
 	{   TM("0: Py callback");
 		const char* message;
 		if (!PyArg_ParseTuple(args, "s", &message))
-		{	return nullptr; // Argument parsing failed
+		{	assert(false);
+			return nullptr; // Argument parsing failed
 		}
-		return PyLong_FromLong(42); // Return a dummy integer
+		return PyLong_FromLong(42); // Dummy return value for benchmarking
 	}
 
 	// Step 1: Initialize Python interpreter and register module
@@ -22,9 +25,10 @@ namespace python
 
 		// Module definition for "embedded_cpp"
 		static PyMethodDef EmbMethods[] = { { "callback", cpp_callback, METH_VARARGS, "C++ Callback" }, {} };
-		static struct PyModuleDef embmodule = { PyModuleDef_HEAD_INIT, "embedded_cpp", NULL, -1, EmbMethods };
+		static PyModuleDef embmodule = { PyModuleDef_HEAD_INIT, "embedded_cpp", nullptr, -1, EmbMethods };
 		if (PyImport_AppendInittab("embedded_cpp", [] { return PyModule_Create(&embmodule); }) == -1)
-		{	return false;
+		{	assert(false);
+			return false;
 		}
 		Py_Initialize();
 		return true;
@@ -38,77 +42,62 @@ namespace python
 			"def py_worker():\n"
 			"\tresult = embedded_cpp.callback('Hello from Python!')\n";
 
-		//return PyRun_SimpleString(script) == 0;
-
-		{	bool result = false;
-			PyObject *code_obj = nullptr;
-			{	TM("2.1: Py compile");
-				code_obj = Py_CompileString(script, "<string>", Py_file_input);
-				if (!code_obj)
-				{	PyErr_Print();
-				}
-			}
-			if (code_obj)
-			{	TM("2.2: Py eval");
-				if (PyObject *main_module = PyImport_AddModule("__main__"))
-				{	if (PyObject *globals = PyModule_GetDict(main_module))
-					{	if (PyObject *evalcode = PyEval_EvalCode(code_obj, globals, globals))
-						{	result = true;
-							Py_DECREF(evalcode);
-						}
-						else
-						{	PyErr_Print();
-						}
-					}
-					else
-					{	PyErr_Print();
-					}
-				}
-			}
-			Py_DECREF(code_obj);
-			return result;
-		}
+		return PyRun_SimpleString(script) == 0;
 	}
 
 	// Step 3: Call Python function
 	bool call_worker()
-	{	PyObject* main_module = PyImport_ImportModule("__main__");
-		PyObject* func = PyObject_GetAttrString(main_module, "py_worker");
+	{	PyObject *main_module = PyImport_ImportModule("__main__");
+		if (!main_module)
+		{	assert(false);
+			PyErr_Print();
+			return false;
+		}
 
-		if (func && PyCallable_Check(func))
-		{
-			PyObject* result = PyObject_CallObject(func, NULL);
-			if (result != NULL)
-			{
-				Py_DECREF(result);
+		PyObject *func = PyObject_GetAttrString(main_module, "py_worker");
+		if (!func)
+		{	assert(false);
+			PyErr_Print();
+			Py_DECREF(main_module);
+			return false;
+		}
+
+		bool result = false;
+		if (PyCallable_Check(func))
+		{	if (PyObject *res = PyObject_CallObject(func, nullptr))
+			{	Py_DECREF(res);
+				result = true;
 			}
 			else
-			{
+			{	assert(false);
 				PyErr_Print();
 			}
 		}
-		else if (PyErr_Occurred())
-		{
-			PyErr_Print();
+		else
+		{	assert(false);
+			fprintf(stderr, "Python error: py_worker is not callable\n");
 		}
 
-		Py_XDECREF(func);
-		Py_XDECREF(main_module);
-		return true;
+		Py_DECREF(func);
+		Py_DECREF(main_module);
+
+		return result;
 	}
 
 	bool call()
 	{
 		{	TM("3.1: Py First Call");
 			if(!call_worker())
-			{	return false;
+			{	assert(false);
+				return false;
 			}
 		}
 
 		for(int n = 0; n < 100; ++n)
 		{	TM("3.2: Py Other Call");
 			if(!call_worker())
-			{	return false;
+			{	assert(false);
+				return false;
 			}
 		}
 
@@ -118,7 +107,10 @@ namespace python
 	// Step 4: Finalize Python interpreter
 	void cleanup()
 	{	TM("4: Py Cleanup");
-		Py_Finalize();
+		if (int res = Py_FinalizeEx())
+		{	assert(false);
+			fprintf(stderr, "Python finalization failed (code %d)\n", res);
+		}
 	}
 
 	// Test entry
