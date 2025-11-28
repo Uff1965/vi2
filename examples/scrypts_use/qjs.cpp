@@ -5,14 +5,16 @@ extern "C" {
 #include <quickjs-libc.h>
 }
 
+#include <cassert>
 #include <cstdio>
 
 namespace qjs
 {
+	constexpr int VAL = 42;
 	JSRuntime *rt = nullptr;
 
 	// Error logging utilities
-	static void log_exception(JSContext *ctx)
+	void log_exception(JSContext *ctx)
 	{	JSValue exc = JS_GetException(ctx);
 		if (!JS_IsError(exc))
 		{	const char *msg = JS_ToCString(ctx, exc);
@@ -21,7 +23,7 @@ namespace qjs
 		}
 		else
 		{	JSValue stack = JS_GetPropertyStr(ctx, exc, "stack");
-			if (const char *stack_str = JS_ToCString(ctx, stack); stack_str)
+			if (const char *stack_str = JS_ToCString(ctx, stack))
 			{	std::fprintf(stderr, "QuickJS error:\n%s\n", stack_str);
 				JS_FreeCString(ctx, stack_str);
 			}
@@ -31,11 +33,15 @@ namespace qjs
 	}
 
 	// Native callback
-	static JSValue cpp_callback(JSContext *ctx, JSValueConst /*this_val*/, int argc, JSValueConst *argv)
+	JSValue cpp_callback(JSContext *ctx, JSValueConst /*this_val*/, int argc, JSValueConst *argv)
 	{	TM("0: QJS callback");
 		const char *message = (argc > 0) ? JS_ToCString(ctx, argv[0]) : nullptr;
+		if (!message || strcmp(message, "Hello, World!") != 0)
+		{	assert(false);
+			printf("QuickJS callback: unexpected string '%s'\n", message? message: "<Nul>");
+		}
 		JS_FreeCString(ctx, message);
-		return JS_NewInt32(ctx, 42);
+		return JS_NewInt32(ctx, VAL);
 	}
 
 	// Step 1: init
@@ -43,10 +49,18 @@ namespace qjs
 	{	TM("1: QJS Initialize");
 
 		rt = JS_NewRuntime();
-		JSContext *ctx = JS_NewContext(rt);
+		if (!rt)
+		{	assert(false);
+			std::fprintf(stderr, "QuickJS: failed to create runtime\n");
+			return nullptr;
+		}
 
-		if (!rt || !ctx)
-		{	std::fprintf(stderr, "QuickJS: failed to initialize runtime\n");
+		JSContext *ctx = JS_NewContext(rt);
+		if (!ctx)
+		{	assert(false);
+			std::fprintf(stderr, "QuickJS: failed to create context\n");
+			JS_FreeRuntime(rt);
+			rt = nullptr;
 			return nullptr;
 		}
 
@@ -65,7 +79,7 @@ namespace qjs
 	bool load_script(JSContext *ctx)
 	{	TM("2: QJS Load script");
 
-		static constexpr char script[] = R"(function js_worker() {let r = cpp_callback("Hello from QJS!");})";
+		static constexpr char script[] = R"(function js_worker() {return cpp_callback("Hello, World!");})";
 
 		JSValue eval_res = JS_Eval(ctx, script, strlen(script), "<input>", JS_EVAL_TYPE_GLOBAL);
 		if (JS_IsException(eval_res))
@@ -94,8 +108,18 @@ namespace qjs
 
 		JSValue ret = JS_Call(ctx, func, global, 0, nullptr);
 		if (JS_IsException(ret))
-		{	std::fprintf(stderr, "QuickJS: exception in js_worker()\n");
+		{	assert(false);
+			std::fprintf(stderr, "QuickJS: exception in js_worker()\n");
 			log_exception(ctx);
+		}
+		else
+		{	int32_t val;
+			if (JS_ToInt32(ctx, &val, ret) == 0)
+			{	assert(val == VAL);
+			}
+			else
+			{	std::fprintf(stderr, "QuickJS: return value is not int\n");
+			}
 		}
 
 		JS_FreeValue(ctx, ret);
@@ -127,25 +151,31 @@ namespace qjs
 	void cleanup(JSContext *ctx)
 	{	TM("4: QJS Cleanup");
 
-		JS_FreeContext(ctx);
-		ctx = nullptr;
-		JS_FreeRuntime(rt);
-		rt = nullptr;
+		if (ctx)
+		{	JS_FreeContext(ctx);
+		}
+		if (rt)
+		{	JS_FreeRuntime(rt);
+			rt = nullptr;
+		}
 	}
 
 	// Test entry
-	void test()
+	bool test()
 	{	TM("qjs test");
 
+		bool result = false;
 		if (auto ctx = init())
 		{	if (load_script(ctx))
-			{	call(ctx);
+			{	result = call(ctx);
 			}
 
 			cleanup(ctx);
 		}
+
+		return result;
 	}
 
-	const auto _ = register_test(test);
+	const auto _ = register_test("QuickJS", test);
 
 } // namespace qjs

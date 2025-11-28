@@ -7,6 +7,8 @@
 
 namespace python
 {
+	constexpr int VAL = 42;
+
 	// Native C++ function exposed to Python
 	// This simulates a callback from Python into C++.
 	PyObject* cpp_callback(PyObject*, PyObject* args)
@@ -16,7 +18,11 @@ namespace python
 		{	assert(false);
 			return nullptr; // Argument parsing failed
 		}
-		return PyLong_FromLong(42); // Dummy return value for benchmarking
+		if (strcmp(message, "Hello, World!") != 0)
+		{	assert(false);
+			printf("Python callback: unexpected string '%s'\n", message);
+		}
+		return PyLong_FromLong(VAL); // Dummy return value for benchmarking
 	}
 
 	// Step 1: Initialize Python interpreter and register module
@@ -40,7 +46,8 @@ namespace python
 		static constexpr char script[] =
 			"import embedded_cpp\n"
 			"def py_worker():\n"
-			"\tresult = embedded_cpp.callback('Hello from Python!')\n";
+			"\tresult = embedded_cpp.callback('Hello, World!')\n"
+			"\treturn result\n";
 
 		return PyRun_SimpleString(script) == 0;
 	}
@@ -66,7 +73,15 @@ namespace python
 		if (PyCallable_Check(func))
 		{	if (PyObject *res = PyObject_CallObject(func, nullptr))
 			{	Py_DECREF(res);
-				result = true;
+				const long val = PyLong_AsLong(res);
+				if (val == -1 && PyErr_Occurred())
+				{	assert(false);
+					PyErr_Print();
+				}
+				else
+				{	assert(val == VAL);
+					result = true;
+				}
 			}
 			else
 			{	assert(false);
@@ -114,17 +129,19 @@ namespace python
 	}
 
 	// Test entry
-	void test()
+	bool test()
 	{	TM("python test");
 
+		bool result = false;
 		if (init())
 		{	if (load_script())
-			{	call();
+			{	result = call();
 			}
 			cleanup();
 		}
+		return result;
 	}
 
-	const auto _ = register_test(test);
+	const auto _ = register_test("Python", test);
 
 } // namespace python

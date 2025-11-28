@@ -1,7 +1,8 @@
 #include "header.h"
 
-#include <vector>
 #include <cstdio>
+#include <map>
+#include <string>
 
 VI_TM(FILE_PATH);
 
@@ -9,14 +10,14 @@ VI_TM_HREG h_register = VI_TM_HGLOBAL;
 
 namespace
 {
-	std::vector<test_func_t>& instance()
-	{	static std::vector<test_func_t> instance;
+	std::map<std::string, test_func_t>& instance()
+	{	static std::map<std::string, test_func_t> instance;
 		return instance;
 	}
 }
 
-int register_test(test_func_t fn)
-{	instance().emplace_back(fn);
+int register_test(const char* name, test_func_t fn)
+{	instance().try_emplace(name, fn);
 	return 0;
 }
 
@@ -30,14 +31,26 @@ int main()
 	vi_CurrentThreadAffinityFixate();
 	vi_WarmUp(1, 500);
 
-	{	h_register = vi_tmRegistryCreate();
-		{	TM("***ALL TESTS***");
-			for (const auto &func : instance())
-			{	vi_ThreadYield();
-				func();
+	{	std::fprintf(stdout, "First execution:\n");
+		h_register = vi_tmRegistryCreate();
+		{	auto tm = vi_tm::scoped_probe_t::make_paused(vi_tmRegistryGetMeas(h_register, "***ALL TESTS***"));
+			for (const auto &[name, func] : instance())
+			{
+#ifndef VI_TM_DISABLE
+				vi_ThreadYield();
+#endif
+				std::fprintf(stdout, "Test: \'%s\' ...", name.c_str());
+				{	auto resume = tm.scoped_resume();
+					if (!func())
+					{
+						assert(false);
+						std::fprintf(stderr, "Test %s failed\n", name.c_str());
+						return 1;
+					}
+				}
+				std::fprintf(stdout, "done\n");
 			}
 		}
-		std::fprintf(stdout, "First execution:\n");
 		vi_tmRegistryReport(h_register, vi_tmSortByName | vi_tmSortAscending);
 		std::fprintf(stdout, "\n");
 		vi_tmRegistryClose(h_register);
@@ -46,13 +59,20 @@ int main()
 #endif
 
 	for (int n = 0; n < 100; ++n)
-	{	VI_TM("***ALL TESTS***");
-		for (const auto &func : instance())
+	{	auto tm = vi_tm::scoped_probe_t::make_paused(vi_tmRegistryGetMeas(h_register, "***ALL TESTS***"));
+		for (const auto &[name, func] : instance())
 		{
 #ifndef VI_TM_DISABLE
 			vi_ThreadYield();
 #endif
-			func();
+			{	auto resume = tm.scoped_resume();
+				if (!func())
+				{
+					assert(false);
+					std::fprintf(stderr, "Test %s failed\n", name.c_str());
+					return 1;
+				}
+			}
 		}
 	}
 
