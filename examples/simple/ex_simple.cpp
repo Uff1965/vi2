@@ -1,4 +1,4 @@
-#include <vi_timing/vi_timing.hpp>
+#include <vi_timing/vi_timing_proxy.h>
 
 #include <string>
 

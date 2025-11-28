@@ -28,14 +28,26 @@
 #
 #	if !defined(__has_include)
 #		error "Compiler does not support __has_include. This proxy header requires __has_include support."
-#	elif !defined(VI_TM_DISABLE) && !__has_include(<vi_timing/vi_timing.hpp>)
+#	elif !defined(VI_TM_DISABLE) && !__has_include(<vi_timing/vi_timing.h>)
 #		define VI_TM_DISABLE // Timing functions are disabled because the header 'vi_timing.h' is not available.
 #	endif
 #
 #	ifndef VI_TM_DISABLE
-#		include <vi_timing/vi_timing.hpp>
+#		include <vi_timing/vi_timing.h>
 #	else
+#		include <stdint.h>
+		typedef int32_t VI_TM_RESULT;
+		typedef uint32_t VI_TM_FLAGS;
+		typedef double VI_TM_FP;
+		typedef uintptr_t VI_TM_SIZE;
+		typedef uint64_t VI_TM_TICK;
+		typedef VI_TM_TICK VI_TM_TDIFF;
+		typedef void* VI_TM_HMEAS;
+		typedef void* VI_TM_HREG;
+#		define VI_TM_HGLOBAL ((VI_TM_HREG)-1)
 #		// Auxiliary macros for generating a unique identifier.
+#		define VI_STR_AUX(x) #x
+#		define VI_STRINGIZE(x) VI_STR_AUX(x)
 #		define VI_STR_CONCAT_AUX( a, b ) a##b
 #		define VI_STR_CONCAT( a, b ) VI_STR_CONCAT_AUX( a, b )
 #
@@ -45,20 +57,22 @@
 #			define VI_UNIC_ID( prefix ) VI_STR_CONCAT(prefix, __LINE__)
 #		endif
 #
-#		// Fallback macros for timing functions
-#		define VI_TM_H(h, ...) const int VI_UNIC_ID(vi_tm__) = 0
-#		define VI_TM_SH(h, ...) const int VI_UNIC_ID(vi_tm__) = 0
-#		define VI_TM_FUNC_H(h) const int VI_UNIC_ID(vi_tm__) = 0
-#		define VI_TM_REPORT_H(h, ...) 0
-#		define VI_TM_RESET_H(h, ...) (void)0
-#		// Fallback macros for global registry timing functions
-#		define VI_TM(...) VI_TM_H(0, __VA_ARGS__)
-#		define VI_TM_S(...) VI_TM_SH(0, __VA_ARGS__)
-#		define VI_TM_FUNC VI_TM_FUNC_H(0)
-#		define VI_TM_REPORT(...) VI_TM_REPORT_H(0, __VA_ARGS__)
-#		define VI_TM_RESET(...) VI_TM_RESET_H(0, __VA_ARGS__)
-#		// Fallback macro for full version string and global init
+#		ifdef __cplusplus
+#			// Fallback macros for timing functions
+#			define VI_TM_H(...)
+#			define VI_TM_SH(...)
+#			define VI_TM_FUNC_H(h)
+#			define VI_TM_REPORT_H(...) 0
+#			define VI_TM_RESET_H(...)
+#			// Fallback macros for global registry timing functions
+#			define VI_TM(...) VI_TM_H(0, __VA_ARGS__)
+#			define VI_TM_S(...) VI_TM_SH(0, __VA_ARGS__)
+#			define VI_TM_FUNC VI_TM_FUNC_H(0)
+#			define VI_TM_REPORT(...) VI_TM_REPORT_H(0, __VA_ARGS__)
+#			define VI_TM_RESET(...) VI_TM_RESET_H(0, __VA_ARGS__)
+#			// Fallback macro for full version string and global init
+#			define VI_TM_GLOBALINIT(...) 0
+#		endif // #ifdef __cplusplus
 #		define VI_TM_FULLVERSION ""
-#		define VI_TM_GLOBALINIT(...) 0
-#	endif
+#	endif // #ifndef VI_TM_DISABLE
 #endif // #ifndef VI_TIMING_PROXY_HPP

@@ -217,7 +217,7 @@
 #	define VI_STATIC_ASSERT _Static_assert
 #	if defined(_MSC_VER)
 #		define VI_NODISCARD _Check_return_ // #include <sal.h> may be required for full SAL support. In practice, this works without it.
-#		define VI_NOEXCEPT __declspec(nothrow)
+#		define VI_NOEXCEPT //__declspec(nothrow)
 #		define VI_DEFAULT(v)
 #	elif defined(__GNUC__) || defined(__clang__)
 #		define VI_NODISCARD __attribute__((warn_unused_result))
@@ -367,7 +367,7 @@ VI_NODISCARD VI_TM_API VI_TM_TICK VI_TM_CALL vi_tmGetTicks(void) VI_NOEXCEPT;
 /// Default: "Timing report:\n".
 /// </param>
 /// <returns>
-/// Result code of the initialization (VI_TM_RESULT).
+/// Returns VI_SUCCESS (0) on success; otherwise, returns a negative error code.
 /// </returns>
 VI_TM_API VI_TM_RESULT VI_TM_CALL vi_tmGlobalInit
 (	VI_TM_FLAGS report_flags VI_DEFAULT(vi_tmReportDefault),

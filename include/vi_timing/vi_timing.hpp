@@ -45,10 +45,10 @@
 
 #if defined(VI_TM_DISABLE) || !defined(__cplusplus)
 #	// Fallback macros for timing functions
-#	define VI_TM_H(hreg, ...) const int VI_UNIC_ID(vi_tm__) = 0
-#	define VI_TM_SH(hreg, ...) const int VI_UNIC_ID(vi_tm__) = 0
-#	define VI_TM_FUNC_H(hreg) const int VI_UNIC_ID(vi_tm__) = 0
-#	define VI_TM_REPORT_H(hreg, ...) 0
+#	define VI_TM_H(h, ...) [[maybe_unused]] const int VI_UNIC_ID(vi_tm__) = ((void)0, 0)
+#	define VI_TM_SH(h, ...) VI_TM_H(h, __VA_ARGS__)
+#	define VI_TM_FUNC_H(h) VI_TM_SH(h, "")
+#	fine VI_TM_REPORT_H(hreg, ...) 0
 #	define VI_TM_RESET_H(hreg, ...) (void)0
 #	// Fallback macros for global registry timing functions
 #	define VI_TM(...) VI_TM_H(0, __VA_ARGS__)

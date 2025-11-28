@@ -1,7 +1,5 @@
 #include "header.h"
 
-#include <vi_timing/vi_timing.h>
-
 #include <vector>
 #include <cstdio>
 
@@ -28,6 +26,7 @@ int main()
 
 	std::fprintf(stdout, "Hellow, World!\n\n");
 
+#ifndef VI_TM_DISABLE
 	vi_CurrentThreadAffinityFixate();
 	vi_WarmUp(1, 500);
 
@@ -44,15 +43,21 @@ int main()
 		vi_tmRegistryClose(h_register);
 		h_register = VI_TM_HGLOBAL;
 	}
+#endif
 
 	for (int n = 0; n < 100; ++n)
 	{	VI_TM("***ALL TESTS***");
 		for (const auto &func : instance())
-		{	vi_ThreadYield();
+		{
+#ifndef VI_TM_DISABLE
+			vi_ThreadYield();
+#endif
 			func();
 		}
 	}
 
+#ifndef VI_TM_DISABLE
 	vi_CurrentThreadAffinityRestore();
+#endif
 	return 0;
 }

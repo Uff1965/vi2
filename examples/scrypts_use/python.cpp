@@ -1,5 +1,4 @@
 #include "header.h"
-#include <vi_timing/vi_timing.h>
 
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>

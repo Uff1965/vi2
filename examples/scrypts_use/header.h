@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vi_timing/vi_timing.h>
+#include <vi_timing/vi_timing_proxy.h>
 #include <string>
 
 #define FILE_PATH (__FILE__ + sizeof(VI_TM_ROOT_DIR))

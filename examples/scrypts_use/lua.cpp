@@ -1,5 +1,4 @@
 #include "header.h"
-#include <vi_timing/vi_timing.h>
 
 extern "C" {
 	#include <lua/lua.h>

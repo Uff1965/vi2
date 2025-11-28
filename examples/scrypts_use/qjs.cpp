@@ -1,5 +1,4 @@
 #include "header.h"
-#include <vi_timing/vi_timing.h>
 
 extern "C" {
 #include <quickjs.h>
@@ -32,7 +31,7 @@ namespace qjs
 	}
 
 	// Native callback
-	static JSValue cpp_callback(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv)
+	static JSValue cpp_callback(JSContext *ctx, JSValueConst /*this_val*/, int argc, JSValueConst *argv)
 	{	TM("0: QJS callback");
 		const char *message = (argc > 0) ? JS_ToCString(ctx, argv[0]) : nullptr;
 		JS_FreeCString(ctx, message);

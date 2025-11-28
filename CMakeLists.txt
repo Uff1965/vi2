@@ -22,7 +22,7 @@ if(NOT VI_TM_STAT_USE_RMSE)
 endif()
 
 if(NOT DEFINED VI_TM_OUTPUT_PATH)
-    set(VI_TM_OUTPUT_PATH "_bin" CACHE PATH "Path to result files")
+    set(VI_TM_OUTPUT_PATH "lib" CACHE PATH "Path to result files")
 endif()
 
 set(CMAKE_CONFIGURATION_TYPES "Release;Debug" CACHE STRING "Limited configs" FORCE)
