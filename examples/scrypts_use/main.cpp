@@ -27,7 +27,6 @@ int main()
 
 	std::fprintf(stdout, "Hellow, World!\n\n");
 
-#ifndef VI_TM_DISABLE
 	vi_CurrentThreadAffinityFixate();
 	vi_WarmUp(1, 500);
 
@@ -36,10 +35,7 @@ int main()
 		{	auto const h_meas = vi_tmRegistryGetMeas(h_register, "***ALL TESTS***");
 			auto tm = vi_tm::scoped_probe_t::make_paused(h_meas);
 			for (const auto &[name, func] : instance())
-			{
-#ifndef VI_TM_DISABLE
-				vi_ThreadYield();
-#endif
+			{	vi_ThreadYield();
 				std::fprintf(stdout, "Test: \'%s\' ...", name.c_str());
 				{	auto resume = tm.scoped_resume();
 					if (!func())
@@ -57,13 +53,6 @@ int main()
 		vi_tmRegistryClose(h_register);
 		h_register = VI_TM_HGLOBAL;
 	}
-#endif
-
-	auto erase_last = [](int n)
-		{	for (int i = 0; i < n; i++)
-			{	printf("\b \b"); // шаг назад, пробел, снова назад
-			}
-		};
 
 	std::fprintf(stdout, "Other executions:\nTesting: ");
 	for (int n = 0; n < 100; ++n)
@@ -72,9 +61,7 @@ int main()
 		auto len = std::fprintf(stdout, "%02d/100 ... ", n + 1);
 		for (const auto &[name, func] : instance())
 		{
-#ifndef VI_TM_DISABLE
 			vi_ThreadYield();
-#endif
 			std::fflush(stdout);
 			{	auto resume = tm.scoped_resume();
 				if (!func())
@@ -84,12 +71,12 @@ int main()
 				}
 			}
 		}
-		erase_last(len);
+		while (len--)
+		{	fputs("\b \b", stdout);
+		}
 	}
 	std::fprintf(stdout, "All tests done.\n\n");
 
-#ifndef VI_TM_DISABLE
 	vi_CurrentThreadAffinityRestore();
-#endif
 	return 0;
 }
