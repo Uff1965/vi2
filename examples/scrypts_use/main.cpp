@@ -23,12 +23,17 @@ int register_test(const char* name, test_func_t fn)
 
 int main()
 {	VI_TM_FUNC;
-	VI_TM_GLOBALINIT("Timing report:\n", vi_tmSortByName, vi_tmSortAscending, "Goodbye!\n");
 
-	std::fprintf(stdout, "Hellow, World!\n\n");
+	auto hreg = vi_tmRegistryCreate();
 
-	vi_CurrentThreadAffinityFixate();
-	vi_WarmUp(1, 500);
+	{	VI_TM_H(hreg, "1");
+		VI_TM_GLOBALINIT("Timing report:\n", vi_tmSortByName, vi_tmSortAscending, "Goodbye!\n");
+
+		std::fprintf(stdout, "Hellow, World!\n\n");
+
+		vi_CurrentThreadAffinityFixate();
+		vi_WarmUp(1, 500);
+	}
 
 	{	std::fprintf(stdout, "First execution:\n");
 		h_register = vi_tmRegistryCreate();
@@ -48,10 +53,16 @@ int main()
 				std::fprintf(stdout, "done\n");
 			}
 		}
-		vi_tmRegistryReport(h_register, vi_tmSortByName | vi_tmSortAscending);
-		std::fprintf(stdout, "\n");
-		vi_tmRegistryClose(h_register);
-		h_register = VI_TM_HGLOBAL;
+		{	VI_TM_H(hreg, "2");
+			vi_tmRegistryReport(h_register, vi_tmSortByName | vi_tmSortAscending);
+		}
+		{	VI_TM_H(hreg, "3");
+			std::fprintf(stdout, "\n");
+		}
+		{	VI_TM_H(hreg, "4");
+			vi_tmRegistryClose(h_register);
+			h_register = VI_TM_HGLOBAL;
+		}
 	}
 
 	std::fprintf(stdout, "Other executions:\nTesting: ");
@@ -75,8 +86,18 @@ int main()
 		{	fputs("\b \b", stdout);
 		}
 	}
-	std::fprintf(stdout, "All tests done.\n\n");
 
-	vi_CurrentThreadAffinityRestore();
+	{	VI_TM_H(hreg, "5");
+		std::fprintf(stdout, "All tests done.\n\n");
+	}
+	{	VI_TM_H(hreg, "6");
+		vi_CurrentThreadAffinityRestore();
+	}
+	{	VI_TM_H(hreg, "7");
+		std::fprintf(stdout, "\nMisc:");
+	}
+
+	vi_tmRegistryReport(hreg, vi_tmSortByTime);
+	vi_tmRegistryClose(hreg);
 	return 0;
 }

@@ -327,10 +327,10 @@ namespace vi_tm
 /// declare a vi_tm::scoped_probe_t manually.
 /// </remarks>
 #	define VI_TM_H(hreg, ...) \
-		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::scoped_probe_t \
-		{	const auto meas = vi_tmRegistryGetMeas((hreg), name); \
+		const auto VI_UNIC_ID(_vi_tm_) = [] (VI_TM_HREG h, const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::scoped_probe_t \
+		{	const auto meas = vi_tmRegistryGetMeas((h), name); \
 			return vi_tm::scoped_probe_t::make_running(meas, cnt); \
-		}(__VA_ARGS__)
+		}(hreg, __VA_ARGS__)
 #
 /// <summary>
 /// See <see cref="VI_TM"/> for the full description. Starts a scoped timing probe with a cached measurement lookup.
@@ -353,8 +353,8 @@ namespace vi_tm
 /// declare a vi_tm::scoped_probe_t manually.
 /// </remarks>
 #	define VI_TM_SH(hreg, ...) \
-		const auto VI_UNIC_ID(_vi_tm_) = [] (const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::scoped_probe_t \
-		{	static const auto meas = vi_tmRegistryGetMeas((hreg), name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
+		const auto VI_UNIC_ID(_vi_tm_) = [] (VI_TM_HREG h, const char* name, VI_TM_SIZE cnt = 1) -> vi_tm::scoped_probe_t \
+		{	static const auto meas = vi_tmRegistryGetMeas((h), name); /* Static, so as not to waste resources on repeated searches for measurements by name. */ \
 			VI_TM_DEBUG_ONLY \
 			(	const char* registered_name = nullptr; \
 				vi_tmMeasurementGet(meas, &registered_name, nullptr); \
@@ -362,7 +362,7 @@ namespace vi_tm
 					"One VI_TM macro cannot be reused with a different name value!"); \
 			) \
 			return vi_tm::scoped_probe_t::make_running(meas, cnt); \
-		}(__VA_ARGS__)
+		}(hreg, __VA_ARGS__)
 #
 #	// This macro is used to create a scoped_probe_t object with the function name as the measurement name.
 #	define VI_TM_FUNC_H(hreg) VI_TM_SH((hreg), VI_FUNCNAME, 1U)
