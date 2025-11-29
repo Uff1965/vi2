@@ -33,6 +33,11 @@ int main()
 	);
 
 	std::fprintf(stdout, "Hellow, World!\n\n");
+	fprintf(
+		stdout,
+		"vi_timing version: \'%s\'\n",
+		static_cast<const char *>(vi_tmStaticInfo(vi_tmInfoVersion))
+		);
 
 	vi_CurrentThreadAffinityFixate();
 //		vi_WarmUp(1, 500);
