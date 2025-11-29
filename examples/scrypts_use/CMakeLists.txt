@@ -51,6 +51,12 @@ PUBLIC
 )
 
 if (WIN32)
+	set_target_properties(${PROJECT_NAME} PROPERTIES
+		LINK_FLAGS_RELEASE "/DEBUG /OPT:REF /OPT:ICF"
+		COMPILE_PDB_NAME_RELEASE "${PROJECT_NAME}"
+		COMPILE_PDB_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/lib"
+	)
+
 	target_compile_definitions(${PROJECT_NAME}
 	PRIVATE
 		WIN32_LEAN_AND_MEAN # Exclude rarely-used stuff from Windows headers.
@@ -67,13 +73,12 @@ if (WIN32)
 		/Zi # Generate debug info
 		/Zc:__cplusplus # By default, Visual Studio always returns the value 199711L for the __cplusplus preprocessor macro.
 		$<$<CONFIG:Release>: /Ox /GL> # Ox include /O2 /Ob2 /Og /Oi /Ot /Oy /Gs /GF /Gy
-		$<$<CONFIG:Debug>: /Od /RTC1 /Zi /Ob0> # Enable runtime checks, debug info, no optimizations, disable function inlining.
+		$<$<CONFIG:Debug>: /Od /RTC1 /Ob0> # Enable runtime checks, debug info, no optimizations, disable function inlining.
 	)
 
 	target_link_options(${PROJECT_NAME}
 	PRIVATE
 		$<$<CONFIG:Release>: /LTCG> # Link Time Code Generation for Release builds.
-		$<$<CONFIG:Debug>: /DEBUG> # Generate debug info for Debug builds.
 	)
 elseif(UNIX)
 	target_compile_options(${PROJECT_NAME}
@@ -81,6 +86,8 @@ elseif(UNIX)
 		-fvisibility=hidden # Hide symbols by default, only export those marked with VI_TM_EXPORTS.
 		-Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
 		-march=native # Switch on all instruction sets supported by the host CPU. Support FMA, AVX, AVX2, etc.
+		-g
+		-gsplit-dwarf
 		$<$<CONFIG:Release>: -O3 -flto=auto -s> # Optimize for speed, strip symbols.
 	)
 

@@ -105,7 +105,7 @@ if (WIN32)
         /Zi # Generate debug info
         /Zc:__cplusplus # By default, Visual Studio always returns the value 199711L for the __cplusplus preprocessor macro.
         $<$<CONFIG:Release>: /O2 /GL> # /O2 include /Og /Oi /Ot /Oy /Ob2 /GF /Gy
-        $<$<CONFIG:Debug>: /Od /RTC1 /Zi /Ob0> # Enable runtime checks, debug info, no optimizations, disable function inlining.
+        $<$<CONFIG:Debug>: /Od /RTC1 /Ob0> # Enable runtime checks, debug info, no optimizations, disable function inlining.
     )
 
     if(BUILD_SHARED_LIBS)
@@ -124,12 +124,14 @@ if (WIN32)
 
     target_link_options(${PROJECT_NAME}
     PRIVATE
+        /DEBUG> # Generate debug info.
         $<$<CONFIG:Release>: /LTCG> # Link Time Code Generation for Release builds.
-        $<$<CONFIG:Debug>: /DEBUG> # Generate debug info for Debug builds.
     )
 elseif (UNIX)
     target_compile_options(${PROJECT_NAME}
     PRIVATE
+        -g
+        -gsplit-dwarf
         -fvisibility=hidden # Hide symbols by default, only export those marked with VI_TM_EXPORTS.
         -Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
         -march=native # Switch on all instruction sets supported by the host CPU. Support FMA, AVX, AVX2, etc.
