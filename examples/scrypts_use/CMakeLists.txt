@@ -87,7 +87,7 @@ elseif(UNIX)
 		-Wno-psabi # suppress "note: parameter passing for argument of type <...> changed in GCC 7.1" message.
 		-march=native # Switch on all instruction sets supported by the host CPU. Support FMA, AVX, AVX2, etc.
 		-g
-		-gsplit-dwarf
+# conflic with lto		-gsplit-dwarf
 		$<$<CONFIG:Release>: -O3 -flto=auto -s> # Optimize for speed, strip symbols.
 	)
 
