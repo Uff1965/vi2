@@ -8,6 +8,6 @@
 using test_func_t = bool (*)(void);
 int register_test(const char* name, test_func_t fn);
 
-extern VI_TM_HREG h_register;
+extern VI_TM_HREG g_register;
 
-#define TM(...) VI_TM_H(h_register, __VA_ARGS__)
+#define TM(...) VI_TM_H(g_register, __VA_ARGS__)
