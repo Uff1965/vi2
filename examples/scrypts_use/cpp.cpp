@@ -6,16 +6,14 @@
 namespace cpp
 {
 	// "Script" worker function (native C++)
-	VI_OPTIMIZE_OFF
-	int callback(const char* message, int val)
+	int VI_NOINLINE callback(const char* message, int val)
 	{	TM("0: CPP callback");
 		if (const auto len = message ? strlen(message) : 0; len > 0)
-		{	return message[(val - 777) % len];
+		{	return message[((val - KEY) % len + len) % len];
 		}
 		assert(false);
 		return -1;
 	}
-	VI_OPTIMIZE_ON
 
 	// Step 1: Initialize environment (dummy)
 	bool init()
@@ -31,7 +29,7 @@ namespace cpp
 
 	VI_OPTIMIZE_OFF
 	int call_worker(const char* msg, int n)
-	{	return callback(msg, n + 777);
+	{	return callback(msg, n + KEY);
 	}
 	VI_OPTIMIZE_ON
 

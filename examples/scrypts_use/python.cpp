@@ -7,8 +7,13 @@
 
 namespace python
 {
+	constexpr char script[] =
+		"import embedded_cpp\n"
+		"def Worker(msg, val):\n"
+		"\tresult = embedded_cpp.callback(msg, val + 777)\n"
+		"\treturn result\n";
+
 	// Native C++ function exposed to Python
-	// This simulates a callback from Python into C++.
 	PyObject* callback(PyObject*, PyObject* args)
 	{   TM("0: Py callback");
 		const char* message;
@@ -20,7 +25,7 @@ namespace python
 
 		int res = -1;
 		if (const auto len = message ? strlen(message) : 0; len > 0)
-		{	res = message[(value - 777) % len];
+		{	res = message[((value - KEY) % len + len) % len];
 		}
 
 		return PyLong_FromLong(res);
@@ -44,12 +49,6 @@ namespace python
 	// Step 2: Load and run inline Python script
 	bool load_script()
 	{	TM("2: Py run");
-		static constexpr char script[] =
-			"import embedded_cpp\n"
-			"def Worker(msg, val):\n"
-			"\tresult = embedded_cpp.callback(msg, val + 777)\n"
-			"\treturn result\n";
-
 		return PyRun_SimpleString(script) == 0;
 	}
 

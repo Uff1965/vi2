@@ -10,23 +10,29 @@ extern "C" {
 
 namespace qjs
 {
+	constexpr char script[] =
+		R"(
+			function Worker(msg, val)
+			{	return callback(msg, val + 777);
+			}
+		)";
 	JSRuntime *rt = nullptr;
 
 	// Error logging utilities
 	void log_exception(JSContext *ctx)
 	{	JSValue exc = JS_GetException(ctx);
-		if (!JS_IsError(exc))
-		{	const char *msg = JS_ToCString(ctx, exc);
-			std::fprintf(stderr, "QuickJS exception: %s\n", msg ? msg : "[unknown]");
-			JS_FreeCString(ctx, msg);
-		}
-		else
+		if (JS_IsError(exc))
 		{	JSValue stack = JS_GetPropertyStr(ctx, exc, "stack");
 			if (const char *stack_str = JS_ToCString(ctx, stack))
 			{	std::fprintf(stderr, "QuickJS error:\n%s\n", stack_str);
 				JS_FreeCString(ctx, stack_str);
 			}
 			JS_FreeValue(ctx, stack);
+		}
+		else
+		{	const char *msg = JS_ToCString(ctx, exc);
+			std::fprintf(stderr, "QuickJS exception: %s\n", msg ? msg : "[unknown]");
+			JS_FreeCString(ctx, msg);
 		}
 		JS_FreeValue(ctx, exc);
 	}
@@ -46,7 +52,7 @@ namespace qjs
 
 		int32_t res = -1;
 		if (const auto len = message ? strlen(message) : 0; len > 0)
-		{	res = message[(value - 777) % len];
+		{	res = message[((value - KEY) % len + len) % len];
 		}
 
 		JS_FreeCString(ctx, message);
@@ -87,13 +93,6 @@ namespace qjs
 	// Step 2: load script
 	bool load_script(JSContext *ctx)
 	{	TM("2: QJS Load script");
-
-		static constexpr char script[] = R"(
-				function Worker(msg, val)
-				{	return callback(msg, val + 777);
-				}
-			)";
-
 		JSValue eval_res = JS_Eval(ctx, script, strlen(script), "<input>", JS_EVAL_TYPE_GLOBAL);
 		if (JS_IsException(eval_res))
 		{	std::fprintf(stderr, "QuickJS: script load error\n");
@@ -124,7 +123,7 @@ namespace qjs
 			std::fprintf(stderr, "QuickJS: exception in Worker()\n");
 			log_exception(ctx);
 		}
-		else if (JS_ToInt32(ctx, &result, ret))
+		else if (JS_ToInt32(ctx, &result, ret) != 0)
 		{	std::fprintf(stderr, "QuickJS: return value is not int\n");
 		}
 

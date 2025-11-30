@@ -10,6 +10,12 @@ extern "C" {
 
 namespace lua
 {
+	constexpr char script[] = R"(
+			function Worker(msg, val)
+				return callback(msg, val + 777)
+			end
+		)";
+
 	// C++ function exposed to Lua
 	// This simulates a native callback that Lua can invoke.
 	int callback(lua_State *L)
@@ -19,7 +25,7 @@ namespace lua
 
 		lua_Integer res = -1;
 		if (const auto len = message ? strlen(message) : 0; len > 0)
-		{	res = message[(value - 777) % len];
+		{	res = message[((value - KEY) % len + len) % len];
 		}
 
 		lua_pushinteger(L, res);
@@ -43,13 +49,6 @@ namespace lua
 	// Step 2: Load and compile Lua script
 	bool load_script(lua_State *L)
 	{   TM("2: Lua Load and compile");
-		static constexpr char script[] = R"(
-				function Worker(msg, val)
-					return callback(msg, val + 777)
-				end
-			)";
-
-		// Compile and execute script
 		if (luaL_dostring(L, script) != LUA_OK)
 		{	assert(false);
 			fprintf(stderr, "Lua error: %s\n", lua_tostring(L, -1));
