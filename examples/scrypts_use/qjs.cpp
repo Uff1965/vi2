@@ -33,7 +33,7 @@ namespace qjs
 	}
 
 	// Native callback
-	JSValue cpp_callback(JSContext *ctx, JSValueConst /*this_val*/, int argc, JSValueConst *argv)
+	JSValue callback(JSContext *ctx, JSValueConst /*this_val*/, int argc, JSValueConst *argv)
 	{	TM("0: QJS callback");
 		const char *message = (argc > 0) ? JS_ToCString(ctx, argv[0]) : nullptr;
 		if (!message || strcmp(message, "Hello, World!") != 0)
@@ -68,8 +68,8 @@ namespace qjs
 		js_std_add_helpers(ctx, 0, nullptr);
 
 		JSValue global = JS_GetGlobalObject(ctx);
-		JSValue cfunc = JS_NewCFunction(ctx, cpp_callback, "cpp_callback", 1);
-		JS_SetPropertyStr(ctx, global, "cpp_callback", cfunc);
+		JSValue cfunc = JS_NewCFunction(ctx, callback, "callback", 1);
+		JS_SetPropertyStr(ctx, global, "callback", cfunc);
 
 		JS_FreeValue(ctx, global);
 		return ctx;
@@ -79,7 +79,7 @@ namespace qjs
 	bool load_script(JSContext *ctx)
 	{	TM("2: QJS Load script");
 
-		static constexpr char script[] = R"(function js_worker() {return cpp_callback("Hello, World!");})";
+		static constexpr char script[] = R"(function js_worker() {return callback("Hello, World!");})";
 
 		JSValue eval_res = JS_Eval(ctx, script, strlen(script), "<input>", JS_EVAL_TYPE_GLOBAL);
 		if (JS_IsException(eval_res))
@@ -106,6 +106,7 @@ namespace qjs
 			return false;
 		}
 
+		bool result = false;
 		JSValue ret = JS_Call(ctx, func, global, 0, nullptr);
 		if (JS_IsException(ret))
 		{	assert(false);
@@ -115,7 +116,13 @@ namespace qjs
 		else
 		{	int32_t val;
 			if (JS_ToInt32(ctx, &val, ret) == 0)
-			{	assert(val == VAL);
+			{	if (val == VAL)
+				{	result = true;
+				}
+				else
+				{	std::fprintf(stderr, "QuickJS: unexpected return value %d\n", val);
+					assert(false);
+				}
 			}
 			else
 			{	std::fprintf(stderr, "QuickJS: return value is not int\n");
@@ -126,7 +133,7 @@ namespace qjs
 		JS_FreeValue(ctx, func);
 		JS_FreeValue(ctx, global);
 
-		return true;
+		return result;
 	}
 
 	bool call(JSContext *ctx)

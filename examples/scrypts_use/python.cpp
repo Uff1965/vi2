@@ -11,7 +11,7 @@ namespace python
 
 	// Native C++ function exposed to Python
 	// This simulates a callback from Python into C++.
-	PyObject* cpp_callback(PyObject*, PyObject* args)
+	PyObject* callback(PyObject*, PyObject* args)
 	{   TM("0: Py callback");
 		const char* message;
 		if (!PyArg_ParseTuple(args, "s", &message))
@@ -30,7 +30,7 @@ namespace python
 	{	TM("1: Py Initialize");
 
 		// Module definition for "embedded_cpp"
-		static PyMethodDef EmbMethods[] = { { "callback", cpp_callback, METH_VARARGS, "C++ Callback" }, {} };
+		static PyMethodDef EmbMethods[] = { { "callback", callback, METH_VARARGS, "C++ Callback" }, {} };
 		static PyModuleDef embmodule = { PyModuleDef_HEAD_INIT, "embedded_cpp", nullptr, -1, EmbMethods };
 		if (PyImport_AppendInittab("embedded_cpp", [] { return PyModule_Create(&embmodule); }) == -1)
 		{	assert(false);
@@ -72,16 +72,18 @@ namespace python
 		bool result = false;
 		if (PyCallable_Check(func))
 		{	if (PyObject *res = PyObject_CallObject(func, nullptr))
-			{	Py_DECREF(res);
-				const long val = PyLong_AsLong(res);
-				if (val == -1 && PyErr_Occurred())
+			{	if (const long val = PyLong_AsLong(res); val == -1 && PyErr_Occurred())
 				{	assert(false);
 					PyErr_Print();
 				}
-				else
-				{	assert(val == VAL);
-					result = true;
+				else if (VAL != val)
+				{	assert(false);
+					std::fprintf(stderr, "Python error: unexpected return value %ld\n", val);
 				}
+				else
+				{	result = true;
+				}
+				Py_DECREF(res);
 			}
 			else
 			{	assert(false);
@@ -95,7 +97,6 @@ namespace python
 
 		Py_DECREF(func);
 		Py_DECREF(main_module);
-
 		return result;
 	}
 

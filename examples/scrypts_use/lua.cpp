@@ -14,7 +14,7 @@ namespace lua
 
 	// C++ function exposed to Lua
 	// This simulates a native callback that Lua can invoke.
-	int cpp_callback(lua_State *L)
+	int callback(lua_State *L)
 	{	TM("0: Lua callback");
 		// Validate first argument is a string
 		if (const char* message = luaL_checkstring(L, 1); !message || strcmp(message, "Hello, World!") != 0)
@@ -35,7 +35,7 @@ namespace lua
 			return nullptr;
 		}
 		luaL_openlibs(L); // Load all standard Lua libraries
-		lua_register(L, "cpp_callback", cpp_callback); // Register native function
+		lua_register(L, "callback", callback); // Register native function
 		return L;
 	}
 
@@ -44,7 +44,7 @@ namespace lua
 	{   TM("2: Lua Load and compile");
 		static constexpr char script[] = R"(
 				function lua_worker()
-					return cpp_callback('Hello, World!')
+					return callback('Hello, World!')
 				end
 			)";
 
@@ -85,7 +85,10 @@ namespace lua
 		}
 		const auto val = lua_tointeger(L, -1);
 		lua_pop(L, 1);
-		assert(VAL == val);
+		if (VAL != val)
+		{	assert(false);
+			return false;
+		}
 
 		return true;
 	}

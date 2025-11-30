@@ -15,7 +15,7 @@ PROPERTIES
 	POSITION_INDEPENDENT_CODE ON
 )
 
-set(SOURCES main.cpp header.h)
+set(SOURCES main.cpp cpp.cpp header.h)
 
 if(VI_TM_ENABLE_PYTHON)
 	# Find Python3 and determine extension suffix!

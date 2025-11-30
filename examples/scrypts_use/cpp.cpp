@@ -1,60 +1,82 @@
 #include "header.h"
-#include <vi_timing/vi_timing.h>
 
-VI_TM(FILE_PATH);
+#include <cassert>
+#include <cstdio>
 
-namespace native_cpp
+namespace cpp
 {
-	// Step 1: Initialization
-	// In native C++ there is no interpreter to initialize,
-	// but we simulate the same stage for consistency.
-	void init_cpp()
-	{	VI_TM("C++(1) Initialize");
-		// Example: allocate resources, prepare environment
-	}
+	constexpr int VAL = 42;
 
-	// Step 2: Load/Compile
-	// For native code, this step represents preparing functions or data.
-	bool load_cpp()
-	{	VI_TM("C++(2) Load and compile");
-		// Example: simulate "compilation" or setup
+	// "Script" worker function (native C++)
+	VI_OPTIMIZE_OFF
+	int callback()
+	{	TM("0: CPP call");
+		const char* message = "Hello, World!";
+		if (!message || strcmp(message, "Hello, World!") != 0)
+		{	assert(false);
+			printf("CPP callback: unexpected string '%s'\n", message ? message : "<null>");
+		}
+		return VAL;
+	}
+	VI_OPTIMIZE_ON
+
+	// Step 1: Initialize environment (dummy)
+	bool init()
+	{	TM("1: CPP Initialize");
 		return true;
 	}
 
-	// Step 3: Call
-	// Execute a native function directly.
-	bool call_cpp()
-	{	VI_TM("C++(3) Call");
-
-		auto worker = []() -> int
-		{	VI_TM("C++ worker");
-			// Simulate some work
-			return 42;
-		};
-
-		int result = worker();
-		(void)result; // suppress unused warning
+	// Step 2: Load "script" (dummy)
+	bool load_script()
+	{	TM("2: CPP Load script");
 		return true;
 	}
 
-	// Step 4: Cleanup
-	// Release resources if any.
-	void cleanup_cpp()
-	{	VI_TM("C++(4) Cleanup");
-		// Example: free memory, close handles
+	// Step 3: Call worker
+	VI_OPTIMIZE_OFF
+	bool call_worker()
+	{	const int val = callback();
+		assert(val == VAL);
+		return val == VAL;
+	}
+	VI_OPTIMIZE_ON
+
+	bool call()
+	{
+		{	TM("3.1: CPP First Call");
+			if (!call_worker())
+				return false;
+		}
+
+		for (int n = 0; n < 100; ++n)
+		{	TM("3.2: CPP Other Call");
+			if (!call_worker())
+				return false;
+		}
+
+		return true;
 	}
 
-	// Main test function
-	// Purpose: measure mandatory time costs of standard steps
-	// when working with native C++ code (no interpreter).
-	void test_cpp()
-	{	VI_TM_FUNC;
-		init_cpp();
-		if (load_cpp())
-			call_cpp();
-		cleanup_cpp();
+	// Step 4: Cleanup (dummy)
+	void cleanup()
+	{	TM("4: CPP Cleanup");
 	}
 
-	const auto _ = register_test(test_cpp);
+	// Test entry
+	bool test()
+	{	TM("CPP test");
 
-} // namespace native_cpp
+		bool result = false;
+		if (init())
+		{	if (load_script())
+				result = call();
+
+			cleanup();
+		}
+
+		return result;
+	}
+
+	const auto _ = register_test("Native", test);
+
+} // namespace cpp
