@@ -5,18 +5,15 @@
 
 namespace cpp
 {
-	constexpr int VAL = 42;
-
 	// "Script" worker function (native C++)
 	VI_OPTIMIZE_OFF
-	int callback()
-	{	TM("0: CPP call");
-		const char* message = "Hello, World!";
-		if (!message || strcmp(message, "Hello, World!") != 0)
-		{	assert(false);
-			printf("CPP callback: unexpected string '%s'\n", message ? message : "<null>");
+	int callback(const char* message, int val)
+	{	TM("0: CPP callback");
+		if (const auto len = message ? strlen(message) : 0; len > 0)
+		{	return message[(val - 777) % len];
 		}
-		return VAL;
+		assert(false);
+		return -1;
 	}
 	VI_OPTIMIZE_ON
 
@@ -32,26 +29,28 @@ namespace cpp
 		return true;
 	}
 
-	// Step 3: Call worker
 	VI_OPTIMIZE_OFF
-	bool call_worker()
-	{	const int val = callback();
-		assert(val == VAL);
-		return val == VAL;
+	int call_worker(const char* msg, int n)
+	{	return callback(msg, n + 777);
 	}
 	VI_OPTIMIZE_ON
 
+	// Step 3: Call worker
 	bool call()
 	{
 		{	TM("3.1: CPP First Call");
-			if (!call_worker())
+			if (MSG[0] != call_worker(MSG, 0))
+			{	assert(false);
 				return false;
+			}
 		}
 
 		for (int n = 0; n < 100; ++n)
 		{	TM("3.2: CPP Other Call");
-			if (!call_worker())
+			if (MSG[n % (strlen(MSG))] != call_worker(MSG, n))
+			{	assert(false);
 				return false;
+			}
 		}
 
 		return true;
@@ -64,7 +63,7 @@ namespace cpp
 
 	// Test entry
 	bool test()
-	{	TM("CPP test");
+	{	TM("*CPP test");
 
 		bool result = false;
 		if (init())
@@ -77,6 +76,6 @@ namespace cpp
 		return result;
 	}
 
-	const auto _ = register_test("Native", test);
+	const auto _ = register_test("CPP", test);
 
 } // namespace cpp

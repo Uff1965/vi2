@@ -7,22 +7,23 @@
 
 namespace python
 {
-	constexpr int VAL = 42;
-
 	// Native C++ function exposed to Python
 	// This simulates a callback from Python into C++.
 	PyObject* callback(PyObject*, PyObject* args)
 	{   TM("0: Py callback");
 		const char* message;
-		if (!PyArg_ParseTuple(args, "s", &message))
+		int value;
+		if (!PyArg_ParseTuple(args, "si", &message, &value))
 		{	assert(false);
 			return nullptr; // Argument parsing failed
 		}
-		if (strcmp(message, "Hello, World!") != 0)
-		{	assert(false);
-			printf("Python callback: unexpected string '%s'\n", message);
+
+		int res = -1;
+		if (const auto len = message ? strlen(message) : 0; len > 0)
+		{	res = message[(value - 777) % len];
 		}
-		return PyLong_FromLong(VAL); // Dummy return value for benchmarking
+
+		return PyLong_FromLong(res);
 	}
 
 	// Step 1: Initialize Python interpreter and register module
@@ -45,43 +46,38 @@ namespace python
 	{	TM("2: Py run");
 		static constexpr char script[] =
 			"import embedded_cpp\n"
-			"def py_worker():\n"
-			"\tresult = embedded_cpp.callback('Hello, World!')\n"
+			"def Worker(msg, val):\n"
+			"\tresult = embedded_cpp.callback(msg, val + 777)\n"
 			"\treturn result\n";
 
 		return PyRun_SimpleString(script) == 0;
 	}
 
-	// Step 3: Call Python function
-	bool call_worker()
+	int call_worker(const char* msg, int val)
 	{	PyObject *main_module = PyImport_ImportModule("__main__");
 		if (!main_module)
 		{	assert(false);
 			PyErr_Print();
-			return false;
+			return -1;
 		}
 
-		PyObject *func = PyObject_GetAttrString(main_module, "py_worker");
+		PyObject *func = PyObject_GetAttrString(main_module, "Worker");
 		if (!func)
 		{	assert(false);
 			PyErr_Print();
 			Py_DECREF(main_module);
-			return false;
+			return -1;
 		}
 
-		bool result = false;
+		long result = -1;
 		if (PyCallable_Check(func))
-		{	if (PyObject *res = PyObject_CallObject(func, nullptr))
-			{	if (const long val = PyLong_AsLong(res); val == -1 && PyErr_Occurred())
+		{	PyObject *args = Py_BuildValue("(si)", msg, val);
+			assert(args);
+			if (PyObject *res = PyObject_CallObject(func, args))
+			{	result = PyLong_AsLong(res);
+				if (result == -1 && PyErr_Occurred())
 				{	assert(false);
 					PyErr_Print();
-				}
-				else if (VAL != val)
-				{	assert(false);
-					std::fprintf(stderr, "Python error: unexpected return value %ld\n", val);
-				}
-				else
-				{	result = true;
 				}
 				Py_DECREF(res);
 			}
@@ -89,21 +85,23 @@ namespace python
 			{	assert(false);
 				PyErr_Print();
 			}
+			Py_XDECREF(args);
 		}
 		else
 		{	assert(false);
-			fprintf(stderr, "Python error: py_worker is not callable\n");
+			fprintf(stderr, "Python error: Worker is not callable\n");
 		}
 
 		Py_DECREF(func);
 		Py_DECREF(main_module);
-		return result;
+		return static_cast<int>(result);
 	}
 
+	// Step 3: Call Python function
 	bool call()
 	{
 		{	TM("3.1: Py First Call");
-			if(!call_worker())
+			if (MSG[0] != call_worker(MSG, 0))
 			{	assert(false);
 				return false;
 			}
@@ -111,7 +109,7 @@ namespace python
 
 		for(int n = 0; n < 100; ++n)
 		{	TM("3.2: Py Other Call");
-			if(!call_worker())
+			if (MSG[n % (strlen(MSG))] != call_worker(MSG, n))
 			{	assert(false);
 				return false;
 			}
@@ -131,7 +129,7 @@ namespace python
 
 	// Test entry
 	bool test()
-	{	TM("python test");
+	{	TM("*PYTHON test");
 
 		bool result = false;
 		if (init())
@@ -143,6 +141,6 @@ namespace python
 		return result;
 	}
 
-	const auto _ = register_test("Python", test);
+	const auto _ = register_test("PYTHON", test);
 
 } // namespace python

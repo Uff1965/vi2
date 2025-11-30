@@ -24,11 +24,10 @@ namespace
 		std::fprintf(stdout, "  Timer frequency: %.0f MHz\n\n", 1e-6 / sec_per_unit);
 	}
 
-	bool all_test(vi_tm::scoped_probe_t &st)
+	bool all_test()
 	{
 		for (const auto &[name, func] : test_registry())
 		{	vi_ThreadYield();
-			auto sr = st.scoped_resume();
 			if (!func())
 			{	assert(false);
 				std::fprintf(stderr, "Test %s failed\n", name.c_str());
@@ -41,9 +40,7 @@ namespace
 	bool run_phase1()
 	{	std::fprintf(stdout, "First execution:\n");
 		g_register = vi_tmRegistryCreate();
-		{	auto const meas = vi_tmRegistryGetMeas(g_register, "***ALL TESTS***");
-			auto st = vi_tm::scoped_probe_t::make_paused(meas);
-			if(!all_test(st))
+		{	if(!all_test())
 			{	return false;
 			}
 		} // scope for st.
@@ -57,10 +54,8 @@ namespace
 	{	constexpr int num_iterations = 100;
 		std::fprintf(stdout, "\nOther executions:\nTesting: ");
 		for (int n = 0; n < num_iterations; ++n)
-		{	auto const meas = vi_tmRegistryGetMeas(g_register, "***ALL TESTS***");
-			auto st = vi_tm::scoped_probe_t::make_paused(meas);
-			auto len = std::fprintf(stdout, "%02d/%d... ", n + 1, num_iterations);
-			if(!all_test(st))
+		{	auto len = std::fprintf(stdout, "%02d/%d... ", n + 1, num_iterations);
+			if(!all_test())
 			{	return false;
 			}
 			// Erase the progress indication.

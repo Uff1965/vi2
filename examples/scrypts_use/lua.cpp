@@ -10,18 +10,19 @@ extern "C" {
 
 namespace lua
 {
-	constexpr int VAL = 42;
-
 	// C++ function exposed to Lua
 	// This simulates a native callback that Lua can invoke.
 	int callback(lua_State *L)
 	{	TM("0: Lua callback");
-		// Validate first argument is a string
-		if (const char* message = luaL_checkstring(L, 1); !message || strcmp(message, "Hello, World!") != 0)
-		{	assert(false);
-			printf("Lua callback: unexpected string '%s'\n", message);
+		const char *message = luaL_checkstring(L, 1);
+		const auto value = luaL_checkinteger(L, 2);
+
+		lua_Integer res = -1;
+		if (const auto len = message ? strlen(message) : 0; len > 0)
+		{	res = message[(value - 777) % len];
 		}
-		lua_pushinteger(L, VAL); // Push a dummy integer result
+
+		lua_pushinteger(L, res);
 		return 1; // Return one result to Lua
 	}
 
@@ -43,8 +44,8 @@ namespace lua
 	bool load_script(lua_State *L)
 	{   TM("2: Lua Load and compile");
 		static constexpr char script[] = R"(
-				function lua_worker()
-					return callback('Hello, World!')
+				function Worker(msg, val)
+					return callback(msg, val + 777)
 				end
 			)";
 
@@ -59,52 +60,51 @@ namespace lua
 		return true;
 	}
 
-	// Step 3: Call Lua function
-	bool call_worker(lua_State *L)
-	{	lua_getglobal(L, "lua_worker");   // Push function onto stack
+	int call_worker(lua_State *L, const char* msg, int val)
+	{	lua_getglobal(L, "Worker"); // Push function onto stack
 		if (!lua_isfunction(L, -1))
 		{	assert(false);
-			fprintf(stderr, "Lua error: lua_worker not found\n");
+			fprintf(stderr, "Lua error: Worker not found\n");
 			lua_pop(L, 1);
-			return false;
+			return -1;
 		}
+		lua_pushstring(L, msg);
+		lua_pushinteger(L, val);
 
-		// Execute Lua function with no args and no return values
-		if (lua_pcall(L, 0, 1, 0) != LUA_OK)
+		if (lua_pcall(L, 2, 1, 0) != LUA_OK)
 		{	assert(false);
 			fprintf(stderr, "Lua error: %s\n", lua_tostring(L, -1));
 			lua_pop(L, 1);
-			return false;
+			return -1;
 		}
 
 		if (!lua_isinteger(L, -1))
 		{	assert(false);
 			fprintf(stderr, "Lua error: result is not integer\n");
 			lua_pop(L, 1);
-			return false;
+			return -1;
 		}
-		const auto val = lua_tointeger(L, -1);
+		const auto result = lua_tointeger(L, -1);
 		lua_pop(L, 1);
-		if (VAL != val)
-		{	assert(false);
-			return false;
-		}
 
-		return true;
+		return static_cast<int>(result);
 	}
 
+	// Step 3: Call Lua function
 	bool call(lua_State *L)
 	{
 		{	TM("3.1: Lua First Call");
-			if(!call_worker(L))
-			{	return false;
+			if (MSG[0] != call_worker(L, MSG, 0))
+			{	assert(false);
+				return false;
 			}
 		}
 
 		for(int n = 0; n < 100; ++n)
 		{	TM("3.2: Lua Other Call");
-			if(!call_worker(L))
-			{	return false;
+			if (MSG[n % (strlen(MSG))] != call_worker(L, MSG, n))
+			{	assert(false);
+				return false;
 			}
 		}
 
@@ -119,7 +119,7 @@ namespace lua
 
 	// Test entry
 	bool test()
-	{	TM("lua test");
+	{	TM("*LUA test");
 		
 		bool result = false;
 		if (auto L = init())
@@ -133,6 +133,6 @@ namespace lua
 		return result;
 	}
 
-	const auto _ = register_test("Lua", test);
+	const auto _ = register_test("LUA", test);
 
 } // namespace lua

@@ -1,8 +1,8 @@
 #include "header.h"
 
 extern "C" {
-#include <quickjs.h>
-#include <quickjs-libc.h>
+#	include <quickjs.h>
+#	include <quickjs-libc.h>
 }
 
 #include <cassert>
@@ -10,7 +10,6 @@ extern "C" {
 
 namespace qjs
 {
-	constexpr int VAL = 42;
 	JSRuntime *rt = nullptr;
 
 	// Error logging utilities
@@ -36,12 +35,22 @@ namespace qjs
 	JSValue callback(JSContext *ctx, JSValueConst /*this_val*/, int argc, JSValueConst *argv)
 	{	TM("0: QJS callback");
 		const char *message = (argc > 0) ? JS_ToCString(ctx, argv[0]) : nullptr;
-		if (!message || strcmp(message, "Hello, World!") != 0)
-		{	assert(false);
-			printf("QuickJS callback: unexpected string '%s'\n", message? message: "<Nul>");
+		int32_t value = 0;
+		if (argc > 1)
+		{	JS_ToInt32(ctx, &value, argv[1]);
 		}
+		if (!message)
+		{	assert(false);
+			printf("QuickJS callback: unexpected string '<NUL>'\n");
+		}
+
+		int32_t res = -1;
+		if (const auto len = message ? strlen(message) : 0; len > 0)
+		{	res = message[(value - 777) % len];
+		}
+
 		JS_FreeCString(ctx, message);
-		return JS_NewInt32(ctx, VAL);
+		return JS_NewInt32(ctx, res);
 	}
 
 	// Step 1: init
@@ -68,7 +77,7 @@ namespace qjs
 		js_std_add_helpers(ctx, 0, nullptr);
 
 		JSValue global = JS_GetGlobalObject(ctx);
-		JSValue cfunc = JS_NewCFunction(ctx, callback, "callback", 1);
+		JSValue cfunc = JS_NewCFunction(ctx, callback, "callback", 2);
 		JS_SetPropertyStr(ctx, global, "callback", cfunc);
 
 		JS_FreeValue(ctx, global);
@@ -79,7 +88,11 @@ namespace qjs
 	bool load_script(JSContext *ctx)
 	{	TM("2: QJS Load script");
 
-		static constexpr char script[] = R"(function js_worker() {return callback("Hello, World!");})";
+		static constexpr char script[] = R"(
+				function Worker(msg, val)
+				{	return callback(msg, val + 777);
+				}
+			)";
 
 		JSValue eval_res = JS_Eval(ctx, script, strlen(script), "<input>", JS_EVAL_TYPE_GLOBAL);
 		if (JS_IsException(eval_res))
@@ -93,40 +106,26 @@ namespace qjs
 		return true;
 	}
 
-	// ---------------------------------------------------------
-	// Step 3: call worker
-	// ---------------------------------------------------------
-	bool call_worker(JSContext *ctx)
+	int call_worker(JSContext *ctx, const char* msg, int val)
 	{	JSValue global = JS_GetGlobalObject(ctx);
-		JSValue func = JS_GetPropertyStr(ctx, global, "js_worker");
+		JSValue func = JS_GetPropertyStr(ctx, global, "Worker");
 		if (!JS_IsFunction(ctx, func))
-		{	std::fprintf(stderr, "QuickJS: function js_worker not found\n");
+		{	std::fprintf(stderr, "QuickJS: function Worker not found\n");
 			JS_FreeValue(ctx, func);
 			JS_FreeValue(ctx, global);
-			return false;
+			return -1;
 		}
 
-		bool result = false;
-		JSValue ret = JS_Call(ctx, func, global, 0, nullptr);
+		int32_t result = -1;
+		JSValue argv[2] = { JS_NewString(ctx, msg), JS_NewInt32(ctx, val) };
+		JSValue ret = JS_Call(ctx, func, global, 2, argv);
 		if (JS_IsException(ret))
 		{	assert(false);
-			std::fprintf(stderr, "QuickJS: exception in js_worker()\n");
+			std::fprintf(stderr, "QuickJS: exception in Worker()\n");
 			log_exception(ctx);
 		}
-		else
-		{	int32_t val;
-			if (JS_ToInt32(ctx, &val, ret) == 0)
-			{	if (val == VAL)
-				{	result = true;
-				}
-				else
-				{	std::fprintf(stderr, "QuickJS: unexpected return value %d\n", val);
-					assert(false);
-				}
-			}
-			else
-			{	std::fprintf(stderr, "QuickJS: return value is not int\n");
-			}
+		else if (JS_ToInt32(ctx, &result, ret))
+		{	std::fprintf(stderr, "QuickJS: return value is not int\n");
 		}
 
 		JS_FreeValue(ctx, ret);
@@ -136,18 +135,21 @@ namespace qjs
 		return result;
 	}
 
+	// Step 3: call worker
 	bool call(JSContext *ctx)
 	{
 		{	TM("3.1: QJS First Call");
-			if(!call_worker(ctx))
-			{	return false;
+			if (MSG[0] != call_worker(ctx, MSG, 0))
+			{	assert(false);
+				return false;
 			}
 		}
 
 		for(int n = 0; n < 100; ++n)
 		{	TM("3.2: QJS Other Call");
-			if(!call_worker(ctx))
-			{	return false;
+			if (MSG[n % (strlen(MSG))] != call_worker(ctx, MSG, n))
+			{	assert(false);
+				return false;
 			}
 		}
 
@@ -169,7 +171,7 @@ namespace qjs
 
 	// Test entry
 	bool test()
-	{	TM("qjs test");
+	{	TM("*QJS test");
 
 		bool result = false;
 		if (auto ctx = init())
@@ -183,6 +185,6 @@ namespace qjs
 		return result;
 	}
 
-	const auto _ = register_test("QuickJS", test);
+	const auto _ = register_test("QJS", test);
 
 } // namespace qjs
