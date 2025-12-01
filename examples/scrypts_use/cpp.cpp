@@ -6,7 +6,7 @@
 namespace cpp
 {
 	// "Script" worker function (native C++)
-	int VI_NOINLINE callback(const char* message, int val)
+	VI_NOINLINE int callback(const char* message, int val)
 	{	TM("0: CPP callback");
 		if (const auto len = message ? strlen(message) : 0; len > 0)
 		{	return message[((val - KEY) % len + len) % len];
@@ -15,7 +15,7 @@ namespace cpp
 		return -1;
 	}
 
-	int VI_NOINLINE fib(int n)
+	VI_NOINLINE int fib(int n)
 	{	if (n < 2)
 		{	return n;
 		}

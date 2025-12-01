@@ -172,7 +172,7 @@
 #	if defined(__clang__) // Clang-specific features
 #		define VI_FUNCNAME __PRETTY_FUNCTION__ // Demangled function name
 #		define VI_RESTRICT __restrict__ // Restricted pointer qualifier
-#		define VI_NOINLINE		[[gnu::noinline]] // C++11 style noinline attribute
+#		define VI_NOINLINE [[gnu::noinline]] // C++11 style noinline attribute
 #		// Clang-specific optimization control pragmas
 #		define VI_OPTIMIZE_OFF	_Pragma("clang optimize push") \
 								_Pragma("clang optimize off")
@@ -181,7 +181,7 @@
 #		// GCC-specific features
 #		define VI_FUNCNAME __PRETTY_FUNCTION__ // Demangled function name
 #		define VI_RESTRICT __restrict__ // Restricted pointer qualifier
-#		define VI_NOINLINE		[[gnu::noinline]] // C++11 style noinline attribute
+#		define VI_NOINLINE [[gnu::noinline]] // C++11 style noinline attribute
 #		// GCC-specific optimization control pragmas
 #		define VI_OPTIMIZE_OFF	_Pragma("GCC push_options") \
 								_Pragma("GCC optimize(\"O0\")")
