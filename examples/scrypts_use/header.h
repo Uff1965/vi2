@@ -11,5 +11,7 @@ int register_test(const char* name, test_func_t fn);
 extern VI_TM_HREG g_register;
 constexpr char MSG[] = "Hello, World!";
 constexpr int KEY = 777;
+constexpr int FIB_N = 20;
+constexpr int FIB_R = 6'765;
 
 #define TM(...) VI_TM_H(g_register, __VA_ARGS__)

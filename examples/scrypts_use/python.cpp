@@ -8,10 +8,15 @@
 namespace python
 {
 	constexpr char script[] =
+		"def Fib(n):\n"
+		"    if n < 2:\n"
+		"        return n\n"
+		"    return Fib(n-1) + Fib(n-2)\n"
+
 		"import embedded_cpp\n"
 		"def Worker(msg, val):\n"
-		"\tresult = embedded_cpp.callback(msg, val + 777)\n"
-		"\treturn result\n";
+		"    result = embedded_cpp.callback(msg, val + 777)\n"
+		"    return result\n";
 
 	// Native C++ function exposed to Python
 	PyObject* callback(PyObject*, PyObject* args)
@@ -96,6 +101,50 @@ namespace python
 		return static_cast<int>(result);
 	}
 
+	int call_fibonacci(int val)
+	{	PyObject *main_module = PyImport_ImportModule("__main__");
+		if (!main_module)
+		{	assert(false);
+			PyErr_Print();
+			return -1;
+		}
+
+		PyObject *func = PyObject_GetAttrString(main_module, "Fib");
+		if (!func)
+		{	assert(false);
+			PyErr_Print();
+			Py_DECREF(main_module);
+			return -1;
+		}
+
+		long result = -1;
+		if (PyCallable_Check(func))
+		{	PyObject *args = Py_BuildValue("(i)", val);
+			assert(args);
+			if (PyObject *res = PyObject_CallObject(func, args))
+			{	result = PyLong_AsLong(res);
+				if (result == -1 && PyErr_Occurred())
+				{	assert(false);
+					PyErr_Print();
+				}
+				Py_DECREF(res);
+			}
+			else
+			{	assert(false);
+				PyErr_Print();
+			}
+			Py_XDECREF(args);
+		}
+		else
+		{	assert(false);
+			fprintf(stderr, "Python error: Worker is not callable\n");
+		}
+
+		Py_DECREF(func);
+		Py_DECREF(main_module);
+		return static_cast<int>(result);
+	}
+
 	// Step 3: Call Python function
 	bool call()
 	{
@@ -109,6 +158,13 @@ namespace python
 		for(int n = 0; n < 100; ++n)
 		{	TM("3.2: Py Other Call");
 			if (MSG[n % (strlen(MSG))] != call_worker(MSG, n))
+			{	assert(false);
+				return false;
+			}
+		}
+
+		{	TM("3.3: Py Fib Call");
+			if (const auto f = call_fibonacci(FIB_N); FIB_R != f)
 			{	assert(false);
 				return false;
 			}

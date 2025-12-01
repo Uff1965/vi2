@@ -15,6 +15,13 @@ namespace cpp
 		return -1;
 	}
 
+	int VI_NOINLINE fib(int n)
+	{	if (n < 2)
+		{	return n;
+		}
+		return fib(n - 1) + fib(n - 2);
+	}
+
 	// Step 1: Initialize environment (dummy)
 	bool init()
 	{	TM("1: CPP Initialize");
@@ -33,6 +40,12 @@ namespace cpp
 	}
 	VI_OPTIMIZE_ON
 
+	VI_OPTIMIZE_OFF
+	int call_fibonacci(int n)
+	{	return fib(n);
+	}
+	VI_OPTIMIZE_ON
+
 	// Step 3: Call worker
 	bool call()
 	{
@@ -46,6 +59,13 @@ namespace cpp
 		for (int n = 0; n < 100; ++n)
 		{	TM("3.2: CPP Other Call");
 			if (MSG[n % (strlen(MSG))] != call_worker(MSG, n))
+			{	assert(false);
+				return false;
+			}
+		}
+
+		{	TM("3.3: CPP Fib Call");
+			if (const auto f = call_fibonacci(FIB_N); FIB_R != f)
 			{	assert(false);
 				return false;
 			}

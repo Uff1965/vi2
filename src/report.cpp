@@ -55,8 +55,8 @@ namespace
 #endif
 	constexpr auto Ascending = " (^)"sv;
 	constexpr auto Descending = " (v)"sv;
-	constexpr auto Insignificant = "<ins>"sv; // insignificant
-	constexpr auto Excessive = "<exc>"sv; // excessively
+	constexpr auto Insignificant = "<sub>"sv; // sub?resolution; insignificant.
+	constexpr auto Excessive = "<var>"sv; // variance too high; excessively.
 	constexpr auto NotAvailable = ""sv;
 
 	constexpr unsigned char DURATION_PREC = 2;

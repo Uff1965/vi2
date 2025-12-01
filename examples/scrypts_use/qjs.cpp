@@ -12,6 +12,12 @@ namespace qjs
 {
 	constexpr char script[] =
 		R"(
+			function Fib(n)
+			{	if (n < 2)
+					return n;
+				return Fib(n-1) + Fib(n-2);
+			}
+
 			function Worker(msg, val)
 			{	return callback(msg, val + 777);
 			}
@@ -134,6 +140,35 @@ namespace qjs
 		return result;
 	}
 
+	int call_fibonacci(JSContext *ctx, int val)
+	{	JSValue global = JS_GetGlobalObject(ctx);
+		JSValue func = JS_GetPropertyStr(ctx, global, "Fib");
+		if (!JS_IsFunction(ctx, func))
+		{	std::fprintf(stderr, "QuickJS: function Fib not found\n");
+			JS_FreeValue(ctx, func);
+			JS_FreeValue(ctx, global);
+			return -1;
+		}
+
+		int32_t result = -1;
+		JSValue argv = JS_NewInt32(ctx, val);
+		JSValue ret = JS_Call(ctx, func, global, 1, &argv);
+		if (JS_IsException(ret))
+		{	assert(false);
+			std::fprintf(stderr, "QuickJS: exception in Fib()\n");
+			log_exception(ctx);
+		}
+		else if (JS_ToInt32(ctx, &result, ret) != 0)
+		{	std::fprintf(stderr, "QuickJS: return value is not int\n");
+		}
+
+		JS_FreeValue(ctx, ret);
+		JS_FreeValue(ctx, func);
+		JS_FreeValue(ctx, global);
+
+		return result;
+	}
+
 	// Step 3: call worker
 	bool call(JSContext *ctx)
 	{
@@ -147,6 +182,13 @@ namespace qjs
 		for(int n = 0; n < 100; ++n)
 		{	TM("3.2: QJS Other Call");
 			if (MSG[n % (strlen(MSG))] != call_worker(ctx, MSG, n))
+			{	assert(false);
+				return false;
+			}
+		}
+
+		{	TM("3.3: QJS Fib Call");
+			if (const auto f = call_fibonacci(ctx, FIB_N); FIB_R != f)
 			{	assert(false);
 				return false;
 			}

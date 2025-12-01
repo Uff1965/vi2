@@ -11,10 +11,15 @@ extern "C" {
 namespace lua
 {
 	constexpr char script[] = R"(
-			function Worker(msg, val)
-				return callback(msg, val + 777)
-			end
-		)";
+		function Fib(n)
+			if n < 2 then return n end
+			return Fib(n-1) + Fib(n-2)
+		end
+
+		function Worker(msg, val)
+			return callback(msg, val + 777)
+		end
+	)";
 
 	// C++ function exposed to Lua
 	// This simulates a native callback that Lua can invoke.
@@ -89,6 +94,35 @@ namespace lua
 		return static_cast<int>(result);
 	}
 
+	int call_fibonacci(lua_State *L, int val)
+	{	lua_getglobal(L, "Fib"); // Push function onto stack
+		if (!lua_isfunction(L, -1))
+		{	assert(false);
+			fprintf(stderr, "Lua error: Fib not found\n");
+			lua_pop(L, 1);
+			return -1;
+		}
+		lua_pushinteger(L, val);
+
+		if (lua_pcall(L, 1, 1, 0) != LUA_OK)
+		{	assert(false);
+			fprintf(stderr, "Lua error: %s\n", lua_tostring(L, -1));
+			lua_pop(L, 1);
+			return -1;
+		}
+
+		if (!lua_isinteger(L, -1))
+		{	assert(false);
+			fprintf(stderr, "Lua error: result is not integer\n");
+			lua_pop(L, 1);
+			return -1;
+		}
+		const auto result = lua_tointeger(L, -1);
+		lua_pop(L, 1);
+
+		return static_cast<int>(result);
+	}
+
 	// Step 3: Call Lua function
 	bool call(lua_State *L)
 	{
@@ -102,6 +136,13 @@ namespace lua
 		for(int n = 0; n < 100; ++n)
 		{	TM("3.2: Lua Other Call");
 			if (MSG[n % (strlen(MSG))] != call_worker(L, MSG, n))
+			{	assert(false);
+				return false;
+			}
+		}
+
+		{	TM("3.3: Lua Fib Call");
+			if (const auto f = call_fibonacci(L, FIB_N); FIB_R != f)
 			{	assert(false);
 				return false;
 			}
