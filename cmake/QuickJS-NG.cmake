@@ -17,7 +17,10 @@ PROPERTIES
 	FOLDER "3rdparty"
 )
 
-target_compile_options(qjs PRIVATE -Wno-error=maybe-uninitialized)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm" OR CMAKE_SYSTEM_PROCESSOR MATCHES "armv7")
+	target_compile_options(qjs PRIVATE -Wno-error=maybe-uninitialized)
+	target_link_libraries(qjs PRIVATE atomic)
+endif()
 
 set_target_properties(qjs_exe
 PROPERTIES
